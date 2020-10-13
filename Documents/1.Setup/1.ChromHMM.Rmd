@@ -152,8 +152,8 @@ if(!file.exists(bed.dir)){system(paste("mkdir", bed.dir))}
 all.bam <- list.files(strain.bam.dir, full.names = TRUE)
 all.bed <- file.path(bed.dir, gsub("bam", "bed", basename(all.bam)))
 for(i in 1:length(all.bam)){
-   #code.line <- paste0("singularity exec chromhmm_v1.18dfsg-1-deb_cv1.sif 'bedtools bamtobed -i ", all.bam[i], " > ", all.bed[i], "'")
-   code.line <- paste0("bedtools bamtobed -i ", all.bam[i], " > ", all.bed[i])
+   code.line <- paste0("./chromhmm_v1.18dfsg-1-deb_cv1.sif 'bedtools bamtobed -i ", all.bam[i], " > ", all.bed[i], "'")
+   #code.line <- paste0("bedtools bamtobed -i ", all.bam[i], " > ", all.bed[i])
    system(code.line)
    }
 ```
