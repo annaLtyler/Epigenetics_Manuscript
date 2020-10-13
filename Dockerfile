@@ -1,5 +1,5 @@
 ## This file builds a container with R 
-## and ChromHMM for the epigenetics manuscript
+## for the epigenetics manuscript
 
 FROM rocker/r-ver:latest
 LABEL maintainer="atyler"
@@ -12,11 +12,9 @@ RUN export DEBIAN_FRONTEND=noninteractive; apt-get -y update \
 	pandoc-citeproc \
 	zlib1g-dev
 
-RUN ["install2.r", "abind", "here", "igraph", "RColorBrewer", "rmarkdown", "shape"]
-RUN R -e "install.packages('qtl2convert', repos='http://cran.r-project.org')"
-RUN R -e "install.packages('qtl2', repos = 'http://cran.r-project.org')"
-
-FROM biocontainers/chromhmm
+RUN ["install2.r", "abind", "here", "igraph", "RColorBrewer", "rmarkdown", "shape", "VennDiagram", "ape", "gprofiler2", "e1071", "rticles", "tinytex", "knitr", "pheatmap", "hexbin", "MASS", "gridExtra", "ggplotify", "BiocManager", "remotes"]
+RUN R -e "BiocManager::install('grimbough/biomaRt')"
+RUN R -e "BiocManager::install('DESeq2')"
 
 WORKDIR /chrom_ms/
 CMD ["R"]
