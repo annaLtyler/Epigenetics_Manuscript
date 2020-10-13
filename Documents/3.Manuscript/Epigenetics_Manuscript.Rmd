@@ -1,0 +1,111 @@
+---
+title: Correcting for relatedness in standard mouse mapping populations; and something about epistasis
+author:
+  - name: Catrina Spruce
+    email: Catrina.Spruce@jax.org
+    affiliation: The Jackson Laboratory
+  - name: Anna L. Tyler
+    email: Anna.Tyler@jax.org
+    affiliation: The Jackson Laboratory
+  - name: Many more people
+    email: many more emails
+    affiliation: JAX-MG and JAX-GM
+  - name: Gregory W. Carter
+    email: Gregory.Carter@jax.org
+    affiliation: The Jackson Laboratory
+    corresponding: Gregory.Carter@jax.org
+address:
+  - code: The Jackson Laboratory
+    address: 600 Main St. Bar Harbor, ME, 04609
+abstract: |
+  
+
+author_summary: |
+  Epigenetics in mice
+bibliography: epigenetics.bib
+output: rticles::plos_article
+csl: plos.csl
+---
+
+```{r read_results, echo = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+library(here)
+```
+
+# Introduction
+
+
+# Materials and Methods
+
+## Chromatin Data
+
+## RRBS Data
+
+## Mice
+
+## Data Processing
+
+## Identifying chromatin states
+
+## RRBS processing
+
+# Results
+
+## Eight-state model correlated best with gene expression
+
+## State proportion correlated with gene expression within-strain
+
+## State proportion did not correlate with expression between-strain
+
+
+
+
+
+# Discussion
+
+
+# Acknowledgements
+This work was funded by XXX.
+
+# Data and Software Availability
+All data used in this study and the code used to analyze it are avalable as part of 
+a reproducible workflow located at... (Figshare?).
+
+CAPE is available at CRAN...
+
+# Supplemental Figure Legends
+
+\begin{figure}[ht]
+\centering
+\caption{Correlations between traits and the first principal component (PC) of
+the kinship matrix. Traits with high correlation to the kinship matrix may 
+be highly polygenic and thus be susceptible to test statistic inflation due to 
+many true positives. To reduce this risk, we selected traits with low correlation
+with the first kinship matrix PC. This figure shows the distribution of correlations
+between traits and the first kinship PC across populations. 
+}
+\label{fig:trait_cor}
+\end{figure}
+
+
+\begin{figure}[ht]
+\centering
+\caption{Reducing $n$ reduces inflation. 
+This figure is identical to Fig. \ref{LD} except that we have added a column 
+for the F2 that has been subsampled to the same $n$ as the Backcross. This 
+subsampling reduces power to detect effects, and thus reduces inflation to 
+roughly the same level as that seen in the backcross.
+}
+\label{subsampled}
+\end{figure}
+
+# Supplemental Table Descriptions
+
+\begin{figure}[ht]
+\centering
+\caption{Correlations between traits and the first PC of the kinship matrix.
+}
+\label{table:trait_cor}
+\end{figure}
+
+
+# References {#references .unnumbered}

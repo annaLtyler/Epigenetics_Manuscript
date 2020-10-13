@@ -1,0 +1,139 @@
+---
+title: "Compare ChromHMM Models"
+author: Anna L Tyler
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  html_document:
+    code_folding: hide
+    collapsed: no
+    toc: yes
+    toc_float: yes
+---
+
+
+The purpose of this workflow is to compare different numbers of states specified 
+for ChromHMM. We want to select the model that is best correlated with expression.
+This workflow can be run after 2.Chromatin_and_Expression.Rmd has been run for multiple 
+state numbers. It uses the "Prop\_Expression\_Cor" files to find the maximum and minimum 
+associations between proportion of each state and the expression of each transcript. 
+It plots these maxima and minima across the states analyzed.
+
+
+### Load libraries
+
+```{r load_libraries, message = FALSE, warning = FALSE, error = FALSE}
+needed.packages <- c("here")
+load_libraries(needed.packages)
+```
+
+### Source code
+
+```{r source_code}
+all.code.dir <- list.files(here("code"), full.names = TRUE)
+for(i in 1:length(all.code.dir)){
+	all.fun <- list.files(all.code.dir[i], full.names = TRUE, pattern = ".R")
+	for(j in 1:length(all.fun)){source(all.fun[j])}
+}
+```
+
+### Collect results
+Collect all results for each state. The results are stored in the Prop\_Expression\_Cor
+files in each analysis directory. These files hold the r values describing the correlation
+between the proportion of each state and expression level in inbred mice.
+
+
+```{r collect_results}
+state.num <- list.files(here("Results", "1.ChromHMM"), full.names = TRUE)
+all.prop <- vector(mode = "list", length = length(state.num))
+names(all.prop) <- basename(state.num)
+for(i in 1:length(state.num)){
+	prop.file <- list.files(path = state.num[i], pattern = "Prop_Expression_Cor", full.names = TRUE)
+	if(length(prop.file) > 0){all.prop[[i]] <- readRDS(prop.file)}
+}
+```
+
+### Compare results
+Calculate the median correlations across all states for all models. Plot the maximum
+and minimum for each model. 
+
+```{r process, fig.width = 10, fig.height = 4}
+all.prop.r <- lapply(all.prop, function(x) x$all.r)
+all.prop.p <- lapply(all.prop, function(x) x$all.p)
+med.prop.r <- lapply(all.prop.r, function(x) if(length(x) > 0){colMeans(x, na.rm = TRUE)})
+
+max.med.prop <- lapply(med.prop.r, function(x) if(length(x) > 0){c(min(x), max(x))})
+min.prop <- unlist(lapply(max.med.prop, function(x) x[1]))
+max.prop <- unlist(lapply(max.med.prop, function(x) x[2]))
+
+min.max.table <- rbind(min.prop, max.prop)
+
+xvals <- as.numeric(sapply(strsplit(names(min.prop), "_"), function(x) x[1]))
+
+plot.two.y.axes(xvals, min.max.table[2,], xvals, min.max.table[1,], lwd = c(3,3), legend.pos = "topright",
+xlab = "N States", ylab1 = "Maximum Median Correlation", ylab2 = "Minimum Median Correlation", 
+plot.type = c("b", "b"), pch = c(16, 16))
+```
+
+The seven-state model has the strongest median negative correlation with expression,
+and the eight-state model has the strongest median positive correlation with expression.
+
+```{r compare_further}
+boxplot.r <- function(r.mats, p.mats, state.num){
+    form.states <- paste0(formatC(state.num, digits = 2, flag = 0), "_states")
+    state.locale <- which(names(r.mats) == form.states)
+    
+    r.mat <- r.mats[[state.locale]]
+    p.mat <- p.mats[[state.locale]]
+
+    plot.new()
+    plot.window(xlim = c(0,(ncol(r.mat)+1)), ylim = c(-1, 1))
+    for(i in 1:ncol(r.mat)){
+        p.col <- colors.from.values(-log10(p.mat[,i]), use.pheatmap.colors = TRUE)
+        not.na <- which(!is.na(r.mat[,i]))
+        points(x = jitter(rep(i, nrow(r.mat))), y = r.mat[,i], col = p.col, 
+        pch = 16, cex = 0.5)
+        boxplot(r.mat[not.na,i], at = i, col = "lightgray", add = TRUE)
+        }
+    axis(2);mtext(side = 2, "Correlation Coefficient", line = 2.5)
+    abline(h = 0)
+    par(xpd = TRUE)
+    text(x = 1:ncol(r.mat), y = -1.1, labels = paste0("State", 1:ncol(r.mat)), 
+    srt = 90, adj = 1)
+    mtext(side = 3, text = paste0(state.num, "-state model"), line = 1)
+}
+
+show.emissions <- function(state.num){
+    form.states <- paste0(formatC(state.num, digits = 2, flag = 0), "_states")
+    emissions.file <- here("results", form.states, paste0("emissions_", state.num, ".png"))
+    cat("![](",emissions.file,")")
+}
+
+boxplot.r(all.prop.r, all.prop.p,  7)
+```
+
+The highest positive state is state 4, which as seem below is the positive marks 
+(H3K27ac, H3K4me1, and H3K4me3). The lowest positive state is state 7, which is
+the absence of all marks.
+
+```{r emissions7, results = "asis"}
+show.emissions(7)
+```
+
+The high and low states in the 8-state model are state 7 and state 1 respectively.
+As with the 7-state model, these states are the three activating marks and the 
+absence of all marks. 
+
+
+```{r plot8}
+boxplot.r(all.prop.r, all.prop.p,  8)
+```
+
+```{r emissions8, results = "asis"}
+show.emissions(8)
+```
+
+Given that the two models are actually quite similar, I think picking the 8-state
+model makes sense, since this has the strongest correlation between the presence of
+marks and transcription activation. Slight differences in the absence of all marks
+seems as if it would be less informative than the being better able to predict high 
+transcription from the presence of specific marks.
