@@ -11,8 +11,11 @@ library(here)
 ```
 
 ```{r source_code}
-all.fun <- list.files(here("Code"), full.names = TRUE)
-for(i in 1:length(all.fun)){source(all.fun[i])}
+all.code.dir <- list.files(here("Code"), full.names = TRUE)
+for(i in 1:length(all.code.dir)){
+	all.fun <- list.files(all.code.dir[i], full.names = TRUE, pattern = ".R")
+	for(j in 1:length(all.fun)){source(all.fun[j])}
+}
 ```
 
 This is the first script in the series that analyzes epigenetic data from the Genetics of 

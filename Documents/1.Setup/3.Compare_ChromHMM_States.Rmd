@@ -18,23 +18,17 @@ state numbers. It uses the "Prop\_Expression\_Cor" files to find the maximum and
 associations between proportion of each state and the expression of each transcript. 
 It plots these maxima and minima across the states analyzed.
 
-
-### Load libraries
-
-```{r load_libraries, message = FALSE, warning = FALSE, error = FALSE}
-needed.packages <- c("here")
-load_libraries(needed.packages)
-```
-
 ### Source code
 
 ```{r source_code}
-all.code.dir <- list.files(here("code"), full.names = TRUE)
+library("here")
+all.code.dir <- list.files(here("Code"), full.names = TRUE)
 for(i in 1:length(all.code.dir)){
 	all.fun <- list.files(all.code.dir[i], full.names = TRUE, pattern = ".R")
 	for(j in 1:length(all.fun)){source(all.fun[j])}
 }
 ```
+
 
 ### Collect results
 Collect all results for each state. The results are stored in the Prop\_Expression\_Cor
@@ -79,7 +73,7 @@ and the eight-state model has the strongest median positive correlation with exp
 
 ```{r compare_further}
 boxplot.r <- function(r.mats, p.mats, state.num){
-    form.states <- paste0(formatC(state.num, digits = 2, flag = 0), "_states")
+    form.states <- paste0(formatC(state.num, digits = 2, flag = 0), "_states_C")
     state.locale <- which(names(r.mats) == form.states)
     
     r.mat <- r.mats[[state.locale]]
@@ -103,12 +97,12 @@ boxplot.r <- function(r.mats, p.mats, state.num){
 }
 
 show.emissions <- function(state.num){
-    form.states <- paste0(formatC(state.num, digits = 2, flag = 0), "_states")
+    form.states <- paste0(formatC(state.num, digits = 2, flag = 0), "_states_C")
     emissions.file <- here("results", form.states, paste0("emissions_", state.num, ".png"))
     cat("![](",emissions.file,")")
 }
 
-boxplot.r(all.prop.r, all.prop.p,  7)
+boxplot.r(all.prop.r, all.prop.p,  6)
 ```
 
 The highest positive state is state 4, which as seem below is the positive marks 
