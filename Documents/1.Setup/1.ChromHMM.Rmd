@@ -109,6 +109,7 @@ All bam files are in the following directory:
 
 ```{r file_dir}
 strain.bam.dir <- "/projects/carter-lab/hepatocytes/chipseq-alignments/output/bamfiles_B6Co"
+chromhmm.dir <- "/projects/carter-lab/hepatocytes/ChromHMM"
 ```
 
 This directory has the files for the B6 mice as well, even though there is a separate 
@@ -118,7 +119,7 @@ We create symbolic links for all bam files and their indices to the data directo
 this workflow
 
 ```{r new_bam_dir}
-new.bam.dir <- here("Data", "bamfiles")
+new.bam.dir <- file.path(chromhmm.dir, "data", "bamfiles")
 if(!file.exists(new.bam.dir)){system(paste("mkdir", new.bam.dir))}
 ```
 
@@ -139,7 +140,7 @@ Next, we use bamtobed to generate bed files from the bam files. The output for t
 will be stored in the following directory:
 
 ```{r bed_dir}
-bed.dir <- here("Data", "bedfiles")
+bed.dir <- file.path(chromhmm.dir, "data", "bedfiles")
 if(!file.exists(bed.dir)){system(paste("mkdir", bed.dir))}
 ```
 
