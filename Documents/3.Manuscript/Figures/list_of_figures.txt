@@ -1,0 +1,4 @@
+list of figures
+
+boxplots showing correlations between gene expression and chromatin state
+	include emission  

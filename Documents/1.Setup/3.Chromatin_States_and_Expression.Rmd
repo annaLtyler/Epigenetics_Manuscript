@@ -12,17 +12,13 @@ output:
 
 ## Introduction
 
-This is the second script in the series that analyzes epigenetic data from the Genetics of 
-Epigenetics Project at JAX. The first scripts (1.ChromHMM.Rmd) started with bam files and
-processed them through ChromHMM. This workflow also uses results from the Expression.Rmd
-workflow.
+The purpose of this workflow is to combine chromatin state data from 
+a single chromHMM model and gene expression. This workflow takes a 
+gene-based approach. It calculates the chromatin state composition of 
+each gene and calculates correlations between the state composition and
+gene expression.
 
-The main purpose of this workflow is to compare multiple models coming out of ChromHMM. 
-When running ChromHMM, we specify a number of states to detect. We generated data for 
-four states up to 16 states. This workflow looks at how the states from each of these 
-models correlates with gene expression. 
-
-This workflow performes the following steps:
+It performs the following specific tasks:
 
 **Gene Expression**
 
@@ -75,6 +71,7 @@ is.interactive = as.logical(args[3]) #keep this as FALSE when running render()
                     #one gene data in multiple windows                    
 delete.previous = as.logical(args[4]) #whether to delete and regenerate files 
                     #from previous a run.
+#num.states = 8; offline = FALSE; is.interactive = TRUE; deleted.previous = FALSE
 ```
 
 
@@ -101,7 +98,7 @@ Set the number of states to be analyzed, and the mark, if relevant.
 
 ```{r state_num}
 sig.val = 0.05
-selected.mark <- NULL #set to null if no specified marks
+selected.mark <- NULL #set to null to use all marks
 #selected.mark <- "H3K4me1"
 #selected.mark <- "H3K4me3"
 #selected.mark <- "H3K27ac"
@@ -126,7 +123,7 @@ T.or.C <- "C" #whether to analyze the control (C) or treatment (T) animals.
 form.states <- paste0(formatC(num.states, digits = 2, flag = 0), "_states", 
 selected.mark, "_", T.or.C)
 data.dir <- here("Data", "ChromHMM", form.states)
-results.dir <- here("Results", "1.ChromHMM", form.states)
+results.dir <- here("Results", "ChromHMM", form.states)
 if(!file.exists(results.dir)){dir.create(results.dir)}
 ```
 
@@ -141,8 +138,7 @@ if(start.feature == "start_position" && end.feature == "end_position"){
 
 buffer.text <- paste(unique(c(upstream.buffer, downstream.buffer)), collapse = "_")
 
-
-state.enrichment.file <- here("Results", "1.ChromHMM", form.states, "enrichment.by.state.RData")
+state.enrichment.file <- here("Results", "ChromHMM", form.states, "enrichment.by.state.RData")
 ```
 
 ```{r clear_results}
@@ -287,7 +283,7 @@ if(!do.eqtl.loaded){
     qtl.ids[is.missing] <- "NA"
     qtl.id.v <- unlist(qtl.ids)
     names(do.eqtl) <- qtl.id.v
-    }
+}
 
 #the cis eQTL coefficients of each mapped gene
 cis.coef.file <- here("Data", "DOQTL", "cis.coef.RData")
@@ -383,11 +379,6 @@ if(!file.exists(chrom.mds.file)){
 The following plot shows the distribution of state proportions across genes. 
 Each row is a single gene. Each column is one state for one strain.
 
-Most of the genes have high proportions of state 1 (no marks).
-Other states that dominate blocks of genes are states 2 and 7. 
-There is a small block dominated by state 3, and another small block of state 8.
-State 8 also shares blocks of genes with state 7.
-
 ```{r states_across_genes, fig.width = 15, fig.height = 7}
 all.state.len <- sapply(chrom.state.props, length)
 enough.states <- which(all.state.len > 1)
@@ -399,10 +390,10 @@ paste0("Chromatin_State_", num.states, "_pheatmap_", gene.text, "_", buffer.text
 if(!file.exists(state.prop.heat.file)){
     state.prop.pheat <- pheatmap(all.state.props, show_rownames = FALSE)
     saveRDS(state.prop.pheat, state.prop.heat.file)
-    }else{
+}else{
         state.prop.pheat <- readRDS(state.prop.heat.file)
         state.prop.pheat
-    }
+}
 ```
 
 ## Chromatin state and inbred expression
@@ -455,6 +446,7 @@ if(!file.exists(state.mds.expression.file)){
 ### Correlation distributions by state
 
 The plot below shows all values of Pearson's r for each state and each transcript.
+For each gene we 
 Points are colored based on the -log of the p value of the correlation. This gives
 an idea of how many correlations were able to be calculated for each state (i.e. the 
 state had some variation across strains), the range of correlations, and whether the 
@@ -483,7 +475,7 @@ sig.r[which(all.prop.p > sig.val)] <- NA
 sig.r.list <- lapply(1:ncol(sig.r), function(x) sig.r[,x])
 ```
 
-##State Annotations
+## State Annotations
 
 The heatmap below shows the emission probabilities for each state found by ChromHMM.
 This shows us which marks each of the states in the barplot has.
@@ -524,7 +516,7 @@ plot.state.example <- function(ex.state){
 ```
 
 ```{r state_examples, results = "asis", fig.width = 7, fig.height = 8}
-for(i in 1:8){
+for(i in 1:num.states){
     cat(paste("### State", i, "Example\n"))
     plot.state.example(i)
     cat("\n\n")
