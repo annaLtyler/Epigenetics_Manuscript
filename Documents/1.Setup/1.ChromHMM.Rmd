@@ -3,7 +3,6 @@ title: "Running ChromHMM Starting With BAM files"
 author: Anna L Tyler
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
 output: html_document
-bibliography: ChromHMM.bib
 ---
 
 ```{r load_libraries, echo = FALSE}
