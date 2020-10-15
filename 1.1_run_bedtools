@@ -2,24 +2,28 @@
 #SBATCH -J setup_data
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 1 # number of cores
-#SBATCH --mem=8G # memory pool for all cores
+#SBATCH --mem=2G # memory pool for all cores
 #SBATCH -t 0-24:00 # time (D-HH:MM)
 #SBATCH -o slurm.%N.%j.out # STDOUT
 #SBATCH -e slurm.%N.%j.err # STDERR
 #SBATCH --mail-user=anna.tyler@jax.org
 #SBATCH --mail-type=END
-# example use: sbatch 1_run_chromHMM
+# example use: sbatch 1.1_run_bedtools
+# this script uses the bedtools library from the jax reg
+# singularity pull library://atac-seq/bedtools-bash:v2.9.2
 
 cd $SLURM_SUBMIT_DIR
 
 module load singularity
+singularity shell shub://jaxreg.jax.org/atac-seq/bedtools-bash:v2.9.2
 
-inputdir=$/projects/carter-lab/hepatocytes/ChromHMM/data/bamfiles/
-targetdir=$/projects/carter-lab/hepatocytes/ChromHMM/data/bedfiles/
+inputdir=/projects/carter-lab/hepatocytes/ChromHMM/data/bamfiles
+targetdir=/projects/carter-lab/hepatocytes/ChromHMM/data/bedfiles
 
-for x in *.sorted.B6co.bam ; do
-    echo "print current:$x";
-    #echo "$targetdir${x%.bam}.bed";
-    #singularity exec bedtools_v2.27.1dfsg-4-deb_cv1.sif 'bedtools bamToBed -i' "$x" > "$targetdir${x%.bam}.bed";
+for x in $(find "$inputdir" -name '*.sorted.B6co.bam'); do
+    echo ": $x"
+    #echo "${x%bam}bed";
+    bedtools bamtobed -i "$x" > "${x%bam}bed";
+    mv ${x%bam}bed targetdir
 done
 echo "done"
