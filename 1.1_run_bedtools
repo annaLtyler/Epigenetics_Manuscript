@@ -14,8 +14,8 @@ cd $SLURM_SUBMIT_DIR
 
 module load singularity
 
-inputdir=$/projects/carter-lab/hepatocytes/ChromHMM/data/bamfiles
-targetdir=$/projects/carter-lab/hepatocytes/ChromHMM/data/bedfiles
+inputdir=$/projects/carter-lab/hepatocytes/ChromHMM/data/bamfiles/
+targetdir=$/projects/carter-lab/hepatocytes/ChromHMM/data/bedfiles/
 
 for x in *.sorted.B6co.bam ; do
     echo "print current:$x";
