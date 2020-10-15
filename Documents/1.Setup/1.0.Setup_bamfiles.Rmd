@@ -1,21 +1,11 @@
 ---
-title: "Running ChromHMM Starting With BAM files"
+title: "Introduction to Epigenetics Analysis"
 author: Anna L Tyler
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
 output: html_document
 ---
 
-```{r load_libraries, echo = FALSE}
-library(here)
-```
-
-```{r source_code}
-all.code.dir <- list.files(here("Code"), full.names = TRUE)
-for(i in 1:length(all.code.dir)){
-	all.fun <- list.files(all.code.dir[i], full.names = TRUE, pattern = ".R")
-	for(j in 1:length(all.fun)){source(all.fun[j])}
-}
-```
+## Introduction 
 
 This is the first script in the series that analyzes epigenetic data from the Genetics of 
 Epigenetics Project at JAX. This study is a survey of strain difference in histone 
@@ -39,22 +29,6 @@ and histone modifications. The following four histone marks were assayed in the 
 + H3K4me3
 + H3K27me3
 + H3K27ac
-
-This workflow allows selection of individual or combinations of marks for differential
-analysis. 
-
-It also runs either the control animals or treatment animals as specified below.
-
-```{r select_mark}
-c.or.t <- "T" #C for control, T for treatment.
-all.marks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K27ac")
-selected.mark <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K27ac")
-#selected.mark <- c("H3K4me1")
-#selected.mark <- c("H3K4me3")
-#selected.mark <- c("H3K27me3")
-#selected.mark <- c("H3K27ac")
-excluded <- setdiff(all.marks, selected.mark)
-```
 
 Reads were aligned to individualized genomes and coordinates were mapped back to C57BL/6J 
 mm10.
@@ -83,15 +57,13 @@ the inbred lines. For example, PWK and CAST may have a strong enhancer state at 
 particular gene and also highly express that gene, while the rest of the strains may 
 have no enhancer, or a repressor state and express the gene at a low level.
 
-Determining the ChromHMM states is the first step in this analysis. This workflow performs
-that process in the following steps:
+Determining the ChromHMM states is the first step in this analysis. Running ChromHMM
+is broken up into three steps:
 
 1. Convert bam files to bed files
 2. Binarize the bed files
 3. Run ChromHMM
 
-Any code chunks that take longer than a few seconds to run are marked with the time they took
-on the Helix cluster at JAX.
 
 ## Convert bam files to bed files
 The first step in this process is to convert the binary bam files to bed files. Each line 
@@ -146,4 +118,125 @@ bed.dir <- file.path(chromhmm.dir, "data", "bedfiles")
 if(!file.exists(bed.dir)){system(paste("mkdir", bed.dir))}
 ```
 
-After running this script, you can run 1.1_run_bedtools to convert bam files to bed files.
+```{r bam2bed, eval = FALSE}
+#now running separately in 1.1_run_bedtools
+#This chunk took a little over 11 hours.
+all.bam <- list.files(strain.bam.dir, full.names = TRUE)
+all.bed <- file.path(bed.dir, gsub("bam", "bed", basename(all.bam)))
+for(i in 1:length(all.bam)){
+   code.line <- paste0("bedtools bamtobed -i ", all.bam[i], " > ", all.bed[i])
+   system(code.line)
+   }
+```
+
+ChromHMM requires that each chromosome name begin with "Chr", but bamtobed doesn't 
+put one there. The following script adds the "Chr" string.
+
+
+```{r add_chr, eval = FALSE}
+#This chunk took 2 hours and 40 minutes
+#now running separately in 1.1_run_bedtools 
+all.bed <- list.files(bed.dir, full.names = TRUE)
+temp.bed <- gsub("sorted", "temp", all.bed)
+for(i in 1:length(all.bed)){
+   append.line <- paste("cat ", all.bed[i], " | awk -F '\t' 'BEGIN {OFS=", '"\t"', "} {print ", '"chr"', "$0}' > ", temp.bed[i], sep = "")
+   system(append.line) #add Chr and output to temp file
+   rename.line <- paste("mv ", temp.bed[i], " ", all.bed[i], sep = "")
+   system(rename.line) #change the name of the temporary file to the original file
+   }
+```
+
+Next we binarize the bed files. This is the first step that uses ChromHMM and the 
+step where the input files come into play. There is one input file for each strain. 
+
+To run this step, we first generate a file list that indicates to ChromHMM which 
+input files go with which data files. The file list has the following columns:
+
+1. strain
+2. mark
+3. bed.file
+4. input.file
+
+The code below generates the file list.
+
+```{r generate_file_list, eval = TRUE}
+all.bed <- get.files(path = bed.dir, want = ".bed", 
+dont.want = c(".txt", "extracted", excluded, ".bai", "unmapped")) 
+						#we don't need the full path names, 
+                  #since paths are specified spearately in ChromHMM
+base.bed <- gsub(".bt2.sorted.B6co.bed", "", all.bed)
+base.bed <- gsub(".bt2.sorted.bed", "", base.bed)
+split.bed <- strsplit(base.bed, "_")
+mark <- sapply(split.bed, function(x) x[1])
+ind <- sapply(split.bed, function(x) x[2])
+split.ind <- strsplit(ind, "")
+C.or.T <- sapply(split.ind, function(x) if(length(x) >= 4){tail(x, 2)[1]}else{NA})
+idx <- sapply(split.ind, function(x) if(length(x) >= 4){tail(x, 1)}else{NA})
+strain <- sapply(split.ind, function(x) if(length(x) >= 4){paste0(x[1:(length(x)-2)], 
+collapse = "")}else{paste0(x, collapse = "")})
+
+#select the individuals that we are running
+ind.which <- which(C.or.T == c.or.t)
+
+#Make the table for all non-input files
+data.idx <- which(!is.na(idx))
+input.idx <- which(is.na(idx))
+input.table <- cbind(strain[input.idx], all.bed[input.idx])
+
+#for each sample, we need to find the appropriate input file based on the strain
+input.file <- sapply(strain[data.idx], function(x) input.table[which(input.table[,1] == x),2])
+final.table <- cbind(strain[data.idx], mark[data.idx], all.bed[data.idx], input.file)
+
+final.table <- final.table[ind.which,]
+bed.table.file <- file.path(bed.dir, "bed.table.txt")
+write.table(final.table, bed.table.file, sep = "\t", quote = FALSE, row.names = FALSE, 
+col.names = FALSE)
+```
+
+Generate a directory for the binarized bed files if one doesn't exist.
+
+```{r bin_dir}
+bin.dir <- here("Data", "binarized_bed", c.or.t)
+if(!file.exists(bin.dir)){system(paste("mkdir", bin.dir))} 
+```
+
+Run ChromHMM to binarize the bed files
+
+```{r binarize_bed, eval = TRUE}
+#This code chunk took 1 hour and 11 minutes on helix
+input.dir <- bed.dir
+output.dir <- bin.dir
+file.list <- file.path(bed.dir, "bed.table.txt")
+chrom.app <- here("ChromHMM", "ChromHMM.jar")
+mm.file <- here("ChromHMM", "CHROMSIZES", "mm10.txt")
+run.line <- paste("java -mx4000M -jar", chrom.app, "BinarizeBed -b 200", mm.file, 
+input.dir, file.list, output.dir)
+system(run.line)
+```
+
+Now we build the ChromHMM models.
+There are four histone marks in this data set, which can each be either present or absent. 
+This gives us $2^4$ possible states. A priori, we don't know which number of states will 
+best describe the data. We thus learn models for a range of state numbers. Here we will 
+run all state numbers between 4 and 16. 
+
+The following code chunk submits a job array to helix. The qsub file `1.learn_model.qsub` 
+runs the R code in `1.learn.model.R`. The R code gets the array ID from the system 
+enrivonment. The array ID indicates how many states to run in ChromHMM. This code then 
+runs ChromHMM with the number of states specified by the array ID. The result is a set 
+of new directories in the results directory, each of which holds the output for a single 
+ChromHMM run. 
+
+
+```{r learn_models}
+min.states = min(c(4, 2^length(selected.mark)))
+max.states = 2^length(selected.mark)
+
+#min.states = 8
+#max.states = 8
+
+#set up the qsub call to the job array
+run.line <- paste0("qsub -t ", min.states, "-", max.states, " -m be 1.learn_model")
+system(run.line)
+```
+
