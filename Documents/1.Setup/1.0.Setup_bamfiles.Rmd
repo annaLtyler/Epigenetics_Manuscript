@@ -146,3 +146,4 @@ bed.dir <- file.path(chromhmm.dir, "data", "bedfiles")
 if(!file.exists(bed.dir)){system(paste("mkdir", bed.dir))}
 ```
 
+After running this script, you can run 1.1_run_bedtools to convert bam files to bed files.
