@@ -238,7 +238,7 @@ if(!file.exists(bin.dir)){system(paste("mkdir", bin.dir))}
 
 Run ChromHMM to binarize the bed files
 
-```{r binarize_bed, eval = TRUE}
+```{r binarize_bed, eval = FALSE}
 #This code chunk took 1 hour and 11 minutes on helix
 input.dir <- bed.dir
 output.dir <- bin.dir
@@ -264,7 +264,7 @@ of new directories in the results directory, each of which holds the output for 
 ChromHMM run. 
 
 
-```{r learn_models}
+```{r learn_models, eval = FALSE}
 min.states = min(c(4, 2^length(selected.mark)))
 max.states = 2^length(selected.mark)
 
