@@ -14,6 +14,8 @@
 
 cd $SLURM_SUBMIT_DIR
 
+echo $SLURM_SUBMIT_DIR
+
 module load singularity
 singularity shell shub://jaxreg.jax.org/atac-seq/bedtools-bash:v2.9.2
 
@@ -25,7 +27,8 @@ for x in $(find "$inputdir" -name '*.sorted.B6co.bam'); do
     targetfile="${x%bam}bed";
     tempfile="${x%bam}temp"
     #echo "${x%bam}bed";
-    bedtools bamtobed -i "$x" > "${x%bam}bed";     #convert bam file to bed file
+    singularity exec bedtools-bash_v2.9.2.sif bedtools bamtobed -i "$x" > "${x%bam}bed";     #convert bam file to bed file
+    #bedtools bamtobed -i "$x" > "${x%bam}bed";     #convert bam file to bed file
     cat $targetfile | awk -F '\t' 'BEGIN {OFS="\t"} {print "chr"$0}' > $tempfile #add the chr we need for chromhmm
     mv $tempfile $targetfile
     mv $targetfile targetdir    #move bed file to bed directory
