@@ -1,0 +1,97 @@
+#!/bin/bash
+ 
+module load python
+module load R
+module load perl
+module load samtools
+module load bedtools
+module load STAR
+module load rsem
+ 
+gunzip ../*.gz
+mkdir ../trimmomatic
+ 
+cd ../trimmomatic
+rm -R STAR
+mkdir STAR
+cd STAR
+mkdir htseq
+mkdir rsem
+cd ../..
+ 
+dataPath=$1
+ext='trimmomatic/'
+inputPath=$dataPath$ext
+outputPath=$dataPath$ext
+ 
+for file in $(find "$dataPath" -name '*R1_001.fastq')
+do
+        echo ": $file...\n"
+        file_R2=$(basename "${file}" | sed 's/R1_001\.fastq/R2_001\.fastq/g')
+        echo $file
+        echo $file_R2
+        fileName3=$(basename "${file}" | sed 's/R1_001\.fastq/R1_001\.fastq_filtered/g')
+        fileName4=$(basename "${file_R2}" | sed 's/R2_001\.fastq/R2_001\.fastq_filtered/g')
+        fileName5=$(basename "${file}" | sed 's/R1_001\.fastq/R1_001\.trimU\.fastq/g')
+        fileName6=$(basename "${file_R2}" | sed 's/R2_001\.fastq/R2_001\.trimU\.fastq/g')
+        trimmomatic PE $file $dataPath$file_R2 $outputPath$fileName3 $outputPath$fileName5 $outputPath$fileName4 $outputPath$fileName6 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36
+done
+echo "Finished QT & QF\n"
+ 
+mv *.trim.fastq ../trimmomatic/
+ 
+dataPath=$1
+ext1='trimmomatic/'
+ext2='trimmomatic/STAR/'
+ 
+inputPath=$dataPath$ext1
+outputPath=$dataPath$ext2
+ 
+for f in $(find "$inputPath" -name '*R1_001.fastq_filtered')
+do
+        filePrefix=$(basename "${f}" | sed 's/R1_001\.fastq_filtered/STAR/g')
+        fileName2=$(basename "${f}" | sed 's/R1_001\.fastq_filtered/R2_001\.fastq_filtered/g')
+        fileNameSAM=$(basename "${f}" | sed 's/R1_001\.fastq_filtered/B6\.sam/g')
+        fileNameMetrics=$(basename "${f}" | sed 's/R1_001\.fastq_filtered/metrics\.txt/g')
+        STAR --genomeDir /projects/carter-lab/adpmc/uncontrolled/shared/genomes_indexes/custom_CC_founder/R84-REL1505/C57BL_6J/B6_APA_STAR --readFilesIn $inputPath$f $inputPath$fileName2 --runThreadN 12 --outFileNamePrefix $outputPath$filePrefix
+done
+ 
+for f in $(find "$outputPath" -name '*.out.sam')
+do
+        fileSorted=$(basename "${f}" | sed 's/\.sam/_sorted\.sam/g')
+        picard SortSam --INPUT=$f --OUTPUT=$outputPath$fileSorted --SO=coordinate
+        fileBam=$(basename "${f}" | sed 's/\.sam/\.bam/g' )
+        echo "sorted sam: $outputPath$fileSorted and output bam: $outputPath$fileBam \n"
+        samtools view -bS $outputPath$fileSorted -o $outputPath$fileBam
+        samtools index $outputPath$fileBam
+done
+ 
+dataPath=$1
+ext1='trimmomatic/STAR/'
+ext2='trimmomatic/STAR/htseq/'
+ 
+inputPath=$dataPath$ext1
+outputPath=$dataPath$ext2
+ 
+ 
+for f in $(find "$inputPath" -name '*sorted.sam')
+do
+        fileHTseq=$(basename "${f}" | sed 's/\.sam/_htseq_count\.txt/g')
+        htseq-count -s no $f /projects/carter-lab/adpmc/uncontrolled/shared/genomes_indexes/custom_CC_founder/R84-REL1505/C57BL_6J/C57BL6J_APA.gtf > $outputPath$fileHTseq
+done
+ 
+cd ..
+rm nReads.txt
+gunzip *R1_001.fastq.gz
+nRawReads2=`wc -l < *R1_001.fastq`
+nRawReads=$((nRawReads2/2))
+ 
+cd trimmomatic
+cd STAR
+nAlignedReads=`samtools view -c -F 260 < *sorted.sam`
+ 
+cd ../../
+ 
+printf '%s\t%s\n' "RawReads" "AlignedReads" >> nReads.txt
+ 
+printf '%s\t%s\n' "$nRawReads" "$nAlignedReads" >> nReads.txt

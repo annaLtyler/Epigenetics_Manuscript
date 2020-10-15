@@ -385,15 +385,15 @@ enough.states <- which(all.state.len > 1)
 all.state.props <- t(sapply(chrom.state.props[enough.states], as.vector))
 states <- chrom.state.props[[1]]
 colnames(all.state.props) <- paste(rep(colnames(states), each = nrow(states)), rep(rownames(states), ncol(states)), sep = "_")
-state.prop.heat.file <- file.path(results.dir,
-paste0("Chromatin_State_", num.states, "_pheatmap_", gene.text, "_", buffer.text, ".RData"))
-if(!file.exists(state.prop.heat.file)){
-    state.prop.pheat <- pheatmap(all.state.props, show_rownames = FALSE)
-    saveRDS(state.prop.pheat, state.prop.heat.file)
-}else{
-        state.prop.pheat <- readRDS(state.prop.heat.file)
-        state.prop.pheat
-}
+#state.prop.heat.file <- file.path(results.dir,
+#paste0("Chromatin_State_", num.states, "_pheatmap_", gene.text, "_", buffer.text, ".RData"))
+#if(!file.exists(state.prop.heat.file)){
+#    state.prop.pheat <- pheatmap(all.state.props, show_rownames = FALSE)
+#    saveRDS(state.prop.pheat, state.prop.heat.file)
+#}else{
+#        state.prop.pheat <- readRDS(state.prop.heat.file)
+#        state.prop.pheat
+#}
 ```
 
 ## Chromatin state and inbred expression
@@ -446,7 +446,9 @@ if(!file.exists(state.mds.expression.file)){
 ### Correlation distributions by state
 
 The plot below shows all values of Pearson's r for each state and each transcript.
-For each gene we 
+For each gene we calculated the correlation between the proportion of each state
+and gene expression across strains.
+
 Points are colored based on the -log of the p value of the correlation. This gives
 an idea of how many correlations were able to be calculated for each state (i.e. the 
 state had some variation across strains), the range of correlations, and whether the 
@@ -473,6 +475,36 @@ par(xpd = FALSE)
 sig.r <- all.prop.r
 sig.r[which(all.prop.p > sig.val)] <- NA
 sig.r.list <- lapply(1:ncol(sig.r), function(x) sig.r[,x])
+```
+
+## State Combinations
+
+We looked for states that were significantly related to expression together
+in a single gene.
+
+```{r state_comb}
+sig_state_comb <- apply(all.prop.p, 1, function(x) which(x <= sig.val))
+not.null <- which(sapply(sig_state_comb, length) > 0)
+```
+
+There were `r length(not.null)` genes for which at least one state was correlated
+with expression at a $p$ value $\leq$ `r sig.val`.
+
+The largest proportion of these had expression significantly correlated with only 
+one chromatin state. After that, pairs of states were correlated. Mostly, 1 and 7,
+5 and 7, and 7 and 8.
+
+
+```{r occur_mat}
+co.occur <- sapply(sig_state_comb[not.null], function(x) paste(x, collapse = "_"))
+co.occur.counts <- table(unlist(co.occur))
+over.one <- which(co.occur.counts > 5)
+#quartz(height = 10, width = 5)
+barplot(sort(co.occur.counts[over.one]), las = 2, horiz = TRUE)
+
+all.sig <- all.prop.r
+all.sig[which(all.prop.p > 0.05)] <- NA
+boxplot(all.sig)
 ```
 
 ## State Annotations

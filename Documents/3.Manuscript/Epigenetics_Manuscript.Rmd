@@ -54,7 +54,6 @@ library(here)
 
 ## State proportion correlated with gene expression within-strain
 
-## State proportion did not correlate with expression between-strain
 
 
 

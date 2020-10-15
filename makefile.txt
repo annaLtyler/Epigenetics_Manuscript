@@ -1,0 +1,8 @@
+# -- this is a Makefile --
+all: manuscript.pdf
+
+manuscript.pdf: data/iris_prepped.csv manuscript.Rmd
+	Rscript -e 'rmarkdown::render("manuscript.Rmd")'
+
+data/iris_prepped.csv: R/prepare_data.R data/iris.csv 
+	Rscript -e 'source("R/prepare_data.R")'

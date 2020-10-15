@@ -2,7 +2,7 @@
 #inbred expression
 
 state.prop.expression <- function(chrom.state.prop, group.mean.expr, strain.key, 
-verbose = FALSE){
+verbose = FALSE, plot.results = FALSE){
 	
 	num.states <- nrow(chrom.state.prop[[1]])
 	null.result <- list("r" = rep(NA, num.states), "p" = rep(NA, num.states))
@@ -25,14 +25,21 @@ verbose = FALSE){
 
 		if(all(is.na(gene.expr))){return(null.result)}
 
-		#plot.new()
-		#plot.window(xlim = c(min(gene.expr), max(gene.expr)), ylim = c(0, max(gene.chrom)))
-		#for(i in 1:nrow(gene.chrom)){text(x = gene.expr, y = gene.chrom[i,], labels = i, col = i)}
-		#axis(1);axis(2)
+		if(plot.results){
+			annot_row <- data.frame(gene.expr)
+			colnames(annot_row) <- "Expression"
+			rownames(annot_row) <- colnames(gene.chrom)
+			pheatmap(t(gene.chrom), annotation_row = annot_row)
+			#pheatmap(t(gene.chrom[,order(gene.expr)]), cluster_rows = FALSE, annotation_row = annot_row)
+			par(mfrow = c(3,3))
+			apply(gene.chrom, 1, function(x) plot(x, gene.expr))
+		}
 
 		all.cor <- apply(gene.chrom, 1, function(x) suppressWarnings(cor.test(gene.expr,x)))
+		
 		all.r  <- sapply(all.cor, function(x) x$estimate)		
-		all.p <- sapply(all.cor, function(x) x$p.value)		
+		all.p <- sapply(all.cor, function(x) x$p.value)
+
 		return(list("r" = all.r, "p" = all.p))
 			
 		}
