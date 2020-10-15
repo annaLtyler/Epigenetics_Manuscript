@@ -14,4 +14,4 @@ cd $SLURM_SUBMIT_DIR
 
 module load singularity
 
-singularity exec ../../Containers/epigenetics_analysis_latest.sif R -e "rmarkdown::render(here::here('Documents', '1.Setup', '1.ChromHMM.Rmd'))"
+singularity exec ../../Containers/epigenetics_analysis_latest.sif R -e "rmarkdown::render(here::here('Documents', '1.Setup', '0.Full_chromhmm_test.Rmd'))"
