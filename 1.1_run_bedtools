@@ -59,8 +59,18 @@ for x in $(find "$inputdir" -name '*.sorted.B6co.bam'); do
 done
 echo "done"
 
-#create chromHMM files
+rm $targetdir/*unmapped #delete unmapped files
 
-for x in $(find "$targetdir" -name '*.sorted.B6co.bed'); do
-    echo ": $x"
+#create index files for chromHMM
+
+for x in $(find "$targetdir" -name '*.bed'); do
+    #echo $x
+    fname=$(basename $x)
+    #info=$fname | cut -d'.' -f 1
+    info=$(echo $fname | cut -d'.' -f 1)
+    #echo $info
+    markname=${info%_*} #retain everything before underscore
+    #echo $markname
+    strainname=${info##*_} #retain everything after underscore
+    echo $strainname
 done

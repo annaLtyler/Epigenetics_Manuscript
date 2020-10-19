@@ -52,11 +52,32 @@ library(here)
 
 ## Eight-state model correlated best with gene expression
 
-## State proportion correlated with gene expression within-strain
+## State proportion correlated with gene expression
+higher proportions of state 7 were correlated with increased expression
+higher proportions of state 2 were correlated with decreased expression
+figure shows the number of whose expression was significantly correlated
+with each state at a nominal $p$ value of 0.01. State 7 was associated 
+with the expression of the largest number of genes.
+
+We see activating and suppressing marks at locations all through the gene.
+not necessarily just at the TSS
+(check to see if we can get coordinates of different transcripts)
+
+## Spatial distribution of states around gene bodies
+Each state had its own distribution around gene bodies.
+The following distributions were for a subset of genes. Need to do genes overall
+and look at subsets that might be interesting either for regulatory reasons
+or GO term enrichment, or something else.
 
 
-
-
+State 1: trough at TSS, climbs through gene body 
+State 2: low throughout
+State 3: peak at TSS, otherwise low
+State 4: low throughout
+State 5: trough at TSS, peak after TES, moderate in gene body
+State 6: troush at TSS, climbs through gene body, peak after TES
+State 7: big spike at TSS, declines through gene body
+State 8: slight peak after TSS, declines through gene body 
 
 # Discussion
 

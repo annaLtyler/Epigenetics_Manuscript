@@ -22,7 +22,7 @@ state.scaled.expression <- function(scaled.chrom, group.mean.expr, strain.key, v
 		
 		if(length(gene.chrom) == 0){return(null.result)}
 		
-		gene.expr <- group.mean.expr[[gene.id.expr]][strain.expr.order]		
+		gene.expr <- scale(group.mean.expr[[gene.id.expr]][strain.expr.order])
 
 		if(all(is.na(gene.expr))){return(null.result)}
 

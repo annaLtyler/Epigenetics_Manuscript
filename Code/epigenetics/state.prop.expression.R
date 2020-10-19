@@ -21,7 +21,8 @@ verbose = FALSE, plot.results = FALSE){
 		if(is.na(chrom.state.prop)[[gene.id.chrom]]){return(null.result)}
 		
 		gene.chrom <- chrom.state.prop[[gene.id.chrom]][,strain.chrom.order]
-		gene.expr <- group.mean.expr[[gene.id.expr]][strain.expr.order]		
+		gene.expr <- scale(group.mean.expr[[gene.id.expr]][strain.expr.order])
+		#gene.expr <- group.mean.expr[[gene.id.expr]][strain.expr.order]
 
 		if(all(is.na(gene.expr))){return(null.result)}
 

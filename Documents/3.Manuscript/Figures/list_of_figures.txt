@@ -1,4 +1,6 @@
 list of figures
 
 boxplots showing correlations between gene expression and chromatin state
-	include emission  
+	emission probabilities
+	number of genes significantly correlated with each states
+ 
