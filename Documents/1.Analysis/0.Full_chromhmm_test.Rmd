@@ -194,7 +194,7 @@ col.names = FALSE)
 Generate a directory for the binarized bed files if one doesn't exist.
 
 ```{r bin_dir}
-bin.dir <- gsub("bedfiles", "binarized_bed", beddir, c.or.t)
+bin.dir <- gsub("bedfiles", "binarized_bed", bed.dir, c.or.t)
 if(!file.exists(bin.dir)){system(paste("mkdir", bin.dir))} 
 ```
 
