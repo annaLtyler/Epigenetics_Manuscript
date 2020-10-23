@@ -22,6 +22,7 @@ singularity shell shub://jaxreg.jax.org/atac-seq/bedtools-bash:v2.9.2
 #soft link bam files to our project diretory
 bamdir=/projects/carter-lab/hepatocytes/chipseq-alignments/output/bamfiles_B6Co
 projectbam=/projects/carter-lab/hepatocytes/ChromHMM/data/bamfiles
+
 if [ ! -d "$projectbam" ]
 then
     mkdir $projectbam
@@ -50,12 +51,11 @@ for x in $(find "$inputdir" -name '*.sorted.B6co.bam'); do
     echo ": $x"
     targetfile="${x%bam}bed";
     tempfile="${x%bam}temp"
-    echo "${x%bam}bed";
-    singularity exec bedtools-bash_v2.9.2.sif bedtools bamtobed -i "$x" > "${x%bam}bed";     #convert bam file to bed file
-    bedtools bamtobed -i "$x" > "${x%bam}bed";     #convert bam file to bed file
+    echo "$targetfile";
+    singularity exec bedtools-bash_v2.9.2.sif bedtools bamtobed -i "$x" > "$targetfile";     #convert bam file to bed file
     cat $targetfile | awk -F '\t' 'BEGIN {OFS="\t"} {print "chr"$0}' > $tempfile #add the chr we need for chromhmm
-    mv $tempfile $targetfile
-    mv $targetfile targetdir    #move bed file to bed directory
+    mv $tempfile $targetfile #rename the edited file
+    mv $targetfile $targetdir    #move bed file to bed directory
 done
 echo "done"
 
