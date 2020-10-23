@@ -68,7 +68,7 @@ singularity exec ../../Containers/epigenetics_analysis_latest.sif R -e "rmarkdow
 #binarize bed files using ChromHMM
 
 bindir="${targetdir%bedfiles}binarized_bed";
-chromfile=$(find "$bindir" -name '*.txt');
+chromfile=$(find "$targetdir" -name '*.txt');
 singularity exec chromhmm_v1.17.sif java -mx400M -jar /chromhmm/ChromHMM.jar BinarizeBed -b 200 /chromhmm/CHROMSIZES/mm10.txt "$chromfile" "$bindir"
 
 
