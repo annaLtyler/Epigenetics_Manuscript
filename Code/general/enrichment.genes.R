@@ -21,6 +21,10 @@ enrichment.genes <- function(enrichment.list, term.name, is.group = TRUE){
 
     all.terms <- lapply(enrichment.tables, function(x) x[,"term_name"])
     term.locale <- grep(term.name, all.terms)
+    if(length(term.locale) == 0){
+        cat("I can't find the term. Check spelling and capitalization.\n")
+        return(NULL)
+    }
     all.genes <- lapply(enrichment.tables, function(x) x[,"intersection"])
 
     gene.list <- vector(mode = "list", length = length(term.locale))

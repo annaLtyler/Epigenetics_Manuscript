@@ -1,10 +1,12 @@
 #This function correlates every point along a gene's state matrix with expression
 #gene.exon.table is required for biologically informed binning of genes
 
-state.window.expr <- function(gene.name, gene.info.table, gene.exon.table = NULL, chrom.mats, group.mean.expr, state.key, window.gene.prop = 0.1, gap.prop = 0.005, bin.by = c("window", "bio"), collapse.exons = TRUE, plot.results = TRUE){
-	# state.colors <- c("#9ecae1", "#99d8c9", "#d9d9d9", "#fee391", "#fc9272", "#bcbddc")
-	state.colors <- c("blue", "green", "gray", "yellow", "red", "purple")
-	
+state.window.expr <- function(gene.name, gene.info.table, gene.exon.table = NULL, 
+chrom.mats, group.mean.expr, state.key, window.gene.prop = 0.1, gap.prop = 0.005, 
+bin.by = c("window", "bio"), collapse.exons = TRUE, plot.results = TRUE){
+
+	state.col <- colors.from.values(1:num.states, use.pheatmap.colors = TRUE, 
+	global.color.scale = TRUE, global.min = 1, global.max = num.states)
 
 	#====================================================
 	# internal functions

@@ -53,10 +53,19 @@ library(here)
 ## Eight-state model correlated best with gene expression
 
 ## State proportion correlated with gene expression
-higher proportions of state 7 were correlated with increased expression
-higher proportions of state 2 were correlated with decreased expression
+Higher proportions of state 7 were correlated with increased expression
+both across genes (within-strain), and across strains. For example,
+Irf5 was expressed at low levels in PWK and CAST. Both strains had state 3
+at the TSS, and low levels of state 7 elsewhere in the gene. The other 
+strains expressed Irf5 much more highly. All of these strains had state 7 
+at the TSS and at higher levels throughout the rest of the gene. Proportion
+of state 7 throughout the gene was positively correlated with expression.
+
+Higher proportions of state 2 were correlated with decreased expression
 figure shows the number of whose expression was significantly correlated
-with each state at a nominal $p$ value of 0.01. State 7 was associated 
+with each state at a nominal $p$ value of 0.01. 
+
+State 7 was associated 
 with the expression of the largest number of genes.
 
 We see activating and suppressing marks at locations all through the gene.
@@ -64,20 +73,48 @@ not necessarily just at the TSS
 (check to see if we can get coordinates of different transcripts)
 
 ## Spatial distribution of states around gene bodies
-Each state had its own distribution around gene bodies.
-The following distributions were for a subset of genes. Need to do genes overall
-and look at subsets that might be interesting either for regulatory reasons
-or GO term enrichment, or something else.
+Each state was distributed unevenly relative to gene bodies.
 
 
 State 1: trough at TSS, climbs through gene body 
-State 2: low throughout
-State 3: peak at TSS, otherwise low
-State 4: low throughout
-State 5: trough at TSS, peak after TES, moderate in gene body
-State 6: troush at TSS, climbs through gene body, peak after TES
+State 2: pretty low throughout, but slight peak at TSS
+State 3: pretty low, but a distinct peak at TSS
+State 4: low throughout, but higher in gene body than at TSS
+State 5: trough at TSS, maybe a peak upstream of TSS
+State 6: very low in gene body
 State 7: big spike at TSS, declines through gene body
-State 8: slight peak after TSS, declines through gene body 
+State 8: slight trough right at TSS, but higher just upstream and downstream of TSS
+  another peak after TES.
+
+## Correlation of chromatin state and gene expression was differentially distributed across the gene body
+We examined whether there was a spatial component to the correlation between
+chromatin state and gene expression. To do this we normalized all gene coordinates
+to run from 0 at the transcription start site (TSS) and 1 at the transcription 
+end site (TES). We then correlated gene expression to chromatin state in a 
+sliding window across the gene body. 
+
+Figure XXX shows the average Pearson correlation between expression and chromatin 
+state across all windows for each chromatin state. 
+
+States 1 and 2 generally suppress expression regardless of position, but do seem
+to have stronger effects at positions near the TSS. 
+
+State 7 generally enhances expression regardless of position, but does seem to have
+a stronger effect at positions near the TSS.
+
+The presence of states 3 and 8 suppress expression primarily when they
+are present at the TSS. Big swings upstream and downstream of the gene 
+for state 3 are primarily due to small numbers of genes in those groups.
+
+States 5 and 6 are moderately positively correlated with expresion when they
+are present within the gene body.
+
+State 4 has very little effect anywhere and is generally not associated with
+differential expression.
+
+Overall there is very little effect of any state on expression near the TES 
+specifically.
+
 
 # Discussion
 
