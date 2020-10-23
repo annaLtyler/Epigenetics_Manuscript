@@ -5,10 +5,10 @@ date: '`r format(Sys.Date(), "%B %d, %Y")`'
 output: html_document
 ---
 
-This workflow is run by 1.1_run_chromhmm. It parses file names to create
-the reference file for ChromHMM.
-
-
+```{r get_dir}
+#get input arguments
+args <- commandArgs(trailingOnly=T)
+```
 
 ```{r load_libraries, echo = FALSE}
 library(here)
@@ -22,8 +22,18 @@ for(i in 1:length(all.code.dir)){
 }
 ```
 
-This is the first script in the series that analyzes epigenetic data from the Genetics of 
-Epigenetics Project at JAX. This study is a survey of strain difference in histone 
+This workflow is a piece of a larger workflow in 1.1_run_chromhmm.
+The full workflow performs three major tasks, each of which is described in detail below.
+
+1. Convert bam files to bed files using bedtools.
+2. Binarize bed files using ChromHMM
+3. Run ChromHMM on a range of state numbers: 4 to 2^n, where n is the number of 
+    measured chromatin modifications.
+
+## Project Introduction
+
+This workflow is a piece of a larger workflow analyzing epigenetic data from the Genetics of 
+Epigenetics project at JAX. This study is a survey of strain difference in histone 
 modifications across the genome. The nine strains included in the study are the following:
 
 + DBA/2J and eight CC founders: 
@@ -96,7 +106,7 @@ that process in the following steps:
 3. Run ChromHMM
 
 Any code chunks that take longer than a few seconds to run are marked with the time they took
-on the Helix cluster at JAX.
+on the Sumnmer cluster at JAX.
 
 ## Convert bam files to bed files
 The first step in this process is to convert the binary bam files to bed files. Each line 
@@ -109,83 +119,29 @@ row contains the chromosome, start position, and stop position, followed by info
 about the assay and strand information. Only the chromosome, start, and stop are used by 
 ChromHMM.
 
+## Bam to bed 
+
 We need to convert the bam files for all individual samples to bed files.
 
-First, we create symbolic links from all bam files to our own data directory.
+This step is performed in the 1.1_run_chromhmm batch script.
 All bam files are in the following directory:
+"/projects/carter-lab/hepatocytes/chipseq-alignments/output/bamfiles_B6Co"
 
-```{r file_dir}
-strain.bam.dir <- "/projects/carter-lab/hepatocytes/chipseq-alignments/output/bamfiles_B6Co"
-chromhmm.dir <- "/projects/carter-lab/hepatocytes/ChromHMM"
-```
+The bed files are put here:
+"/projects/carter-lab/hepatocytes/ChromHMM"
 
 This directory has the files for the B6 mice as well, even though there is a separate 
 directory labeled as B6.
 
-We create symbolic links for all bam files and their indices to the data directory for 
-this workflow
+We then used bamtobed in bedtools to generate bed files from the bam files.
+This step is performed directly by the 1.1_run_chromhmm script.
 
-```{r new_bam_dir}
-new.bam.dir <- file.path(chromhmm.dir, "data", "bamfiles")
-if(!file.exists(new.bam.dir)){system(paste("mkdir", new.bam.dir))}
-```
-
-Next we create the symbolic links.
-
-```{r symlink_bam, eval = FALSE}
-strain.bam <- get.files(path = strain.bam.dir, want = ".bam", 
-dont.want = c("unmapped"), full.names = TRUE)
-
-for(i in 1:length(strain.bam)){
-   new.bam.file <- file.path(new.bam.dir, basename(strain.bam[i]))
-   link.line <- paste0("ln -s ", strain.bam[i], " ", new.bam.file)
-   system(link.line)
-}
-```
-
-Next, we use bamtobed to generate bed files from the bam files. The output for this step 
-will be stored in the following directory:
-
-```{r bed_dir}
-bed.dir <- file.path(chromhmm.dir, "data", "bedfiles")
-if(!file.exists(bed.dir)){system(paste("mkdir", bed.dir))}
-```
-
-```{bash}
-#This chunk took a little over 11 hours.
-singularity shell shub://jaxreg.jax.org/atac-seq/bedtools-bash:v2.9.2
-
-inputdir=/projects/carter-lab/hepatocytes/ChromHMM/data/bamfiles
-targetdir=/projects/carter-lab/hepatocytes/ChromHMM/data/bedfiles
-
-for x in $(find "$inputdir" -name '*.sorted.B6co.bam'); do
-    echo ": $x"
-    targetfile="${x%bam}bed";
-    tempfile="${x%bam}temp"
-    #echo "${x%bam}bed";
-    bedtools bamtobed -i "$x" > "${x%bam}bed";     #convert bam file to bed file
-    cat $targetfile | awk -F '\t' 'BEGIN {OFS="\t"} {print "chr"$0}' > $tempfile #add the chr we need for chromhmm
-    mv $tempfile $targetfile
-    mv $targetfile targetdir    #move bed file to bed directory
-done
-echo "done"
-```
+## Add Chr
 
 ChromHMM requires that each chromosome name begin with "Chr", but bamtobed doesn't 
-put one there. The following script adds the "Chr" string.
+put one there. This step is also performed directly by the 1.1_run_chromhmm script.
 
-
-```{r add_chr, eval = TRUE}
-#This chunk took 2 hours and 40 minues
-all.bed <- list.files(bed.dir, full.names = TRUE)
-temp.bed <- gsub("sorted", "temp", all.bed)
-for(i in 1:length(all.bed)){
-   append.line <- paste("cat ", all.bed[i], " | awk -F '\t' 'BEGIN {OFS=", '"\t"', "} {print ", '"chr"', "$0}' > ", temp.bed[i], sep = "")
-   system(append.line) #add Chr and output to temp file
-   rename.line <- paste("mv ", temp.bed[i], " ", all.bed[i], sep = "")
-   system(rename.line) #change the name of the temporary file to the original file
-   }
-```
+## Binarize bed files
 
 Next we binarize the bed files. This is the first step that uses ChromHMM and the 
 step where the input files come into play. There is one input file for each strain. 
@@ -201,6 +157,7 @@ input files go with which data files. The file list has the following columns:
 The code below generates the file list.
 
 ```{r generate_file_list, eval = TRUE}
+bed.dir <- args[1]
 all.bed <- get.files(path = bed.dir, want = ".bed", 
 dont.want = c(".txt", "extracted", excluded, ".bai", "unmapped")) 
 						#we don't need the full path names, 
@@ -237,11 +194,13 @@ col.names = FALSE)
 Generate a directory for the binarized bed files if one doesn't exist.
 
 ```{r bin_dir}
-bin.dir <- here("Data", "binarized_bed", c.or.t)
+bin.dir <- gsub("bedfiles", "binarized_bed", beddir, c.or.t)
 if(!file.exists(bin.dir)){system(paste("mkdir", bin.dir))} 
 ```
 
-Run ChromHMM to binarize the bed files
+
+The final step is to run ChromHMM on the binarized bed files.
+This step is performed directly in the 1.1_run_chromhmm script.
 
 ```{r binarize_bed, eval = FALSE}
 #This code chunk took 1 hour and 11 minutes on helix
@@ -255,7 +214,6 @@ input.dir, file.list, output.dir)
 system(run.line)
 ```
 
-Now we build the ChromHMM models.
 There are four histone marks in this data set, which can each be either present or absent. 
 This gives us $2^4$ possible states. A priori, we don't know which number of states will 
 best describe the data. We thus learn models for a range of state numbers. Here we will 

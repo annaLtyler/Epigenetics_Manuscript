@@ -61,16 +61,15 @@ echo "done"
 
 rm $targetdir/*unmapped #delete unmapped files
 
-#create index files for chromHMM
+#create index files for ChromHMM
 
-for x in $(find "$targetdir" -name '*.bed'); do
-    #echo $x
-    fname=$(basename $x)
-    #info=$fname | cut -d'.' -f 1
-    info=$(echo $fname | cut -d'.' -f 1)
-    #echo $info
-    markname=${info%_*} #retain everything before underscore
-    #echo $markname
-    strainname=${info##*_} #retain everything after underscore
-    echo $strainname
-done
+singularity exec ../../Containers/epigenetics_analysis_latest.sif R -e "rmarkdown::render(here::here('Documents', '1.Setup', '0.Full_chromhmm_test.Rmd'))" --args "$targetdir"
+
+#binarize bed files using ChromHMM
+#I have no idea how to run chromhmm from a container!
+bindir="${targetdir%bedfiles}binarized_bed";
+chromfile=$(find "$bindir" -name '*.txt');
+singularity exec chromhmm_v1.17.sif java -mx400M -jar /chromhmm/ChromHMM.jar BinarizeBed -b 200 /chromhmm/CHROMSIZES/mm10.txt "$chromfile" "$bindir"
+
+
+
