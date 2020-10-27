@@ -1,0 +1,116 @@
+---
+title: "Map chromatin to genotype"
+author: Anna L Tyler
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  html_document:
+    code_folding: hide
+    collapsed: no
+    toc: yes
+    toc_float: yes
+---
+
+
+The purpose of this workflow is to set up data files for imputing chromatin 
+states onto the DO mice. I ran into memory problems when reading in all 
+data. This workflow attempts to pare down some of the memory requirements.
+
+We prepare the following files:
+
+1. Gene expression matrix for DO mice
+    * DO_Expression.RDS
+2. Genoprobs containing only the markers nearest to transcripts.
+    * transcript.haplotypes.RDS
+  
+```{r load_libraries, message = FALSE, warning = FALSE, error = FALSE}
+num.states = 8
+needed.packages <- c("here")
+for(i in 1:length(needed.packages)){library(needed.packages[i], character.only = TRUE)}
+is.interactive = FALSE
+#is.interactive = TRUE
+```
+
+```{r source_code}
+all.code.dir <- list.files(here("Code"), full.names = TRUE)
+for(i in 1:length(all.code.dir)){
+	all.fun <- list.files(all.code.dir[i], full.names = TRUE)
+	for(j in 1:length(all.fun)){source(all.fun[j])}
+}
+```
+
+Load the DO data. We will be using the genoprobs object for our mapping.
+
+```{r load_do_data}
+all.var <- ls()
+data.loaded <- as.logical(length(which(all.var == "dataset.expr")))
+if(!data.loaded){
+  do.data <- load(here("Data", "DOQTL", "Svenson_DO850_for_eQTL_veiwer_v0.Rdata"))
+}
+expr.data <- list(dataset.expr.petr$expr, dataset.expr.petr$covar)
+names(expr.data) <- c("expr", "covar")
+saveRDS(expr.data, here("Data", "DOQTL", "DO_Expression.RDS"))
+```
+
+For each transcript in the chromatin data, identify the haplotypes at the 
+nearest marker.
+
+```{r nearest_marker}
+transcript.info <- readRDS(here("Data", "RNASeq", "RNASeq_gene_info.RData"))
+marker.coords <- lapply(genoprobs, function(x) as.numeric(sapply(strsplit(dimnames(x)[[3]], "_"), function(y) y[2])))
+expr <- dataset.expr.petr$expr
+common.ind <- intersect(rownames(expr), rownames(genoprobs[[1]]))
+#use only individuals for which we have RNA-Seq data
+geno.ind.locale <- match(common.ind, rownames(genoprobs[[1]])) 
+expr.ind.locale <- match(common.ind, rownames(expr))
+
+get_haplotypes <- function(gene.id){
+  gene.locale <- which(transcript.info[,"ensembl_gene_id"] == gene.id)[1]
+  if(length(gene.locale) == 0){return(NA)}
+  gene.chr <- transcript.info[gene.locale,"chromosome_name"]
+  gene.start <- transcript.info[gene.locale, "start_position"]
+  chr.locale <- which(names(marker.coords) == gene.chr)
+  if(length(chr.locale) == 0){return(NA)}
+  nearest.idx <- get.nearest.pt(marker.coords[[chr.locale]], gene.start)
+  transcript.haps <- genoprobs[[chr.locale]][geno.ind.locale,,nearest.idx,drop=FALSE]
+  return(transcript.haps)
+}
+
+trans.hap.file <- here("Data", "DOQTL", "transcript.haplotypes.RDS")
+if(!file.exists(trans.hap.file)){
+  transcript.haplotypes <- lapply(names(chrom.states), get_haplotypes)
+  names(transcript.haplotypes) <- names(chrom.states)
+  saveRDS(transcript.haplotypes, trans.hap.file)
+}else{
+  transcript.haplotypes  <- readRDS(trans.hap.file)
+}
+```
+
+Expand the chromatin matrices to three dimensions, so each state
+is listed as present/absent.
+
+```{r expand_chrom}
+chrom.mats <- readRDS(here("Results", "ChromHMM", "008_states_C", 
+"Chromatin_States_8_full_gene_1000.RData"))
+
+expand_chrom <- function(chrom.mat, num.states = 8){
+  if(length(chrom.mat) == 1){return(NA)}
+
+  chrom.array <- array(0, dim = c(ncol(chrom.mat), num.states, nrow(chrom.mat)))
+  rownames(chrom.array) <- colnames(chrom.mat)
+  colnames(chrom.array) <- 1:num.states
+  dimnames(chrom.array)[[3]] <- rownames(chrom.mat)
+
+  for(i in 1:num.states){
+    new.state <- matrix(0, nrow = nrow(chrom.mat), ncol = ncol(chrom.mat))
+    state.pres <- which(chrom.mat == i)
+    new.state[state.pres] <- 1
+    chrom.array[,i,] <- t(new.state)
+  }
+
+  return(chrom.array)
+}
+
+expanded.chrom.file <- here("Data", "chQTL", "Expanded_Chromatin.RDS")
+exp.chrom <- lapply_pb(chrom.mats, expand_chrom)
+saveRDS(exp.chrom, expanded.chrom.file)
+```

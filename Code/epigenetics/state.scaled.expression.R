@@ -4,8 +4,8 @@
 state.scaled.expression <- function(scaled.chrom, group.mean.expr, strain.key, verbose = FALSE){
 	
 	null.result <- list("r" = NA, "p" = NA)
-	strain.chrom.order <- order.strains(strain.key[,1], rownames(scaled.chrom[[1]]), strain.key)
-	strain.expr.order <- order.strains(strain.key[,1], names(group.mean.expr[[1]]), strain.key)
+	strain.chrom.order <- match.order(strain.key[,1], rownames(scaled.chrom[[1]]), strain.key)
+	strain.expr.order <- match.order(strain.key[,1], rownames(group.mean.expr[[1]]), strain.key)
 
 	one.cor <- function(gene.id){
 		gene.id.chrom <- which(names(scaled.chrom) == gene.id)

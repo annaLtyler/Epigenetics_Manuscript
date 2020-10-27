@@ -144,3 +144,25 @@ plot.enrichment.vis(all.enrich, order.by = "p.value", num.terms = 30)
 
 
 
+```{r chrom_bin_LOD}
+get_cor_at_lod_bin <- function(lod.min, lod.max, sorted.lod, sorted.cor){
+    gene.idx <- intersect(which(sorted.lod >= lod.max), which(sorted.lod >= lod.min))
+    gene.cor <- sorted.cor[gene.idx]
+    return(gene.cor)
+}
+
+#bin LOD scores, look at correlations of genes with chromatin state
+#in each bin.
+lod.seq <- seq.int(min(all.cis.lod), max(all.cis.lod), length.out = 100)
+par(mfrow = c(2,4))
+for(s in 1:num.states){
+    binned.chrom.cor <- lapply(1:(length(lod.seq)-1), 
+    function(x) get_cor_at_lod_bin(lod.seq[x], lod.seq[(x+1)], all.cis.lod, 
+    all.prop.r[common.chrom.locale,s]))
+    chrom.cor.med <- sapply(binned.chrom.cor, function(x) median(abs(x), na.rm = TRUE))
+    #boxplot(binned.chrom.cor, main = paste("State", s))
+    plot(lod.seq[-1], chrom.cor.med, main = paste("State", s), xlab = "eQTL LOD score",
+    ylab = "Abs. Median State Correlation", type = "l", ylim = c(0, 0.85))
+}
+```
+

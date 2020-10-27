@@ -72,7 +72,8 @@ is.interactive = as.logical(args[3]) #keep this as FALSE when running render()
                     #one gene data in multiple windows                    
 delete.previous = as.logical(args[4]) #whether to delete and regenerate files 
                     #from previous a run.
-#num.states = 8; offline = FALSE; is.interactive = TRUE; delete.previous = FALSE
+num.states = 8; offline = FALSE; is.interactive = FALSE; delete.previous = FALSE
+#num.states = 8; offline = FALSE; is.interactive = FALSE; delete.previous = FALSE
 ```
 
 
@@ -448,7 +449,7 @@ paste0("State_", num.states, "_MDS_Expression_Cor_", gene.text, "_", buffer.text
 
 if(!file.exists(state.mds.expression.file)){
     cor.mds.results <- state.scaled.expression(scaled.chrom = chrom.mds, 
-    group.mean.expr = strain.mean.expr, strain.key = col.table, 
+    group.mean.expr = scaled.mean.expr, strain.key = col.table, 
     verbose = is.interactive)
     all.mds.p <- sapply(cor.mds.results, function(x) x[2])
     all.mds.r <- sapply(cor.mds.results, function(x) x[1])
@@ -513,8 +514,6 @@ sig.r.list <- lapply(1:ncol(sig.r), function(x) sig.r[,x])
 a <- boxplot(sig.r.list, main = 'Nominally Significant Correlations')
 par(xpd = TRUE)
 text(x = 1:length(sig.r.list), y = rep(1.15, length(sig.r.list)), labels = a$n)
-#stripchart(lapply(sig.r.list, function(x) round(x, 2)), method = "stack", 
-#pch = 16, col = "gray", vertical = TRUE, offset = 0.1)
 ```
 
 ## Functional enrichment of state-responsive genes {.tabset .tabset-fade .tabset-pills}
@@ -831,7 +830,6 @@ plot.one.gene(do.eqtl, rnaseq.gene.info, rna.seq, all.bed, col.table,
 gene.name = "Irf5", T.or.C, start.feature, end.feature, upstream.buffer, 
 downstream.buffer, separate.windows = is.interactive, dim.rd = "state.prop", state = 7, 
 total.states = num.states, show.state.numbers = FALSE)
-
 ```
 
 ```{r state8, eval = FALSE}
@@ -850,4 +848,94 @@ for(g in 1:length(ex.genes)){
     total.states = num.states, show.state.numbers = FALSE)
     cat("\n")
 }
+```
+
+## Comparing Genetics and Chromatin
+
+What is the correlation between cis LOD scores and the correlation between
+chromatin state and expression?
+
+The following plots show the absolute value of the correlation between each 
+transcript in the inbred mice and its expression vs. the LOD score in the DO for
+the same transcript. We expect that if chromatin and genetics are providing redundant
+information that this two measures would be very highly correlated. They are actually
+positively correlated for all states, particularly for states 1 and 7. 
+
+However, there are transcripts whose chromatin is very highly correlated with 
+inbred expression but have low LOD scores. There are also many genes with very
+high LOD scores but very low correlation between chromatin state and inbred expression.
+
+```{r chrom_lod_cor}
+
+#get the cis lod for each transcript
+get_cis_lod <- function(eqtl.results){
+    trans.start <- eqtl.results$gene.info$Start.Mbp * 1e6
+    marker.coord <- as.numeric(sapply(strsplit(rownames(eqtl.results$DO.coefficients), "_"), function(x) x[2]))
+    nearest.marker <- get.nearest.pt(marker.coord, trans.start)
+    nearest.lod <- eqtl.results$LOD[nearest.marker]
+    return(nearest.lod)
+}
+
+common.genes <- intersect(names(do.eqtl), rownames(all.prop.r))
+common.eqtl.locale <- match(common.genes, names(do.eqtl))
+common.chrom.locale <- match(common.genes, rownames(all.prop.r))
+
+cis.lod.file <- here("Data", "DOQTL", "cis.eqtl.lod.RDS")
+if(!file.exists(cis.lod.file)){
+    all.cis.lod <- unlist(lapply(do.eqtl[common.eqtl.locale], get_cis_lod))
+    saveRDS(all.cis.lod, cis.lod.file)
+}else{
+    all.cis.lod <- readRDS(cis.lod.file)
+}
+
+lod.thresh <- 0
+lod.locale <- which(all.cis.lod >= lod.thresh)
+par(mfrow = c(2,4))
+for(i in 1:ncol(all.prop.r)){
+    plot.with.model(all.cis.lod[lod.locale], abs(all.prop.r[common.chrom.locale[lod.locale],i]), 
+    main = paste("State", i), xlab = "|r| Chromatin vs. Expression",
+    ylab = "eQTL LOD score", report = "cor.test")
+}
+```
+
+The following plot shows the same as the above plots, except for the correlation 
+between the overall matrix and inbred expression. For this test, we dimension-reduced
+the chromatin matrix to a single dimension using multi-dimensional scaling and correlated
+that dimension with inbred expression. This correlation is higher than any of the correlation
+with any of the individual states. 
+
+```{r mds_model}
+plot.with.model(all.cis.lod, abs(unlist(all.mds.r)[common.chrom.locale]), report = "cor.test",
+xlab = "eQTL LOD Score", ylab = "|r| MDS chromatin v. Expression")
+```
+
+## Low Lod High Chromm {.tabset .tabset-fade .tabset-pills}
+
+Let's spot-check a few of these genes.
+
+```{r spot_check, results = "asis"}
+
+find_genes <- function(sorted.cor, sorted.lod, lod.lim, cor.lim){
+    lod.locale <- intersect(which(sorted.lod >= lod.lim[1]), which(sorted.lod <= lod.lim[2]))
+    cor.locale <- intersect(which(sorted.cor >= cor.lim[1]), which(sorted.cor <= cor.lim[2]))
+    inter.locale <- intersect(lod.locale, cor.locale)
+}
+
+min.lod <- 0; max.lod <- 5; min.cor <- 0.9; max.cor <- 1
+sorted.cor <- unlist(all.mds.r)[common.chrom.locale]
+trimmed.names <- sapply(strsplit(names(sorted.cor), ".", fixed = TRUE), function(x) x[1])
+names(sorted.cor) <- trimmed.names
+sorted.lod <- unlist(all.cis.lod)
+low.lod.high.cor <- trimmed.names[find_genes(sorted.cor, sorted.lod, c(min.lod, max.lod), c(min.cor, max.cor))]
+low.lod.high.cor.names <- rnaseq.gene.info[match(low.lod.high.cor, rnaseq.gene.info[,"ensembl_gene_id"]), "external_gene_name"]
+
+for(g in 1:length(low.lod.high.cor)){
+    cat("###", low.lod.high.cor.names[g], "\n")
+    plot.one.gene(do.eqtl, rnaseq.gene.info, rna.seq, all.bed, col.table, 
+    gene.name = low.lod.high.cor.names[g], T.or.C, start.feature, end.feature, upstream.buffer, 
+    downstream.buffer, separate.windows = is.interactive, dim.rd = "mds", state = NULL, 
+    total.states = num.states, show.state.numbers = FALSE)
+    cat("\n")
+}
+
 ```
