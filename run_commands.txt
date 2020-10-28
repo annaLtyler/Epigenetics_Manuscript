@@ -3,4 +3,4 @@
 R -e "rmarkdown::render(here::here('Documents', '2.Analysis', '1.Chromatin_States_and_Expression.Rmd'))" --args "8" "FALSE" "FALSE" "FALSE"
 
 
-R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '2.0_chromaprobs.Rmd'))"
+R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '2.1_chromaprobs.Rmd'))"
