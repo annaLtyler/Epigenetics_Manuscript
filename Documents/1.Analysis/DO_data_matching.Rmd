@@ -1,0 +1,87 @@
+---
+title: "DO data matching"
+author: Anna L Tyler
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  html_document:
+    code_folding: hide
+    collapsed: no
+    toc: yes
+    toc_float: yes
+---
+
+I'm having trouble matching up data from different sources. DO eqtl LOD scores
+from DO478_tpm_20360_cis_allele_coef.RData don't match the LOD scores I get when
+I rescan data from Svenson_DO850_for_eQTL_veiwer_v0.Rdata.
+
+Here I am poking around to see if I can figure out what is going on.
+
+```{r}
+library(here)
+```
+
+The files I am examining are the following:
+    * DO478_tpm_20360_cis_allele_coef: contains a list of eQTL results, but 
+    I'm not sure who generated them. 
+    
+    * Svenson_DO850_for_eQTL_veiwer_v0: I got these data from Dan. This is 
+    a typical eQTL viewer data set with genoprobs, expression, covariates,
+    etc.
+    The dataset.expr data has an expression data set called expr and one
+    called norm. The one called expr has rankz normalized values.
+    The values in norm look funny. I'm not sure how they were normalize.
+    Both expression data sets have 478 individuals and 11770 transcripts.
+    There is another data set called dataset.expr.petr. The expr data set
+    in this table has 478 individuals and 12067 transcripts. These have 
+    also been rankZ normalized. The raw dataset in Petr's set has 46517 
+    transcripts in TPM. The thresholds he used removed a lot of transcripts!
+    There is yet another data set in here with only 384 individuals. I'm not
+    sure what that's all about. 
+    * _Svenson_DO478_normalized_genes_v1 is just expression data. It has
+    478 individuals and 32879 transcripts. These transcripts are mean centered
+    and normalized, but I'm not sure how they were normalized.
+
+All of these data sets are a little bit different. Given that Petr's is
+rankZ normalized and has more transcripts than the other rankZ normalize
+set, I think it makes sense to use that. I will not use the previous eQTL
+results (the cis_allele_coef) file, since I'm not sure where they came
+from, and I want to make sure I'm scanning chromatin and genetics with the
+same expression data.
+
+```{r load_data}
+do.results <- readRDS(here("Data", "DOQTL", "DO478_tpm_20360_cis_allele_coef.RData"))
+dan.data <- load(here("Data", "DOQTL", "Svenson_DO850_for_eQTL_veiwer_v0.Rdata"))
+svenson.do <- readRDS("/Users/atyler/Documents/Data/DO/RNASeq/_Svenson_DO478_normalized_genes_v1.rds")
+```
+
+
+```{r exploring}
+boxplot(svenson.do[,1:10])
+
+boxplot(dataset.expr.petr$expr[,1:10]) #rankZ normalized
+boxplot(dataset.expr.petr$raw[,1:10]) #TPM
+boxplot(dataset.expr$expr[,1:10]) #rankZ normalized
+boxplot(dataset.expr$raw[,1:10]) #TPM
+boxplot(dataset.expr$norm[,1:10]) #not rankZ normalized
+```
+
+```{r direct_compare}
+compare.datasets <- function(expr1, expr2, n.to.test = 10){
+    common.trans <- intersect(colnames(expr1), colnames(expr2))
+    expr1.locale <- match(common.trans, colnames(expr1))
+    expr2.locale <- match(common.trans, colnames(expr2))
+    sub.expr1 <- expr1[,expr1.locale]
+    sub.expr2 <- expr2[,expr2.locale]
+    for(i in 1:n.to.test){
+        sample.idx <- sample(length(common.trans), 1)
+        plot(sub.expr1[,sample.idx], sub.expr2[,sample.idx])
+    }
+}
+
+
+par(mfrow = c(3,3))
+compare.datasets(dataset.expr$expr, dataset.expr.petr$expr, 9)
+
+par(mfrow = c(3,3))
+compare.datasets(dataset.expr.petr$raw, dataset.expr$raw,9)
+```
