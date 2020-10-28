@@ -197,7 +197,7 @@ plot.coef <- function(scan1.results, gene.id = NULL, coef.type = c("chromatin", 
     gene.end <- transcript.info[gene.locale, "end_position"]    
     abline(v = c(gene.start, gene.end))
   }
-legend("topleft", fill = cols, legend = legend.labels, horiz = TRUE, cex = 0.7)
+legend("topleft", fill = cols, legend = legend.labels, horiz = TRUE, cex = 0.7, adj = 0)
 }
 ```
 
@@ -233,7 +233,7 @@ if(!file.exists(chrom.coef.file)){
 
   #for each transcript
   for(i in 1:length(chrom.states)){
-    if(is.interactive){report.progress(i, length(chrom.probs))}
+    if(is.interactive){report.progress(i, length(chrom.states))}
     gene.id <- names(chrom.states)[i]
     expr.locale <- which(colnames(expr) == gene.id)
     
