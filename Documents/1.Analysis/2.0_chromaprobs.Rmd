@@ -88,7 +88,7 @@ rownames(chrom.states[[1]]), strain.key)
 #rownames(chrom.states[[1]])[chrom.order]
 
 calc.chrom <- function(gene.id){
-  gene.idx <- which(names(transcript.haplotypes) = gene.id)
+  gene.idx <- which(names(transcript.haplotypes) == gene.id)
   haps <- transcript.haplotypes[[gene.idx]]
   if(length(haps) == 1){return(NA)}
   ref.chroms <- chrom.states[[gene.idx]][chrom.order,,]
