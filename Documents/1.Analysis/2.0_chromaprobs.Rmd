@@ -214,7 +214,8 @@ geno.coef.file <- here("Results", "eQTL", "eQTL.coef.RDS")
 geno.lod.file <- here("Results", "eQTL", "eQTL.lod.RDS")
 
 if(!file.exists(chrom.coef.file)){
-  
+  sink(here("progress.txt"))
+
   #make space for one set of genoprob coefficients for each transcript
   geno.coef <- matrix(NA, ncol = 8, nrow = length(common.transcripts))
   rownames(geno.coef) <- common.transcripts
@@ -231,7 +232,9 @@ if(!file.exists(chrom.coef.file)){
   colnames(geno.lod) <- "Genotype_LOD"
 
   #for each transcript
+  #for(i in 1:100){
   for(i in 1:length(common.transcripts)){
+    print(i)
     if(is.interactive){report.progress(i, length(common.transcripts))}
     #gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == "Dzip1l"),"ensembl_gene_id"][1]
     #i <- which(common.transcripts == gene.id)
@@ -298,5 +301,18 @@ if(!file.exists(chrom.coef.file)){
   geno.lod <- readRDS(geno.lod.file)
   geno.coef <- readRDS(geno.coef.file)
 }
+
+sink(NULL)
+```
+
+## Compare Results
+
+```{r compare_lod}
+max.chrom.lod <- sapply(chrom.lod, function(x) max(x, na.rm = TRUE))
+max.eqtl.lod <- sapply(geno.lod, function(x) max(x, na.rm = TRUE))
+
+plot(max.eqtl.lod, max.chrom.lod, xlab = "Maximum eQTL LOD Score",
+ylab = "Maximum Chromatin LOD Score")
+abline(0,1)
 ```
 
