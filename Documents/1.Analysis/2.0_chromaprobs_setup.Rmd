@@ -38,16 +38,25 @@ for(i in 1:length(all.code.dir)){
 }
 ```
 
+Load chromatin data.
+
+```{r chrom_data}
+chrom.states <- readRDS(here("Results", "ChromHMM", "008_states_C", 
+"Chromatin_States_8_full_gene_1000.RData"))
+
+```
+
 Load the DO data. We will be using the genoprobs object for our mapping.
 
 ```{r load_do_data}
 all.var <- ls()
 data.loaded <- as.logical(length(which(all.var == "dataset.expr")))
 if(!data.loaded){
-  do.data <- load(here("Data", "DOQTL", "Svenson_DO850_for_eQTL_veiwer_v0.Rdata"))
+  do.data <- load(here("Data", "DOQTL", "Svenson_DO850_for_eQTL_viewer_v9.RData"))
 }
-expr.data <- list(dataset.expr.petr$expr, dataset.expr.petr$covar)
-names(expr.data) <- c("expr", "covar")
+rz.expr <- dataset.mrna$data$rz
+covar <- dataset.mrna$covar.matrix
+expr.data <- list("expr" = rz.expr, "covar" = covar)
 saveRDS(expr.data, here("Data", "DOQTL", "DO_Expression.RDS"))
 ```
 
@@ -57,11 +66,10 @@ nearest marker.
 ```{r nearest_marker}
 transcript.info <- readRDS(here("Data", "RNASeq", "RNASeq_gene_info.RData"))
 marker.coords <- lapply(genoprobs, function(x) as.numeric(sapply(strsplit(dimnames(x)[[3]], "_"), function(y) y[2])))
-expr <- dataset.expr.petr$expr
-common.ind <- intersect(rownames(expr), rownames(genoprobs[[1]]))
+common.ind <- intersect(rownames(rz.expr), rownames(genoprobs[[1]]))
 #use only individuals for which we have RNA-Seq data
 geno.ind.locale <- match(common.ind, rownames(genoprobs[[1]])) 
-expr.ind.locale <- match(common.ind, rownames(expr))
+expr.ind.locale <- match(common.ind, rownames(rz.expr))
 
 get_haplotypes <- function(gene.id){
   gene.locale <- which(transcript.info[,"ensembl_gene_id"] == gene.id)[1]
@@ -89,8 +97,6 @@ Expand the chromatin matrices to three dimensions, so each state
 is listed as present/absent.
 
 ```{r expand_chrom}
-chrom.mats <- readRDS(here("Results", "ChromHMM", "008_states_C", 
-"Chromatin_States_8_full_gene_1000.RData"))
 
 expand_chrom <- function(chrom.mat, num.states = 8){
   if(length(chrom.mat) == 1){return(NA)}
@@ -111,6 +117,6 @@ expand_chrom <- function(chrom.mat, num.states = 8){
 }
 
 expanded.chrom.file <- here("Data", "chQTL", "Expanded_Chromatin.RDS")
-exp.chrom <- lapply_pb(chrom.mats, expand_chrom)
+exp.chrom <- lapply_pb(chrom.states, expand_chrom)
 saveRDS(exp.chrom, expanded.chrom.file)
 ```
