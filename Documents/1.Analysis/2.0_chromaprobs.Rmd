@@ -126,6 +126,9 @@ calc.chrom <- function(gene.id){
 get_one_geno  <- function(gene.id, geno_type = c("chromatin", "genotype")){
   geno_type <- geno_type[1]
   info.locale <- which(transcript.info[,"ensembl_gene_id"] == gene.id)[1]
+
+  if(is.na(info.locale)){return(NA)}
+
   gene.chr <- transcript.info[info.locale,"chromosome_name"]
   gene.start <- transcript.info[info.locale,"start_position"]
 
@@ -207,7 +210,6 @@ cis location to calculate eQTL LOD scores and coefficients.
 
 
 ```{r scan_chQTL_and_eQTL}
-
 chrom.coef.file <- here("Results", "chQTL", "chQTL.coef.RDS")
 chrom.lod.file <- here("Results", "chQTL", "chQTL.lod.RDS")
 geno.coef.file <- here("Results", "eQTL", "eQTL.coef.RDS")
@@ -232,8 +234,8 @@ if(!file.exists(chrom.coef.file)){
   colnames(geno.lod) <- "Genotype_LOD"
 
   #for each transcript
-  #for(i in 120:122){
-  for(i in 1:length(common.transcripts)){
+  for(i in 1376:1378){
+  #for(i in 1:length(common.transcripts)){
     print(i)
     if(is.interactive){report.progress(i, length(common.transcripts))}
     #gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == "Dzip1l"),"ensembl_gene_id"][1]
@@ -244,6 +246,9 @@ if(!file.exists(chrom.coef.file)){
 
     #chromatin scan
     chrom.geno <- get_one_geno(gene.id, "chromatin")
+    
+    if(is.na(chrom.geno)){next()}
+
     #check for variation
     test.var <- apply(chrom.geno[[1]], 3, function(x) apply(x, 2, function(y) var(y)))
     no.var <- all(apply(test.var, 1, function(x) length(unique(x))) == 1)
