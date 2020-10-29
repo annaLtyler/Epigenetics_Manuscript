@@ -234,8 +234,8 @@ if(!file.exists(chrom.coef.file)){
   colnames(geno.lod) <- "Genotype_LOD"
 
   #for each transcript
-  for(i in 1376:1378){
-  #for(i in 1:length(common.transcripts)){
+  #for(i in 1376:1378){
+  for(i in 1:length(common.transcripts)){
     print(i)
     if(is.interactive){report.progress(i, length(common.transcripts))}
     #gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == "Dzip1l"),"ensembl_gene_id"][1]
