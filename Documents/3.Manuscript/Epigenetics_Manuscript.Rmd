@@ -80,7 +80,6 @@ not necessarily just at the TSS
 ## Spatial distribution of states around gene bodies
 Each state was distributed unevenly relative to gene bodies.
 
-
 State 1: trough at TSS, climbs through gene body 
 State 2: pretty low throughout, but slight peak at TSS
 State 3: pretty low, but a distinct peak at TSS
@@ -120,7 +119,7 @@ differential expression.
 Overall there is very little effect of any state on expression near the TES 
 specifically.
 
-## Chromatin states were aligned with eQTLs
+## Chromatin states and eQTLs
 We investigated whether chromatin states provided regulatory information on 
 top of that provided by the underlying genetics. 
 

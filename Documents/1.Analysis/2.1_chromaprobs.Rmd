@@ -101,10 +101,14 @@ calc.chrom <- function(gene.id){
   
   for(p in 1:dim(ref.chroms)[3]){ #for each position
     chrom.mat <- ref.chroms[,,p]
+
     for(i in 1:dim(chrom.array)[1]){ #for each individual
       ind.hap <- haps[i,,1]
-      mult.mat <- apply(chrom.mat, 1, function(x) x*ind.hap)
-      ind.state <- rowSums(mult.mat)
+      #barplot(ind.hap)
+      mult.mat <- apply(chrom.mat, 2, function(x) x*ind.hap)
+      #pheatmap(mult.mat, cluster_rows = FALSE, cluster_cols = FALSE)
+      ind.state <- colSums(mult.mat)
+      #barplot(ind.state)
       #print(signif(ind.state, 2))
       chrom.array[i,,p] <- ind.state
     }
@@ -285,6 +289,13 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
     addcovar = covar)
     geno.coef[i,] <- geno.coef.results[,LETTERS[1:8]]
 
+    #test.state = 7
+    #state.mat <- chrom.geno[[1]][,test.state,]
+    #state.total <- rowSums(state.mat)
+    #plot.with.model(state.prop, expr[,expr.locale], xlab = "state total", ylab = "expression")
+    #expr.df <- data.frame(expr[,expr.locale])
+    #pheatmap(state.mat, annotation_row = expr.df, show_rownames = FALSE, cluster_cols = FALSE)
+
     if(is.interactive){
       quartz(width = 10, height = 7)
       layout.mat <- matrix(c(1,0, 2,3,4,6,5,0), ncol = 2, byrow = TRUE)
@@ -336,16 +347,5 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
 }
 
 sink(NULL)
-```
-
-## Compare Results
-
-```{r compare_lod, warnings = FALSE, error = FALSE, message = FALSE}
-max.chrom.lod <- sapply(chrom.lod, function(x) max(x, na.rm = TRUE))
-max.eqtl.lod <- sapply(geno.lod, function(x) max(x, na.rm = TRUE))
-
-plot(max.eqtl.lod, max.chrom.lod, xlab = "Maximum eQTL LOD Score",
-ylab = "Maximum Chromatin LOD Score")
-abline(0,1)
 ```
 

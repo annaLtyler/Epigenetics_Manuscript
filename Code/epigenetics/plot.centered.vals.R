@@ -14,9 +14,9 @@
 #returned.
 
 plot.centered.vals <- function(val.list, min.representation = 10, plot.label = "Center",
-plot.individual = FALSE, ylim = c(0, 50), seq.by = 1, merge.by = 1, plot.line = TRUE, 
-plot.hex = FALSE, min.upstream = -2, max.downstream = 2, return.means = TRUE, 
-verbose = FALSE){
+plot.individual = FALSE, ylim = c(0, 50), ylab = "Methylation Percent Mean",
+seq.by = 1, merge.by = 1, plot.line = TRUE, plot.hex = FALSE, 
+min.upstream = -2, max.downstream = 2, return.means = TRUE, verbose = FALSE){
   
   not.null <- which(sapply(val.list, function(x) !all(is.na(x))))
   if(length(not.null) == 0){stop("No values")}
@@ -70,10 +70,11 @@ verbose = FALSE){
       bulk.mat[i,val.idx] <- sub.val.list[[i]][within.bounds]
     }
   }
-  #pheatmap(bulk.mat, cluster_rows = FALSE, cluster_cols = FALSE, show_colnames = FALSE)
+
   keep.rows <- which(apply(bulk.mat, 1, function(x) !all(is.na(x))))
   bulk.mat <- bulk.mat[keep.rows,]
-  
+  #pheatmap(bulk.mat, cluster_rows = FALSE, cluster_cols = FALSE, show_colnames = FALSE, show_rownames = FALSE)
+
   #smooth across columns to put more examples in each 
   if(merge.by > 1){
     col.list <- bin.sequence(1:ncol(bulk.mat), round(ncol(bulk.mat)/merge.by))
@@ -100,7 +101,7 @@ verbose = FALSE){
     col = "#9ecae1", border = NA, new.plot = FALSE)
     points(as.numeric(colnames(sub.bulk.mat)), methyl.means, type = "l")
     axis(1);axis(2)
-    mtext("Methylation Percent Mean", side = 2, line = 2)
+    mtext(ylab, side = 2, line = 2)
     mtext(paste0(plot.label, "\n", nrow(sub.bulk.mat), " Genes"), side = 3, line = 2)
     mtext("Relative Genomic Position", side = 1, line = 2)
   }

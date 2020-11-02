@@ -1,7 +1,7 @@
 #This function is a shortcut to plotting 2D density plots
 #using hexbin
 
-plot.hexbin <- function(x, y, xlab, ylab, main){
+plot.hexbin <- function(x, y, xbins = 30, xlab, ylab, main){
     require(hexbin)
     require(RColorBrewer)
 
@@ -12,7 +12,7 @@ plot.hexbin <- function(x, y, xlab, ylab, main){
     rf <- colorRampPalette(rev(brewer.pal(11,'Spectral')))
 
     df <- data.frame(cbind(x, y))
-    h <- hexbin(df)
+    h <- hexbin(df, xbins = xbins)
 
     plot(h, xlab = xlab, ylab = ylab, colramp = rf, main = main)
 }

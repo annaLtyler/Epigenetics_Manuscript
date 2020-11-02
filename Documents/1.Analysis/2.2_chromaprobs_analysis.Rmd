@@ -1,0 +1,200 @@
+---
+title: "Analyze Chromatin local QTL results"
+author: Anna L Tyler
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  html_document:
+    code_folding: hide
+    collapsed: no
+    toc: yes
+    toc_float: yes
+---
+
+
+The purpose of this workflow is to analyze the results from 2.1_chromaprobs.Rmd
+That workflow imputed local chromatin states for each transcript, and scanned
+those states for effects on transcription in the DO.
+
+This workflow compares the eQTL mapped to chromatin and to haplotypes.
+  
+```{r load_libraries, message = FALSE, warning = FALSE, error = FALSE}
+library(here);library(qtl2)
+```
+
+```{r source_code}
+all.code.dir <- list.files(here("Code"), full.names = TRUE)
+for(i in 1:length(all.code.dir)){
+	all.fun <- list.files(all.code.dir[i], full.names = TRUE)
+	for(j in 1:length(all.fun)){source(all.fun[j])}
+}
+data(CCcolors)
+chrom.colors <- colors.from.values(1:8, use.pheatmap.colors = TRUE)
+```
+
+
+Load data.
+
+```{r load_data}
+transcript.info <- readRDS(here("Data", "RNASeq", "RNASeq_gene_info.RData"))
+ch.coef <- readRDS(here("Results", "chQTL", "chQTL.coef.RDS"))
+ch.lod <- readRDS(here("Results", "chQTL", "chQTL.lod.RDS"))
+e.coef <- readRDS(here("Results", "eQTL", "eQTL.coef.RDS"))
+e.lod <- readRDS(here("Results", "eQTL", "eQTL.lod.RDS"))
+chrom.mats <- readRDS(here("Results", "ChromHMM", "008_states_C", "Chromatin_States_8_full_gene_1000.RData"))
+gene.names <- transcript.info[match(rownames(e.lod), transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
+```
+
+The following plot compares the maximum LOD score from each chromatin 
+eQTL to the LOD scores from the cis genetic haplotypes. In all cases, the
+chromatin LOD scores are either the same as the eQTL LOD scores or less.
+There are no instances where the chromatin explains the expression better
+than the genetics.
+
+```{r max_lod}
+max.ch.lod <- sapply(ch.lod, max)
+plot(e.lod, max.ch.lod, xlab = "eQTL LOD score", 
+ylab = "Maximum Chromatin eQTL LOD Score")
+abline(0,1)
+```
+
+The following plot shows the distribution of the difference between the
+genetic eQTL and the chromatin eQTL.
+
+```{r lod_diff}
+hist(e.lod-max.ch.lod, breaks = 100)
+```
+
+## Positional Chromatin LOD score
+
+We normalized the transcript position to examine whether high LOD
+scores occurred mostly at the TSS, or at other regions.
+
+It looks as if over all transcripts there is a bias toward higher
+LOD scores near the TSS.
+
+```{r norm_lod}
+norm.ch <- vector(mode = "list", length = length(ch.lod))
+names(norm.ch) <- rownames(e.lod)
+for(x in 1:length(ch.lod)){
+  if(verbose){report.progress(x, length(ch.lod))}
+  if(!is.null(ch.lod[[x]])){
+  norm.ch[[x]] <- center.on.feature(gene.names[x], transcript.info, ch.lod[[x]][,1], 
+  feature = "full")
+  }
+}
+
+lod.by.pos <- plot.centered.vals(norm.ch, seq.by = 0.01, min.representation = 10, 
+ylim = c(0, 25), plot.label = "Mean LOD Score by Position", 
+ylab = "Mean LOD Score", return.means = FALSE)
+abline(v = c(0,1))
+
+```
+
+However, the following plot shows that low LOD score genes tended to 
+have low LOD scores througout, while high LOD score genes tended to 
+have high LOD scores throughout. The overall bias, however, was to
+have higher LOD scores near the TSS.
+
+To make the plot below, we binned the genes by maximum LOD score,
+and showed their average positional score. The color indicates
+the maximum lod score of the group of genes. (red for higher LOD
+scores, blue for lower LOD scores).
+
+The TSS bias looks as if it is mainly for transcripts with middle
+LOD scores. 
+
+There also seem to be a fair number of high LOD scores upstream 
+and downstream of the genes even for genes with relatively low 
+LOD scores.
+
+```{r lod_pos}
+#also look just by high and low LOD score genes
+#the pattern is the same for both, except that high LOD 
+#score genes have higher LOD scores througout the gene 
+#body than low LOD score genes.
+
+lod.thresh = seq(2,100, 2)
+lod.bins <- consec.pairs(lod.thresh)
+lod.col <- colors.from.values(lod.thresh, use.pheatmap.colors = TRUE)
+
+for(l in nrow(lod.bins):1){
+  lod.bin <- which(apply(lod.by.pos, 1, function(x) 
+  max(x, na.rm = TRUE) >= lod.bins[l,1] && max(x, na.rm = TRUE) <= lod.bins[l,2]))
+
+  if(l == nrow(lod.bins)){
+      plot(as.numeric(colnames(lod.by.pos)), colMeans(lod.by.pos[lod.bin,], 
+      na.rm = TRUE), type = "l", ylim = c(0,100), col = lod.col[l],
+      ylab = "Mean LOD Score", xlab = "Relative Genomic Position")
+  }else{
+    if(length(lod.bin) > 10){
+      points(as.numeric(colnames(lod.by.pos)), colMeans(lod.by.pos[lod.bin,], 
+      na.rm = TRUE), type = "l", col = lod.col[l])
+    }
+  }
+}
+abline(v = c(0,1))
+```
+
+
+## Chromatin state coefficients by position
+
+The chromatin states don't appear to have any directionality bias.
+This doesn't make any sense. Should states positively correlated with
+expression in the inbred mice be positively related to expression in the 
+DO mice?
+
+
+
+```{r norm_coef}
+norm.ch.coef <- ch.coef
+names(norm.ch.coef) <- rownames(e.lod)
+for(x in 1:length(ch.coef)){
+  if(verbose){report.progress(x, length(ch.coef))}
+  if(!is.null(ch.coef[[x]])){
+  norm.pos <- center.on.feature(gene.names[x], transcript.info, ch.coef[[x]][,1], 
+  feature = "full")
+  rownames(norm.ch.coef[[x]]) <- names(norm.pos)
+  }
+}
+
+
+all.state.coef <- vector(mode = "list", length = 8)
+names(all.state.coef) <- 1:8
+for(s in 1:8){
+  norm.state <- lapply(norm.ch.coef, function(x) x[,s])
+  all.state.coef[[s]] <- plot.centered.vals(norm.state, seq.by = 0.01, min.representation = 10, 
+  ylim = c(-0.2, 0.2), plot.label = paste("State", s), 
+  ylab = "Mean Coefficient", return.means = FALSE)
+  abline(h = 0, v = c(0,1))
+}
+
+for(s in 1:8){
+  quartz()
+  all.coef <- unlist(lapply(1:nrow(all.state.coef[[s]]), function(x) all.state.coef[[s]][x,]))
+  all.pos <- rep(as.numeric(colnames(all.state.coef[[s]])), nrow(all.state.coef[[s]]))
+  #plot.hexbin(all.pos, all.coef, xbins = 100, main = s)
+  df <- data.frame(cbind(all.pos, all.coef))
+  hist2d(df, main = s)
+  #boxplot(apply(all.state.coef[[s]], 2, abs), cex = 0.5, main = s)
+  #abline(h = 0, col = "red")
+  #abline(v = which(as.numeric(colnames(all.state.coef[[s]])) == 0), col = "red")
+  #abline(v = which(as.numeric(colnames(all.state.coef[[s]])) == 1), col = "red")
+}
+
+
+#the counts of positive and negative coefficients 
+#are exact mirror images. That does not make sense.
+for(s in 1:8){
+  state.coef <- all.state.coef[[s]]
+  pos.state <-  apply(state.coef, 2, function(x) which(x > 0))
+  neg.state <-  apply(state.coef, 2, function(x) which(x < 0))
+  num.neg <- sapply(neg.state, length)
+  num.pos <- sapply(pos.state, length)
+  quartz()
+  plot.new()
+  plot.window(xlim = c(0, length(pos.state)), ylim = c(max(c(num.neg, num.pos))*-1, max(c(num.neg, num.pos))))
+  barplot(num.pos, add = TRUE)
+  barplot(num.neg*-1, add = TRUE)
+  mtext(paste("State", s, "Count of coefficients"), side = 3)
+}
+```
