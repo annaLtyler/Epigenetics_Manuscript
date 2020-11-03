@@ -4,3 +4,6 @@ R -e "rmarkdown::render(here::here('Documents', '2.Analysis', '1.Chromatin_State
 
 
 R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '2.1_chromaprobs.Rmd'))"
+
+
+R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '2.2_chromaprobs_analysis.Rmd'))"

@@ -10,6 +10,7 @@ output:
     toc_float: yes
 ---
 
+## Introduction
 
 The purpose of this workflow is to analyze the results from 2.1_chromaprobs.Rmd
 That workflow imputed local chromatin states for each transcript, and scanned
@@ -22,6 +23,8 @@ library(here);library(qtl2)
 ```
 
 ```{r source_code}
+is.interactive = FALSE
+#is.interactive = TRUE
 all.code.dir <- list.files(here("Code"), full.names = TRUE)
 for(i in 1:length(all.code.dir)){
 	all.fun <- list.files(all.code.dir[i], full.names = TRUE)
@@ -32,7 +35,7 @@ chrom.colors <- colors.from.values(1:8, use.pheatmap.colors = TRUE)
 ```
 
 
-Load data.
+## Load data
 
 ```{r load_data}
 transcript.info <- readRDS(here("Data", "RNASeq", "RNASeq_gene_info.RData"))
@@ -43,6 +46,8 @@ e.lod <- readRDS(here("Results", "eQTL", "eQTL.lod.RDS"))
 chrom.mats <- readRDS(here("Results", "ChromHMM", "008_states_C", "Chromatin_States_8_full_gene_1000.RData"))
 gene.names <- transcript.info[match(rownames(e.lod), transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
 ```
+
+## Genetic and Chromatin eQTL LOD score comparison
 
 The following plot compares the maximum LOD score from each chromatin 
 eQTL to the LOD scores from the cis genetic haplotypes. In all cases, the
@@ -57,11 +62,38 @@ ylab = "Maximum Chromatin eQTL LOD Score")
 abline(0,1)
 ```
 
+## LOD score differences
+
 The following plot shows the distribution of the difference between the
-genetic eQTL and the chromatin eQTL.
+genetic eQTL and the chromatin eQTL. There are a few genes for 
+which the chromatin eQTL has a higher LOD score than the genetic eQTL.
+All of these genes have very low genetic LOD scores, and the chromatin
+LOD scores are not very high either.
 
 ```{r lod_diff}
-hist(e.lod-max.ch.lod, breaks = 100)
+lod.diff <- e.lod-max.ch.lod
+hist(lod.diff, breaks = 100)
+better.chrom.locale <- which(e.lod-max.ch.lod < 0)
+better.chrom.lod.names <- gene.names[better.chrom.locale]
+better.chrom.lod <- e.lod[better.chrom.locale]
+better.chrom.ch.lod <- max.ch.lod[better.chrom.locale]
+```
+
+There are other genes whose LOD scores from the genetics and the chromatin
+are vastly different. There can still be a big signal from the chromatin,
+it's just not as big as the genetic signal.
+
+```{r}
+big.lod.diff <- 20
+big.diff.locale <- which(lod.diff > big.lod.diff)
+big.diff.chrom.lod.names <- gene.names[big.diff.locale]
+big.diff.chrom.lod <- e.lod[big.diff.locale]
+big.diff.chrom.ch.lod <- max.ch.lod[big.diff.locale]
+
+#plot(big.diff.chrom.lod, big.diff.chrom.ch.lod)
+#abline(0,2)
+#enrich <- gost(big.diff.chrom.lod.names, organism = "mmusculus")
+#plot.enrichment(enrich, order.by = "p_value", num.terms = 30)
 ```
 
 ## Positional Chromatin LOD score
@@ -69,14 +101,18 @@ hist(e.lod-max.ch.lod, breaks = 100)
 We normalized the transcript position to examine whether high LOD
 scores occurred mostly at the TSS, or at other regions.
 
-It looks as if over all transcripts there is a bias toward higher
-LOD scores near the TSS.
+It actually appears that there is a dip in average LOD score right
+at the TSS, and a peak in average LOD score in the initial part of 
+the gene after the TSS.
 
 ```{r norm_lod}
-norm.ch <- vector(mode = "list", length = length(ch.lod))
-names(norm.ch) <- rownames(e.lod)
-for(x in 1:length(ch.lod)){
-  if(verbose){report.progress(x, length(ch.lod))}
+test.idx <- 1:length(ch.lod)
+#test.idx <- big.diff.locale
+
+norm.ch <- vector(mode = "list", length = length(ch.lod[test.idx]))
+names(norm.ch) <- rownames(e.lod)[test.idx]
+for(x in 1:length(test.idx)){
+  if(is.interactive){report.progress(x, length(test.idx))}
   if(!is.null(ch.lod[[x]])){
   norm.ch[[x]] <- center.on.feature(gene.names[x], transcript.info, ch.lod[[x]][,1], 
   feature = "full")
@@ -84,28 +120,16 @@ for(x in 1:length(ch.lod)){
 }
 
 lod.by.pos <- plot.centered.vals(norm.ch, seq.by = 0.01, min.representation = 10, 
-ylim = c(0, 25), plot.label = "Mean LOD Score by Position", 
+ylim = c(0, 10), plot.label = "Mean LOD Score by Position", 
 ylab = "Mean LOD Score", return.means = FALSE)
 abline(v = c(0,1))
-
 ```
 
-However, the following plot shows that low LOD score genes tended to 
-have low LOD scores througout, while high LOD score genes tended to 
-have high LOD scores throughout. The overall bias, however, was to
-have higher LOD scores near the TSS.
-
-To make the plot below, we binned the genes by maximum LOD score,
-and showed their average positional score. The color indicates
-the maximum lod score of the group of genes. (red for higher LOD
-scores, blue for lower LOD scores).
-
-The TSS bias looks as if it is mainly for transcripts with middle
-LOD scores. 
-
-There also seem to be a fair number of high LOD scores upstream 
-and downstream of the genes even for genes with relatively low 
-LOD scores.
+We binned the genes by LOD score, and plotted the same curve as
+above for each bin. The plot below shows that genes across the 
+range of LOD scores all have this dip in LOD score at the TSS.
+The color indicates the maximum lod score of the group of genes. 
+(red for higher LOD scores, blue for lower LOD scores).
 
 ```{r lod_pos}
 #also look just by high and low LOD score genes
@@ -136,20 +160,38 @@ abline(v = c(0,1))
 ```
 
 
-## Chromatin state coefficients by position
+## Chromatin state coefficients by position {.tabset .tabset-fade .tabset-pills}
 
-The chromatin states don't appear to have any directionality bias.
-This doesn't make any sense. Should states positively correlated with
-expression in the inbred mice be positively related to expression in the 
-DO mice?
+In the figures below, we show the average coefficients for each state 
+across the gene body. We only include non-zero coefficients. This tells
+us the effect of each state at each position when it actually varies
+at that position. 
 
+I had done this earlier using all coefficients, and it looked as if state
+7 had a dip in effect at the TSS. It does, but only because it is invariant
+at the TSS across strains for most genes. We should also have a measure
+of presence and variance across the gene body.
 
+The chromatin states have the same directionality biases that we observed
+in the inbred strains. For example, states 1 and 2 are negatively associated
+with expression, and state 7 is positively associated with expression.
 
-```{r norm_coef}
+We see *very* similar spatial pattern to that seen in the inbred mice.
+
+State 8 coefficients dip right at the TSS.
+State 7 coefficients are high everywhere, but take a dip at the TSS.
+  This is a little different from the inbred mice, where the dip seems 
+  to occur upstream of the TSS.
+State 5 coefficients were high in the body of the gene
+State 4 coefficients were pretty close to 0 everywhere
+State 3 coefficients took a little dip by the TSS
+State 1 and state 2 coefficients were low everywhere, especially near the TSS
+
+```{r norm_coef, results = "asis", fig.width = 10, fig.height = 4}
 norm.ch.coef <- ch.coef
 names(norm.ch.coef) <- rownames(e.lod)
 for(x in 1:length(ch.coef)){
-  if(verbose){report.progress(x, length(ch.coef))}
+  if(is.interactive){report.progress(x, length(ch.coef))}
   if(!is.null(ch.coef[[x]])){
   norm.pos <- center.on.feature(gene.names[x], transcript.info, ch.coef[[x]][,1], 
   feature = "full")
@@ -161,40 +203,161 @@ for(x in 1:length(ch.coef)){
 all.state.coef <- vector(mode = "list", length = 8)
 names(all.state.coef) <- 1:8
 for(s in 1:8){
+  if(is.interactive){quartz(width = 10, height = 4)}
+  cat("### State", s, "\n")
   norm.state <- lapply(norm.ch.coef, function(x) x[,s])
-  all.state.coef[[s]] <- plot.centered.vals(norm.state, seq.by = 0.01, min.representation = 10, 
-  ylim = c(-0.2, 0.2), plot.label = paste("State", s), 
-  ylab = "Mean Coefficient", return.means = FALSE)
+  non.missing.state <- norm.state
+  for(i in 1:length(norm.state)){
+    zero.locale <- which(non.missing.state[[i]] == 0)
+    if(length(zero.locale) > 0){
+      non.missing.state[[i]][zero.locale] <- NA
+    }
+  }
+  all.state.coef[[s]] <- plot.centered.vals(non.missing.state, seq.by = 0.01, min.representation = 10, 
+  ylim = c(-0.3, 0.3), plot.label = paste("State", s), 
+  ylab = "Mean Non-Zero Coefficient", return.means = FALSE)
   abline(h = 0, v = c(0,1))
-}
-
-for(s in 1:8){
-  quartz()
-  all.coef <- unlist(lapply(1:nrow(all.state.coef[[s]]), function(x) all.state.coef[[s]][x,]))
-  all.pos <- rep(as.numeric(colnames(all.state.coef[[s]])), nrow(all.state.coef[[s]]))
-  #plot.hexbin(all.pos, all.coef, xbins = 100, main = s)
-  df <- data.frame(cbind(all.pos, all.coef))
-  hist2d(df, main = s)
-  #boxplot(apply(all.state.coef[[s]], 2, abs), cex = 0.5, main = s)
-  #abline(h = 0, col = "red")
-  #abline(v = which(as.numeric(colnames(all.state.coef[[s]])) == 0), col = "red")
-  #abline(v = which(as.numeric(colnames(all.state.coef[[s]])) == 1), col = "red")
-}
-
-
-#the counts of positive and negative coefficients 
-#are exact mirror images. That does not make sense.
-for(s in 1:8){
-  state.coef <- all.state.coef[[s]]
-  pos.state <-  apply(state.coef, 2, function(x) which(x > 0))
-  neg.state <-  apply(state.coef, 2, function(x) which(x < 0))
-  num.neg <- sapply(neg.state, length)
-  num.pos <- sapply(pos.state, length)
-  quartz()
-  plot.new()
-  plot.window(xlim = c(0, length(pos.state)), ylim = c(max(c(num.neg, num.pos))*-1, max(c(num.neg, num.pos))))
-  barplot(num.pos, add = TRUE)
-  barplot(num.neg*-1, add = TRUE)
-  mtext(paste("State", s, "Count of coefficients"), side = 3)
+  cat("\n\n")
 }
 ```
+
+## Effect size of chromatin does not depend on position {.tabset .tabset-fade .tabset-pills}
+
+Do the dips we see above represent dips toward zero or away from zero?
+Below we show the absolute value of the average coefficient to get a better
+handle on which states have stronger effects near the TSS, and which states
+have weaker effects.
+
+The strength of the effect of state 7 takes a dip at the TSS.
+The strength of the effect of state 1 also take a bit of a dip right at
+the TSS, but is high on either side.
+The average effect of state 4 goes up a bit at the TSS.
+States 2, 3, 5, and 8 are all fairly level across the gene.
+
+
+```{r coef_magnitude, results = "asis", fig.width = 10, fig.height = 4}
+all.state.mag <- vector(mode = "list", length = 8)
+names(all.state.mag) <- 1:8
+for(s in 1:8){
+  if(is.interactive){quartz(width = 10, height = 4)}
+  cat("### State", s, "\n")
+  norm.state <- lapply(norm.ch.coef, function(x) x[,s])
+  abs.state <- lapply(norm.state, function(x) if(length(x) > 0){abs(x)}else{NA})
+  non.missing.state <- abs.state
+  for(i in 1:length(norm.state)){
+    zero.locale <- which(non.missing.state[[i]] == 0)
+    if(length(zero.locale) > 0){
+      non.missing.state[[i]][zero.locale] <- NA
+    }
+  }
+  all.state.mag[[s]] <- plot.centered.vals(non.missing.state, seq.by = 0.01, min.representation = 10, 
+  ylim = c(0, 0.5), plot.label = paste("State", s), 
+  ylab = "Mean Non-Zero Coefficient Magnitude", return.means = FALSE)
+  abline(h = 0, v = c(0,1))
+  #abline(h = mean(all.state.mag[[s]], na.rm = TRUE))
+  cat("\n\n")
+}
+
+cat("### Mean State Effect Size\n")
+barplot(sapply(all.state.mag, function(x) mean(x, na.rm = TRUE)), col = chrom.colors,
+main = "Mean Effect Magnitude")
+cat("\n")
+```
+
+## State Variation by Position {.tabset .tabset-fade .tabset-pills}
+
+The figures below show the proportion of the genes at any given 
+gene body position that have variation in the given state across
+strains. 
+
+What these figures show is that the placement of state 7 is highly 
+consistent right at the TSS because there is a dip in variation right 
+at that point. Variation then increases later in the body of the gene. 
+This is the lowest value seen for any state, suggesting its placement
+at the TSS is important to transcription. 
+
+On the other hand, the variation in state 8 goes up at the TSS, suggesting
+that it may play a more regulatory role in that position.
+
+Other states are much less conserved relative to the position in the gene
+body. States 4, 5, 6 have high variation throught the gene body. 
+
+State 1 is an interesting one. We know from the analysis in the 
+inbred animals that its abundance is very low near the TSS and then 
+increases as you move toward the TES. However the proportion of genes
+with variation in that state across strains decreases as you move toward
+the TSS.
+
+```{r state_variance, results = "asis", fig.width = 10, fig.height = 4}
+all.state.var <- vector(mode = "list", length = 8)
+names(all.state.var) <- 1:8
+for(s in 1:8){
+  if(is.interactive){quartz(width = 10, height = 4)}
+  cat("### State", s, "\n")
+  norm.state <- lapply(norm.ch.coef, function(x) x[,s])
+  non.missing.state <- norm.state
+  for(i in 1:length(norm.state)){
+    non.zero.locale <- which(non.missing.state[[i]] != 0)
+    if(length(non.zero.locale) > 0){
+      non.missing.state[[i]][non.zero.locale] <- 1
+    }
+  }
+  all.state.var[[s]] <- plot.centered.vals(non.missing.state, seq.by = 0.01, min.representation = 10, 
+  ylim = c(0, 1.1), plot.label = paste("State", s), 
+  ylab = "Proportion Genes With Variation in State", return.means = FALSE)
+  abline(h = 0, v = c(0,1))
+  cat("\n\n")
+}
+```
+
+## Putting together position, variation, and effect
+
+To assess the involvement of a given chromatin state in regulation of
+transcription, we looked at whether the state varied across strains
+at each position, what the magnitude of the effect on expression was
+at each position, and what the direction of the effect on expression 
+was at each position. 
+
+### Magnitude of state effect does not depend on position
+
+All states had consistent magnitude of effect across the gene body.
+That is, when they were present, and when there was variation in that
+state, the effect did not depend on position in the gene body. There
+are lots of wiggles in the lines, but no stark trends. 
+
+```{r testing, eval = FALSE}
+s = 8
+one.state.coef <- all.state.coef[[s]]
+one.state.mag <- all.state.mag[[s]]
+one.state.var <- all.state.var[[s]]
+
+common.locale <- Reduce("intersect", list(colnames(one.state.coef), colnames(one.state.mag),
+colnames(one.state.var)))
+coef.locale <- match(common.locale, colnames(one.state.coef))
+mag.locale <- match(common.locale, colnames(one.state.mag))
+var.locale <- match(common.locale, colnames(one.state.var))
+
+mean.coef <- colMeans(one.state.coef[,coef.locale], na.rm = TRUE)
+mean.var <- colMeans(one.state.var[,var.locale], na.rm = TRUE)
+mean.mag <- colMeans(one.state.mag[,mag.locale], na.rm = TRUE)
+pairs(cbind(mean.coef, mean.var, mean.mag))
+```
+
+### There is low variation in chromatin state at the TSS
+
+There is a dip in LOD score right at the TSS, suggesting that this 
+position is not used much to regulate variations in strain-specific
+expression. We see that state 7 is very consistently represented at
+this position across strains. Where there is variation in this state
+at the TSS, it has a positive effect on expression.
+
+
+
+
+
+State 7 is very consistently represented at the TSS, and has very 
+little variation across strains at that position. When state 7 does
+vary at the TSS, 
+
+Further on in
+the gene body it varies more.

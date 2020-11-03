@@ -172,39 +172,7 @@ get_map <- function(gene.id, map_type = c("chromatin", "genotype")){
   return(one.map)
 }
 
-plot.coef <- function(scan1.results, gene.id = NULL, coef.type = c("chromatin", "genotype")){
-  coef.type <- coef.type[1]
-  if(coef.type == "genotype"){
-    cols <- CCcolors
-    legend.labels <- LETTERS[1:8]
-  }else{
-    cols <- chrom.colors
-    legend.labels <- paste("State", 1:8)
-  }
-  just.coef <- scan1.results[,1:8]
-  ymin <- min(just.coef, na.rm = TRUE);ymax = max(just.coef, na.rm = TRUE)
-  coords <- suppressWarnings(as.numeric(rownames(just.coef)))
-  if(all(is.na(coords))){
-    coords <- as.numeric(sapply(strsplit(rownames(just.coef), "_"), function(x) x[2]))
-  }
-  xmin <- min(coords); xmax <- max(coords)
-  plot.new()
-  plot.window(xlim = c(xmin, xmax), ylim = c(ymin, ymax))
-  for(s in 1:ncol(just.coef)){
-    points(coords, just.coef[,s], col = cols[s], type = "l", lwd = 3)
-  }
-  axis(1);axis(2)
-  mtext("Genomic Position", side = 1, line = 2.5)
-  mtext("Coefficient", side = 2, line = 2.5)
-  if(!is.null(gene.id)){
-    gene.locale <- which(transcript.info[,"ensembl_gene_id"] == gene.id)[1]
-    gene.name <- transcript.info[gene.locale,"external_gene_name"]
-    mtext(gene.name, side = 3)
-    gene.start <- transcript.info[gene.locale, "start_position"]    
-    gene.end <- transcript.info[gene.locale, "end_position"]    
-    abline(v = c(gene.start, gene.end))
-  }
-}
+
 ```
 
 Run R/qtl2 on the chromatin probabilities for each transcript.
@@ -256,11 +224,11 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
   sink(here("progress.txt"))
 
   #for each remaining transcript
-  #for(i in 1376:1378){
+  #for(i in 1:100){
   for(i in start.at:length(common.transcripts)){
     print(i)
     if(is.interactive){report.progress(i, length(common.transcripts))}
-    #gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == "Dzip1l"),"ensembl_gene_id"][1]
+    #gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == "Rtca"),"ensembl_gene_id"][1]
     #i <- which(common.transcripts == gene.id)
     gene.id <- common.transcripts[i]
     expr.locale <- which(colnames(expr) == gene.id)
@@ -292,12 +260,12 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
     #test.state = 7
     #state.mat <- chrom.geno[[1]][,test.state,]
     #state.total <- rowSums(state.mat)
-    #plot.with.model(state.prop, expr[,expr.locale], xlab = "state total", ylab = "expression")
+    #plot.with.model(state.total, expr[,expr.locale], xlab = "state total", ylab = "expression")
     #expr.df <- data.frame(expr[,expr.locale])
     #pheatmap(state.mat, annotation_row = expr.df, show_rownames = FALSE, cluster_cols = FALSE)
 
     if(is.interactive){
-      quartz(width = 10, height = 7)
+      quartz(width = 10, height = 6.5)
       layout.mat <- matrix(c(1,0, 2,3,4,6,5,0), ncol = 2, byrow = TRUE)
       layout(layout.mat, widths = c(1,0.4), heights = c(0.3, 1,1,1))
       par(mar = c(0,4,0,4))
@@ -306,7 +274,7 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
       legend(0,0.5, fill = chrom.colors, legend = paste("State", 1:num.states), 
       horiz = TRUE, cex = 0.7, adj = 0)
       par(mar = c(2,4,2,4))
-      plot.coef(chrom.coef[[i]], gene.id, "chromatin")
+      plot.coef(chrom.coef[[i]], gene.id, transcript.info, "chromatin")
       ordered.coef <- sort(geno.coef[i,])
       ordered.coef.names <- strain.key[match.order(names(ordered.coef), 
       strain.key[,1], strain.key),1]
