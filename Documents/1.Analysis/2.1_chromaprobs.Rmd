@@ -229,8 +229,8 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
   sink(here("progress.txt"))
 
   #for each remaining transcript
-  for(i in 1:100){
-  #for(i in start.at:length(common.transcripts)){
+  #for(i in 1:100){
+  for(i in start.at:length(common.transcripts)){
     print(i)
     if(is.interactive){report.progress(i, length(common.transcripts))}
     #gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == "Dynlt1c"),"ensembl_gene_id"][1]
@@ -253,14 +253,14 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
     chrom.lod[[i]] <- scan1(chrom.geno, expr[,expr.locale], addcovar = covar)  
     chrom.coef[[i]] <- scan1coef(genoprobs = chrom.geno, pheno = expr[,expr.locale], 
     addcovar = covar)
-    chrom.models <- apply(chrom.geno[[1]], 3, function(x) lm(expr[,expr.locale]~x))
+    chrom.models <- apply(chrom.geno[[1]], 3, function(x) lm(expr[,expr.locale]~x+covar))
     ch.r2 <- sapply(chrom.models, function(x) summary(x)$adj.r.squared)
     chrom.r2[[i]] <- ch.r2
 
     #scan eQTL
     geno.geno <- get_one_geno(gene.id, "genotypes")
     geno.lod.results <- scan1(geno.geno, expr[,expr.locale], addcovar = covar)
-    geno.r2[i] <- summary(lm(expr[,expr.locale]~geno.geno[[1]][,,1]))$adj.r.squared
+    geno.r2[i] <- summary(lm(expr[,expr.locale]~geno.geno[[1]][,,1]+covar))$adj.r.squared
     geno.lod[i] <- geno.lod.results[1,1]
     geno.coef.results <- scan1coef(genoprobs = geno.geno, pheno = expr[,expr.locale], 
     addcovar = covar)
@@ -312,15 +312,19 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
     if(i %% save.every == 0){
       saveRDS(chrom.lod, chrom.lod.file)
       saveRDS(chrom.coef, chrom.coef.file)
+      saveRDS(chrom.r2, chrom.r2.file)
       saveRDS(geno.lod, geno.lod.file)
       saveRDS(geno.coef, geno.coef.file)
+      saveRDS(geno.r2, geno.r2.file)
     }
   }
   #also save at the end of everything.
   saveRDS(chrom.lod, chrom.lod.file)
   saveRDS(chrom.coef, chrom.coef.file)
+  saveRDS(chrom.r2, chrom.r2.file)
   saveRDS(geno.lod, geno.lod.file)
   saveRDS(geno.coef, geno.coef.file)
+  saveRDS(geno.r2, geno.r2.file)
 }
 
 sink(NULL)
@@ -328,7 +332,9 @@ sink(NULL)
 
 ```{r testing, eval = FALSE}
 max.chrom.r2 <- sapply(chrom.r2, function(x) max(x, na.rm = TRUE))
-plot(geno.r2, max.chrom.r2);abline(0,1)
 r2.diff <- geno.r2 - max.chrom.r2
-hist(r2.diff)
+pt.col <- rep("gray", length(r2.diff))
+pt.col[which(r2.diff < 0)] <- "red"
+plot(geno.r2, max.chrom.r2, col = pt.col, pch = 16)
+abline(0,1)
 ```
