@@ -60,6 +60,10 @@ max.ch.lod <- sapply(ch.lod, max)
 plot(e.lod, max.ch.lod, xlab = "eQTL LOD score", 
 ylab = "Maximum Chromatin eQTL LOD Score")
 abline(0,1)
+plot(e.lod, max.ch.lod, xlab = "eQTL LOD score", 
+ylab = "Maximum Chromatin eQTL LOD Score", log = "xy")
+abline(0,1)
+
 ```
 
 ## LOD score differences
