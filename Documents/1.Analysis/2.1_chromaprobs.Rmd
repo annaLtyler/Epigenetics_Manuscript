@@ -330,11 +330,3 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
 sink(NULL)
 ```
 
-```{r testing, eval = FALSE}
-max.chrom.r2 <- sapply(chrom.r2, function(x) max(x, na.rm = TRUE))
-r2.diff <- geno.r2 - max.chrom.r2
-pt.col <- rep("gray", length(r2.diff))
-pt.col[which(r2.diff < 0)] <- "red"
-plot(geno.r2, max.chrom.r2, col = pt.col, pch = 16)
-abline(0,1)
-```

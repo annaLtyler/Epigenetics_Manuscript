@@ -19,7 +19,7 @@ those states for effects on transcription in the DO.
 This workflow compares the eQTL mapped to chromatin and to haplotypes.
   
 ```{r load_libraries, message = FALSE, warning = FALSE, error = FALSE}
-library(here);library(qtl2)
+library(here);library(qtl2);library(gprofiler2)
 ```
 
 ```{r source_code}
@@ -268,8 +268,8 @@ for(s in 1:8){
       non.missing.state[[i]][zero.locale] <- NA
     }
   }
-  all.state.mag[[s]] <- plot.centered.vals(non.missing.state, seq.by = 0.01, min.representation = 10, 
-  ylim = c(0, 0.5), plot.label = paste("State", s), 
+  all.state.mag[[s]] <- plot.centered.vals(non.missing.state, seq.by = 0.01, 
+  min.representation = 10, ylim = c(0, 0.5), plot.label = paste("State", s), 
   ylab = "Mean Non-Zero Coefficient Magnitude", return.means = FALSE)
   abline(h = 0, v = c(0,1))
   #abline(h = mean(all.state.mag[[s]], na.rm = TRUE))
@@ -320,12 +320,25 @@ for(s in 1:8){
       non.missing.state[[i]][non.zero.locale] <- 1
     }
   }
-  all.state.var[[s]] <- plot.centered.vals(non.missing.state, seq.by = 0.01, min.representation = 10, 
-  ylim = c(0, 1.1), plot.label = paste("State", s), 
+  all.state.var[[s]] <- plot.centered.vals(non.missing.state, seq.by = 0.01, 
+  min.representation = 10, ylim = c(0, 1.1), plot.label = paste("State", s), 
   ylab = "Proportion Genes With Variation in State", return.means = FALSE)
   abline(h = 0, v = c(0,1))
   cat("\n\n")
 }
+```
+
+## Genes with variation in state 7 at TSS
+
+We looked at which genes had variation in state 7 at the TSS.
+
+```{r state_seven_tss}
+state.seven.var <- all.state.var[[7]]
+tss.pt <- get.nearest.pt(as.numeric(colnames(state.seven.var)), 0)
+state.var.locale <- which(state.seven.var[,tss.pt] == 1)
+var.id <- rownames(state.seven.var)[state.var.locale]
+enrich <- gost(var.id, organism = "mmusculus")
+plot.enrichment(enrich, order.by = "p_value")
 ```
 
 ## Putting together position, variation, and effect
