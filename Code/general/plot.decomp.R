@@ -8,8 +8,8 @@
 #color.by supercedes cols if specified.
 
 plot.decomp <- function(mat, pc = 2, mean.center = TRUE, 
-scale.col = FALSE, cols = rep("black", nrow(mat)), color.by = NULL, pch = NULL, main = NULL, 
-plot.results = TRUE){
+scale.col = FALSE, cols = rep("black", nrow(mat)), color.by = NULL, 
+pch = NULL, main = NULL, plot.results = TRUE){
 
 	na.rows <- which(apply(mat, 1, function(x) all(!is.na(x))))
 	if(length(na.rows) < nrow(mat)){

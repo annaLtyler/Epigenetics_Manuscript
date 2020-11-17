@@ -19,7 +19,17 @@ those states for effects on transcription in the DO.
 This workflow compares the eQTL mapped to chromatin and to haplotypes.
   
 ```{r load_libraries, message = FALSE, warning = FALSE, error = FALSE}
-library(here);library(qtl2);library(gprofiler2)
+library(here);library(qtl2);library(gprofiler2);library(stringr)
+library(msigdbr);library(fgsea);library(pheatmap);library(biomaRt)
+```
+
+```{r load_biomart}
+all.var <- ls()
+lib.loaded <- as.logical(length(which(all.var == "mus")))
+if(!lib.loaded){
+  mus <- useMart("ENSEMBL_MART_ENSEMBL", dataset = "mmusculus_gene_ensembl", 
+  host = "may2017.archive.ensembl.org")
+}
 ```
 
 ```{r source_code}
@@ -48,6 +58,40 @@ e.r2 <- readRDS(here("Results", "eQTL", "eQTL.R2.RDS"))
 
 chrom.mats <- readRDS(here("Results", "ChromHMM", "008_states_C", "Chromatin_States_8_full_gene_1000.RData"))
 gene.names <- transcript.info[match(rownames(e.lod), transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
+chrom.states <- readRDS(here("Data", "chQTL", "Expanded_Chromatin.RDS"))
+
+do.data <- load(here("Data", "DOQTL", "Svenson_DO850_for_eQTL_viewer_v9.RData"))
+expr <- dataset.mrna$data$rz
+expr.norm <- dataset.mrna$data$norm
+covar <- dataset.mrna$covar.matrix
+diet.locale <- lapply(c(0,1), function(x) which(covar[,"diethf"] == x))
+transcript.haplotypes <- readRDS(here("Data", "DOQTL", "transcript.haplotypes.RDS"))
+
+strain.key <- read.table(here("Data", "support_files", "strain.color.table.txt"), 
+sep = "\t", stringsAsFactors = FALSE, comment.char = "*")
+
+```
+
+### Differential Expression by Diet
+
+We calculated which genes were differentially expressed between the chow and HF 
+animals. Wow, almost every gene is differentially expressed. I'm not sure how 
+this will help...
+
+```{r deg_diet}
+diff.expr.file <- here("Results", "eQTL", "Differential.Expression.p.RDS")
+if(!file.exists(diff.expr.file)){
+  all.diff.p <- apply(expr.norm, 2, function(x) summary(aov(x~covar[,c(1,3:6)]+covar[,"diethf"]))[[1]][,"Pr(>F)"][2])
+  p.adj <- p.adjust(all.diff.p, "hochberg")
+  #qqunif.plot(p.adj)
+  adj.expr <- adjust(expr.norm, covar[,c(1,3:6)])
+  diff.meds <- t(apply(adj.expr, 2, function(x) sapply(c(0,1), function(y) median(x[which(covar[,"diethf"] == y)]))))
+  colnames(diff.meds) <- c("Chow-Mean", "HF-Mean")
+  diff.table <- cbind(diff.meds, p.adj)
+  saveRDS(diff.table, diff.expr.file)
+}else{
+  diff.table <- readRDS(diff.expr.file)
+}
 ```
 
 ## Genetic and Chromatin eQTL LOD score comparison
@@ -58,60 +102,282 @@ chromatin LOD scores are either the same as the eQTL LOD scores or less.
 There are no instances where the chromatin explains the expression better
 than the genetics.
 
-```{r max_lod}
-max.ch.lod <- sapply(ch.lod, function(x) max(x, na.rm = TRUE))
-plot(e.lod, max.ch.lod, xlab = "eQTL LOD score", 
-ylab = "Maximum Chromatin eQTL LOD Score")
-abline(0,1)
-plot(e.lod, max.ch.lod, xlab = "eQTL LOD score", 
-ylab = "Maximum Chromatin eQTL LOD Score", log = "xy")
-abline(0,1)
+```{r max_lod, fig.width = 5, fig.height = 5}
+if(is.interactive){quartz(width = 5, height = 5)}
+max.ch.lod <- t(sapply(ch.lod, function(x) if(length(x) > 1){apply(x, 2, function(y) max(y, na.rm = TRUE))}else{rep(NA, 3)}))
+lod.diff <- e.lod - max.ch.lod
+boxplot(lod.diff)
+par(mfrow = c(1,3))
+for(i in 1:3){
+  pt.col <- rep("gray", length(lod.diff[,i]))
+  pt.col[which(lod.diff[,i] < 0)] <- "red"
+  plot(e.lod[,i], max.ch.lod[,i], xlab = "eQTL LOD score", cex = 0.5,
+  ylab = "Maximum Chromatin eQTL LOD Score", pch = 16, col = pt.col,
+  main = colnames(max.ch.lod)[i])
+  abline(0,1)
+}
 ```
 
 ## Genetic and Chromatin R2 Comparison
 
 We also calculated the R2 for each linear model using either haplotype
 probabilities or chromatin probabilities plus covariates to explain 
-transcript level. This way we can get a better sense of how much variance
+transcript level. This way we can get a sense of how much variance
 in the expression each type of data is explaining.
 
-```{r max_r2}
-max.ch.r2 <- sapply(ch.r2, function(x) max(x, na.rm = TRUE))
-r2.diff <- geno.r2 - max.ch.r2
-pt.col <- rep("gray", length(r2.diff))
-pt.col[which(r2.diff < 0)] <- "red"
-plot(e.r2, max.ch.r2, xlab = "eQTL R2", 
-ylab = "Maximum Chromatin eQTL R2", col = pt.col, pch = 16)
-abline(0,1)
+The chromatin variance explained and genetics variance explained are 
+very highly correlated. There are many cases in which the chromatin does
+not explain as much variance as the genetics. There are also cases in 
+which the chromatin explains more variance, but all of these cases 
+are probably within the error of the model. There are not outstanding
+cases in which the chromatin explains a lot more than the genetics.
+
+```{r max_r2, fig.width = 5, fig.height = 5}
+if(is.interactive){quartz(width = 5, height = 5)}
+max.ch.r2 <- t(sapply(ch.r2, function(x) if(length(x) == 0){return(rep(NA, 3))}else{apply(x, 2, function(y) max(y, na.rm = TRUE))}))
+r2.diff <- e.r2 - max.ch.r2
+boxplot(r2.diff)
+
+par(mfrow = c(1,3))
+for(i in 1:3){
+  pt.col <- rep("gray", nrow(r2.diff))
+  pt.col[which(r2.diff[,i] < 0)] <- "red"
+  plot(e.r2[,i], max.ch.r2[,i], xlab = "eQTL R2", cex = 0.5,
+  ylab = "Maximum Chromatin eQTL R2", col = "gray", pch = 16,
+  main = colnames(r2.diff)[i])
+  abline(0,1)
+}
 ```
 
 The following plot shows the distribution of the difference in R2 between 
 the genetic eQTL and the chromatin eQTL. 
 
-```{r lod_diff}
+```{r r2_diff}
 r2.diff <- e.r2-max.ch.r2
-hist(r2.diff, breaks = 100)
-better.chrom.locale <- which(e.r2-max.ch.r2 < 0)
-better.chrom.r2.names <- gene.names[better.chrom.locale]
-better.chrom.r2 <- e.r2[better.chrom.locale]
-better.chrom.ch.r2 <- max.ch.r2[better.chrom.locale]
+boxplot(r2.diff)
 ```
 
-There are other genes whose LOD scores from the genetics and the chromatin
-are vastly different. There can still be a big signal from the chromatin,
-it's just not as big as the genetic signal.
+There are some genes for which there is a big genetic eQTL, but very little
+variation in the chromatin. Here we spend some time exploring these 
+mismatched genes. 
+
+## Investigating Genetic and Chromatin Differences {.tabset .tabset-fade .tabset-pills}
+
+We defined genes with a big mismatch between the genetic and chromatin 
+eQTL scores as genes with an R2 difference greater than 0.1. 
+
+
+```{r define_mismatch}
+r2diff.order <- order(r2.diff, decreasing = TRUE)
+big.diff <- gene.names[which(r2.diff > 0.1)]
+```
+
+This set of `r length(big.diff)` genes is highly enriched for
+ribosomal genes. 
+
+```{r mismatch_enrich, fig.height = 10, fig.width = 7}
+enrich <- gost(big.diff, organism = "mmusculus", source = "GO")
+if(is.interactive){quartz(height = 10, width = 7)}
+plot.enrichment.vis(enrich, order.by = "p_value", num.terms = 40)
+```
+
+We looked at the expression of these genes. The expression is not
+very highly correlated.
 
 ```{r}
-big.lod.diff <- 20
-big.diff.locale <- which(lod.diff > big.lod.diff)
-big.diff.chrom.lod.names <- gene.names[big.diff.locale]
-big.diff.chrom.lod <- e.lod[big.diff.locale]
-big.diff.chrom.ch.lod <- max.ch.lod[big.diff.locale]
+big.diff.id <- transcript.info[match(big.diff, transcript.info[,"external_gene_name"]),"ensembl_gene_id"]
+id.locale <- match(big.diff.id, colnames(expr))
+big.diff.expr <- expr[,id.locale]
+pheatmap(cor(big.diff.expr, use = "pairwise.complete.obs"), show_rownames = FALSE, 
+show_colnames = FALSE)
+```
 
-#plot(big.diff.chrom.lod, big.diff.chrom.ch.lod)
-#abline(0,2)
-#enrich <- gost(big.diff.chrom.lod.names, organism = "mmusculus")
-#plot.enrichment(enrich, order.by = "p_value", num.terms = 30)
+We decomposed the expression matrix using PCA. There was no obvious way 
+to cluster the genes into multiple groups, so we mapped the full group.
+
+```{r expr_decomp}
+expr.decomp <- plot.decomp(t(big.diff.expr))
+
+eigengene.decomp <- plot.decomp(big.diff.expr, pc = 2, plot.results = FALSE)
+eigengenes <- eigengene.decomp$u
+rownames(eigengenes) <- rownames(expr)
+```
+
+We scanned these top two eigengenes to look for trans eQTL. Both eigengenes do 
+have QTLs. Both QTLs encompass genes in the expression block. 
+I will take these out and rescan.
+
+```{r scan_eigengenes, results = "asis"}
+eigengene.scan <- scan1(genoprobs, eigengenes, kinship = K, addcovar = covar)
+
+for(i in 1:ncol(eigengenes)){
+  if(is.interactive){quartz(width = 10, height = 3)}
+  par(mar = c(2,4,2,2))
+  plot(eigengene.scan, lodcol = i, map = map, main = paste("Eigengene", i))
+}
+
+qtl.peaks <- find_peaks(eigengene.scan, map = map, threshold = 6, prob = 0.95)
+qtl.genes <- local.genes <- vector(mode = "list", length = nrow(qtl.peaks))
+for(i in 1:length(qtl.genes)){
+  region <- paste0(qtl.peaks[i,3], ":", qtl.peaks[i,6]*1e6, ":", qtl.peaks[i,7]*1e6)
+  qtl.genes[[i]] <- getBM("external_gene_name", "chromosomal_region",  region, mus)
+  local.genes[[i]] <- intersect(qtl.genes[[i]][,1], big.diff)
+}
+```
+
+Take out local genes and rescan. The chromosome 11 QTL is still there,
+but the chromosome 3 QTL dips down a fair bit. Hmm...
+
+```{r scan_eigengenes2, results = "asis"}
+out.genes <- setdiff(big.diff, unlist(local.genes))
+out.id <- transcript.info[match(out.genes, transcript.info[,"external_gene_name"]), "ensembl_gene_id"]
+id.locale <- match(out.id, colnames(expr))
+sub.expr <- expr[,id.locale]
+
+eigengene.decomp <- plot.decomp(sub.expr, pc = 2, plot.results = FALSE)
+eigengenes <- eigengene.decomp$u
+rownames(eigengenes) <- rownames(expr)
+
+eigengene.scan <- scan1(genoprobs, eigengenes, kinship = K, addcovar = covar)
+
+for(i in 1:ncol(eigengenes)){
+  if(is.interactive){quartz(width = 10, height = 3)}
+  par(mar = c(2,4,2,2))
+  plot(eigengene.scan, lodcol = i, map = map, main = paste("Eigengene", i))
+}
+```
+
+
+
+## Investigating Chromatin and Genetic Differences
+
+Because the chromatin was measured in inbred hepatocytes, and DO gene
+expression was measured in whole liver, perhaps the genes for which
+the chromatin and genetic eQTLs differ are genes that are expressed
+in a cell type other than hepatocytes. That cell type might have 
+a genetic eQTL and even have matching chromatin, but we would see
+a different chromatin pattern because we measured chromatin in hepatocytes
+only. 
+
+## GSEA of mismatched genes for cell type specificity {.tabset .tabset-fade .tabset-pills}
+
+Here we investigate whether the genes that have widely diverging eQTL and
+chromatin eQTL LOD scores are primarily expressed in another cell type.
+
+First we create gene lists for each cell type associated with the Aizarani 
+liver cell type data sets.
+
+```{r msigdb}
+#get cell-type specific gene sets (category C8)
+#see https://www.gsea-msigdb.org/gsea/msigdb/genesets.jsp?
+cell.sets <- msigdbr(species = "Mus musculus", category = "C8", subcategory = "")
+cell.genes <- set_to_list(cell.sets, set.name = "AIZARANI")
+```
+
+Then we use each of these as a gene set in gene set enrichment.
+
+```{r gsea}
+#order the genes by the difference in R2 between the genetic
+#and chromatin eQTLs.
+ordered.genes <- r2.diff[r2diff.order]
+names(ordered.genes) <- gene.names[r2diff.order]
+ordered.genes <- ordered.genes[which(!is.na(ordered.genes))]
+
+cell.enrich <- fgsea::fgseaMultilevel(pathways = cell.genes, stats = ordered.genes, 
+  minSize=15, maxSize=600, gseaParam = 1, scoreType = "pos")
+namecol <- which(colnames(cell.enrich) == "pathway")
+path.names <- sapply(strsplit(gsub("AIZARANI_LIVER_", "", cell.enrich[[namecol]]), "_"), function(x) paste(x[2:length(x)], collapse = "_"))
+plot.gsea.results(cell.enrich, "padj", path.names)
+
+leading.genes <- cell.enrich[[8]][which(cell.enrich[[2]] < 0.05)]
+names(leading.genes) <- cell.enrich[[1]][which(cell.enrich[[2]] < 0.05)]
+```
+
+The numerals in this dataset refer to t-SNE clusters. We also merged 
+these clusters to see if there is a more general cell-type signature.s
+
+There is no longer an enrichment if I merge the cell type clusters.
+
+```{r merge_aizarani}
+cell.types <- sapply(strsplit(path.names, "_"), function(x) paste(x[1:(length(x)-1)], collapse = "_"))
+u_cell.types <- unique(cell.types)
+merged.cell.genes <- vector(mode = "list", length = length(u_cell.types))
+names(merged.cell.genes) <- u_cell.types
+for(i in 1:length(u_cell.types)){
+  type.locale <- which(cell.types == u_cell.types[i])
+  merged.genes <- unique(unlist(cell.genes[type.locale]))
+  merged.cell.genes[[i]] <- merged.genes
+}
+
+merged.cell.enrich <- fgsea::fgseaMultilevel(pathways = merged.cell.genes, 
+  stats = ordered.genes, minSize=15, maxSize=600, gseaParam = 1, scoreType = "pos")
+namecol <- which(colnames(cell.enrich) == "pathway")
+plot.gsea.results(merged.cell.enrich, "pval", p.thresh = 1)
+```
+
+## GSEA of mismatched genes for GO terms {.tabset .tabset-fade .tabset-pills}
+
+```{r msigdb_go, results = "asis"}
+#get GO term gene sets
+#see https://www.gsea-msigdb.org/gsea/msigdb/genesets.jsp?
+go.mf <- msigdbr(species = "Mus musculus", category = "C5", subcategory = "GO:MF")
+go.cc <- msigdbr(species = "Mus musculus", category = "C5", subcategory = "GO:CC")
+go.bp <- msigdbr(species = "Mus musculus", category = "C5", subcategory = "GO:BP")
+
+go.mf.genes <- set_to_list(go.mf)
+go.bp.genes <- set_to_list(go.bp)
+go.cc.genes <- set_to_list(go.bp)
+
+go.mf.enrich <- fgsea::fgseaMultilevel(pathways = go.mf.genes, stats = ordered.genes, 
+  minSize=15, maxSize=600, gseaParam = 0)
+go.bp.enrich <- fgsea::fgseaMultilevel(pathways = go.bp.genes, stats = ordered.genes, 
+  minSize=15, maxSize=600, gseaParam = 0)
+go.cc.enrich <- fgsea::fgseaMultilevel(pathways = go.cc.genes, stats = ordered.genes, 
+  minSize=15, maxSize=600, gseaParam = 0)
+
+leading.mf.genes <- go.mf.enrich[[8]][which(go.mf.enrich[[3]] < 0.05)]
+names(leading.mf.genes) <- go.mf.enrich[[1]][which(go.mf.enrich[[3]] < 0.05)]
+leading.bp.genes <- go.mf.enrich[[8]][which(go.bp.enrich[[3]] < 0.05)]
+names(leading.bp.genes) <- go.bp.enrich[[1]][which(go.mf.enrich[[3]] < 0.05)]
+leading.cc.genes <- go.mf.enrich[[8]][which(go.cc.enrich[[2]] < 0.05)]
+```
+
+
+### GO:MF
+```{r gomf_results}
+plot.gsea.results(go.mf.enrich, "padj", p.thresh = 1e-6, plot.label = "GO:MF")
+```
+
+### GO:BP
+```{r gobp_results}
+plot.gsea.results(go.bp.enrich, "padj", p.thresh = 1e-4, plot.label = "GO:BP")
+```
+
+### GO:CC
+```{r gocc_results}
+plot.gsea.results(go.cc.enrich, "padj", p.thresh = 1e-4, plot.label = "GO:CC")
+```
+
+I also tried transcription factor gene lists, and immune gene lists,
+and none had any significant enrichments.
+
+## GSEA of mismatched genes for other things {.tabset .tabset-fade .tabset-pills}
+
+```{r msigdb_tf, results = "asis"}
+#get GO term gene sets
+#see https://www.gsea-msigdb.org/gsea/msigdb/genesets.jsp?
+gene.sets <- msigdbr(species = "Mus musculus", category = "H") #hallmark gene sets
+gene.sets <- msigdbr(species = "Mus musculus", category = "C8") #cell-specific gene sets
+
+gene.lists <- set_to_list(gene.sets)
+gene.enrich <- fgsea::fgseaMultilevel(pathways = gene.lists, stats = ordered.genes, 
+  minSize=15, maxSize=600, gseaParam = 0)
+plot.gsea.results(gene.enrich)
+```
+
+### GTRD
+```{r gtrd_results}
+plot.gsea.results(cell.enrich, "padj", p.thresh = 0.1)
 ```
 
 ## Positional Chromatin LOD score
@@ -216,7 +482,6 @@ for(x in 1:length(ch.coef)){
   rownames(norm.ch.coef[[x]]) <- names(norm.pos)
   }
 }
-
 
 all.state.coef <- vector(mode = "list", length = 8)
 names(all.state.coef) <- 1:8

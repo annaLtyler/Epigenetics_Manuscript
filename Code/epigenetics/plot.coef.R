@@ -33,12 +33,23 @@ coef.type = c("chromatin", "genotype")){
   axis(1);axis(2)
   mtext("Genomic Position", side = 1, line = 2.5)
   mtext("Coefficient", side = 2, line = 2.5)
+  abline(h = 0, col = "gray", lty = 2)
+  
   if(!is.null(gene.id)){
     gene.locale <- which(transcript.info[,"ensembl_gene_id"] == gene.id)[1]
     gene.name <- transcript.info[gene.locale,"external_gene_name"]
+    gene.strand <- transcript.info[gene.locale,"strand"]
     mtext(gene.name, side = 3)
     gene.start <- transcript.info[gene.locale, "start_position"]    
-    gene.end <- transcript.info[gene.locale, "end_position"]    
-    abline(v = c(gene.start, gene.end))
+    gene.end <- transcript.info[gene.locale, "end_position"]
+    
+    plot.new()
+    plot.window(xlim = c(xmin, xmax), ylim = c(0, 1))
+    if(gene.strand == 1){
+      arrows(x0 = gene.start, x1 = gene.end, y0 = 0.5)
+    }else{
+      arrows(x0 = gene.end, x1 = gene.start, y0 = 0.5)
+    }
+    
   }
 }

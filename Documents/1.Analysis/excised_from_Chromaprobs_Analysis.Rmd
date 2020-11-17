@@ -1,0 +1,106 @@
+
+We performed GSEA on this ordered set of genes. We downloaded the mouse 
+prebuilt gene sets from (GO2Msig)[http://www.bioinformatics.org/go2msig/releases/old_prebuilt_sets/prebuilt_sets_september_2013/]
+
+```{r gsea}
+#look at all GO lists simultaneously
+db.file <- here("Data", "GSEA", 
+"Mus_musculus_GSEA_GO_sets_all_symbols_highquality_September_2013.gmt")
+db <- read.gmt(db.file)
+
+ordered.genes <- r2.diff[r2diff.order]
+#for some reason these genes are all in uppercase, even though they are mouse genes
+names(ordered.genes) <- str_to_upper(gene.names[r2diff.order])
+
+
+gsea.file <- here("Results", "GSEA", "GSEA.Perm.Results.RDS")
+nperm = 100
+p = 1 #weight by correlation difference
+ES.thresh = 0.8
+if(!file.exists(gsea.file)){
+  #first run GSEA without puermutations to see which terms 
+  #are worth running permutations on. We will only run 
+  #permutations on terms with very high ES.
+  first.pass <- lapply_pb(db, function(x) gsea(ordered.genes, x, nperm = 0, p = p,
+  min.size = 15, max.size = Inf))
+  max.abs.es <- sapply(first.pass, function(x) if(length(x$Enrichment) > 1){max(abs(x$Enrichment), na.rm = TRUE)})
+  hist(unlist(max.abs.es));abline(v = ES.thresh, col = "red") 
+
+  for.further.testing <- names(which(unlist(max.abs.es) >= ES.thresh))
+  testing.idx <- match(for.further.testing, names(db))
+  
+  if(is.interactive){    
+      gsea.enrich <- lapply_pb(db[testing.idx], 
+      function(x) gsea(ordered.genes, x, nperm = nperm, p = p))
+    }else{
+      gsea.enrich <- lapply(db[testing.idx], 
+      function(x) gsea(ordered.genes, x, nperm = nperm, p = p))
+    }
+  saveRDS(gsea.enrich, gsea.file)
+}else{
+  gsea.enrich <- readRDS(gsea.file)
+}
+
+for(idx in 1:length(gsea.enrich)){
+  go.term <- names(gsea.enrich)[idx]
+  go.locale <- which(names(db) == go.term)
+  if(is.interactive){quartz()}
+  plot_gsea(ordered.genes, go.genes = db[[go.locale]], nperm = 100, p = p, 
+  go.name = go.term)
+}
+
+#top.lists <- vector(mode = "list", length = length(all.enrich))
+#for(i in 1:length(all.enrich)){
+#  enrich.results <- all.enrich[[i]]
+#  top.lists[[i]] <- which(sapply(enrich.results, function(x) if(length(x) == 1){NA}else{max(x[[1]]) > x[[2]]}))
+#}
+
+#db.which <- 1
+#top.cat <- top.lists[[db.which]]
+#for(i in 1:length(top.cat)){
+#for(i in 21:30){
+#  quartz()
+#  test.gsea <- plot_gsea(ordered.genes, go.genes = db.list[[db.which]][[top.cat[i]]],
+#  go.name = names(top.cat)[i], nperm = 100, percentile = 99)
+#}
+
+```
+
+## GSEA of mismatched genes for KEGG, REACTOME, and WIKIPATHWAYS {.tabset .tabset-fade .tabset-pills}
+
+These results reiterate the GO results. Mostly ribosomal stuff and 
+processing of non-coding RNA.
+
+```{r msigdb_kegg, results = "asis"}
+#get GO term gene sets
+#see https://www.gsea-msigdb.org/gsea/msigdb/genesets.jsp?
+kegg <- msigdbr(species = "Mus musculus", category = "C2", subcategory = "CP:KEGG")
+reactome <- msigdbr(species = "Mus musculus", category = "C2", subcategory = "CP:REACTOME")
+wiki <- msigdbr(species = "Mus musculus", category = "C2", subcategory = "CP:WIKIPATHWAYS")
+
+kegg.genes <- set_to_list(kegg)
+reactome.genes <- set_to_list(reactome)
+wiki.genes <- set_to_list(wiki)
+
+kegg.enrich <- fgsea::fgseaMultilevel(pathways = kegg.genes, stats = ordered.genes, 
+  minSize=15, maxSize=600)
+reactome.enrich <- fgsea::fgseaMultilevel(pathways = reactome.genes, stats = ordered.genes, 
+  minSize=15, maxSize=600)
+wiki.enrich <- fgsea::fgseaMultilevel(pathways = wiki.genes, stats = ordered.genes, 
+  minSize=15, maxSize=600)
+```
+
+### KEGG
+```{r kegg_rsults}
+plot.gsea.results(kegg.enrich, "padj", p.thresh = 0.1, plot.label = "KEGG")
+```
+
+### REACTOME
+```{r reactome_results}
+plot.gsea.results(reactome.enrich, "padj", p.thresh = 0.1, plot.label = "reactome")
+```
+
+### WIKIPATHWAYS
+```{r wiki_results}
+plot.gsea.results(wiki.enrich, "padj", p.thresh = 0.1, plot.label = "WIKIPATHWAYS")
+```
