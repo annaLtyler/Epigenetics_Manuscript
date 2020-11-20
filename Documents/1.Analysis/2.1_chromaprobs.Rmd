@@ -142,8 +142,8 @@ if(file.exists(chrom.coef.file)){
 if(start.at < length(common.transcripts)){ #if we haven't scanned all the transcripts yet
   sink(here("progress.txt"))
   #for each remaining transcript
-  for(i in 101:200){
-  #for(i in start.at:length(common.transcripts)){
+  #for(i in 101:200){
+  for(i in start.at:length(common.transcripts)){
     print(i)
     if(is.interactive){report.progress(i, length(common.transcripts))}
     #gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == "Irf5"),"ensembl_gene_id"][1]
