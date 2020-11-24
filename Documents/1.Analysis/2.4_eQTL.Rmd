@@ -34,7 +34,8 @@ covar <- dataset.mrna$covar.matrix
 Run the eQTL scan.
 
 ```{r run_eqtl}
-scan1.result <- scan1(genoprobs, expr[,1:10], kinship = K, addcovar = covar)
+scan1.result <- scan1(genoprobs, expr[,1:5], kinship = K, addcovar = covar,
+cores = 0)
 
 saveRDS(scan1.result, here("Results", "eQTL", "Full.Transcriptome.RDS"))
 ```
