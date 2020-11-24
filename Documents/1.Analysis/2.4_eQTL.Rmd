@@ -67,10 +67,11 @@ if(!file.exists(trans.locus.file)){
     chr <- annots[i,3]
     gene.start <- annots[i,4]
     gene.end <- annots[i,5]
-    
     nearest.marker <- annots[i,8]
     if(!is.na(nearest.marker)){
       cis.lod <- scan1.result[nearest.marker,i]
+    }else{
+      cis.lod <- "X"
     }
 
     #check for trans loci on other chromosomes
@@ -104,10 +105,30 @@ if(!file.exists(trans.locus.file)){
     }
 
     all.trans.loci <- c(not.chr.trans, up.chr.trans, down.chr.trans)
-    trans.loci[[i]] <- all.trans.loci
+    result <- list("cis.LOD" = cis.lod, "trans.LOD" = all.trans.loci)
+    trans.loci[[i]] <- result
   }
   saveRDS(trans.loci, trans.locus.file)
 }
+```
 
-barplot(sapply(trans.loci, length))
+Do a bit of analysis.
+
+```{r rel_strength}
+compare.lod <- function(locus.results){
+  cis.lod <- NA; max.trans <- NA
+  if(length(locus.results) > 1){
+    cis.lod <- locus.results[[1]]
+    trans.lod <- locus.results[[2]]
+    if(length(trans.lod) > 0){
+      max.trans <- max(trans.lod)
+    }
+  }
+  result <- c("cis" = cis.lod, "trans" = max.trans)
+}
+
+lod.table <- t(sapply(trans.loci, compare.lod))
+plot(as.numeric(lod.table[,1]), as.numeric(lod.table[,2]),
+xlab = "cis LOD", ylab = "Maximum trans LOD")
+abline(0,1)
 ```
