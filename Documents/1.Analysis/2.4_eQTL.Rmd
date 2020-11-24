@@ -44,10 +44,14 @@ if(!file.exists(scan1.file)){
 }
 ```
 
-Detect transcripts with trans eQTL.
+Detect transcripts with trans eQTL. Because this data set includes 
+early DO generations, even 10 Mb does not get outside of some big 
+eQTL, so we will only look for trans eQTL on chromsomes other than 
+the one encoding the transcript.
 
 ```{r trans_eQTL}
-lod.thresh = 6
+lod.thresh = 8
+check.same.chr <- FALSE
 Mb.buffer = 10 #miminum distance of a trans effect
 annots <- dataset.mrna$annot.mrna
 scan1.markers <- rownames(scan1.result)
@@ -85,26 +89,30 @@ if(!file.exists(trans.locus.file)){
       not.chr.trans <- NULL
     }
 
-    #check for trans loci on the same chromsome
-    chr.locale <- which(scan1.chr == chr)
-    chr.pos <- as.numeric(scan1.pos[chr.locale])/1e6
-    upstream <- which(chr.pos < (gene.start - Mb.buffer))
-    if(length(upstream) > 0){
-      up.chr.hits <- which(scan1.result[chr.locale[upstream],i] > lod.thresh)
-      up.chr.trans <- scan1.result[chr.locale[upstream[up.chr.hits]],i]
+    if(check.same.chr){
+      #check for trans loci on the same chromsome
+      chr.locale <- which(scan1.chr == chr)
+      chr.pos <- as.numeric(scan1.pos[chr.locale])/1e6
+      upstream <- which(chr.pos < (gene.start - Mb.buffer))
+      if(length(upstream) > 0){
+        up.chr.hits <- which(scan1.result[chr.locale[upstream],i] > lod.thresh)
+        up.chr.trans <- scan1.result[chr.locale[upstream[up.chr.hits]],i]
+      }else{
+        up.chr.trans <- NULL
+      }
+
+      downstream <- which(chr.pos > (gene.start + Mb.buffer))
+      if(length(downstream) > 0){
+        down.chr.hits <- which(scan1.result[chr.locale[downstream],i] > lod.thresh)
+        down.chr.trans <- scan1.result[chr.locale[downstream[down.chr.hits]],i]
+      }else{
+        down.chr.trans <- NULL
+      }
+      all.trans.loci <- c(not.chr.trans, up.chr.trans, down.chr.trans)
     }else{
-      up.chr.trans <- NULL
+      all.trans.loci <- not.chr.trans
     }
 
-    downstream <- which(chr.pos > (gene.start + Mb.buffer))
-    if(length(downstream) > 0){
-      down.chr.hits <- which(scan1.result[chr.locale[downstream],i] > lod.thresh)
-      down.chr.trans <- scan1.result[chr.locale[downstream[down.chr.hits]],i]
-    }else{
-      down.chr.trans <- NULL
-    }
-
-    all.trans.loci <- c(not.chr.trans, up.chr.trans, down.chr.trans)
     result <- list("cis.LOD" = cis.lod, "trans.LOD" = all.trans.loci)
     trans.loci[[i]] <- result
   }
@@ -131,4 +139,30 @@ lod.table <- t(sapply(trans.loci, compare.lod))
 plot(as.numeric(lod.table[,1]), as.numeric(lod.table[,2]),
 xlab = "cis LOD", ylab = "Maximum trans LOD")
 abline(0,1)
+
+write.table(lod.table, here("Results", "eQTL", "cis.trans.LOD.table.RDS"))
+```
+
+Spot check a few with large trans eQTL.
+
+```{r spot_check}
+big.thresh = 10
+big.trans <- which(as.numeric(lod.table[,2]) > big.thresh)
+
+i = sample(big.trans, 1)
+plot(scan1.result, i, map = map)
+annots[i,]
+```
+
+Spot check transcripts for which the trans LOD score is larger than
+the cis LOD score.
+
+```{r big_trans}
+lod.diff <- as.numeric(lod.table[,2]) - as.numeric(lod.table[,1])
+hist(lod.diff, breaks = 100)
+
+trans.reg <- which(lod.diff > 0)
+i <- sample(trans.reg, 1)
+plot(scan1.result, i, map = map)
+annots[i,]
 ```
