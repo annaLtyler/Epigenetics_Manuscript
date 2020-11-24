@@ -20,7 +20,7 @@ genetic eQTL and the chromatin eQTL.
 Load libraries.
 
 ```{r load_libraries}
-library(here);library(qtl2)
+library(here);library(qtl2);library(parallel)
 ```
 
 Load data.
@@ -34,8 +34,70 @@ covar <- dataset.mrna$covar.matrix
 Run the eQTL scan.
 
 ```{r run_eqtl}
-scan1.result <- scan1(genoprobs, expr[,1:5], kinship = K, addcovar = covar,
-cores = 0)
-
+n.cores <- detectCores() - 1
+scan1.result <- scan1(genoprobs, expr, kinship = K, addcovar = covar, cores = n.cores)
 saveRDS(scan1.result, here("Results", "eQTL", "Full.Transcriptome.RDS"))
+```
+
+Detect transcripts with trans eQTL.
+
+```{r trans_eQTL}
+lod.thresh = 6
+Mb.buffer = 10 #miminum distance of a trans effect
+annots <- dataset.mrna$annot.mrna
+scan1.markers <- rownames(scan1.result)
+scan1.chr <- sapply(strsplit(scan1.markers, "_"), function(x) x[1])
+scan1.pos <- sapply(strsplit(scan1.markers, "_"), function(x) x[2])
+
+trans.locus.file <- here("Results", "eQTL", "Trans.eQTL.RDS")
+
+if(!file.exists(trans.locus.file)){
+  trans.loci <- vector(mode = "list", length = nrow(annots))
+  names(trans.loci) <- annots[,1]
+
+  for(i in 1:ncol(scan1.result)){
+    if(max(scan1.result[,i]) < lod.thresh){next()}
+    #plot(scan1.result, i, map = map)
+    id <- annots[i,1]
+    chr <- annots[i,3]
+    gene.start <- annots[i,4]
+    gene.end <- annots[i,5]
+    nearest.marker <- annots[i,8]
+    cis.lod <- scan1.result[nearest.marker,i]
+
+    #check for trans loci on other chromosomes
+    not.chr.locale <- which(scan1.chr != chr)
+    not.chr.lod <- scan1.result[not.chr.locale,i]
+    not.chr.hits <- which(not.chr.lod > lod.thresh)
+
+    if(length(not.chr.hits) > 0){
+      not.chr.trans <- scan1.result[not.chr.locale[not.chr.hits],i]
+    }else{
+      not.chr.trans <- NULL
+    }
+
+    #check for trans loci on the same chromsome
+    chr.locale <- which(scan1.chr == chr)
+    chr.pos <- as.numeric(scan1.pos[chr.locale])/1e6
+    upstream <- which(chr.pos < (gene.start - Mb.buffer))
+    if(length(upstream) > 0){
+      up.chr.hits <- which(scan1.result[chr.locale[upstream],i] > lod.thresh)
+      up.chr.trans <- scan1.result[chr.locale[upstream[up.chr.hits]],i]
+    }else{
+      up.chr.trans <- NULL
+    }
+
+    downstream <- which(chr.pos > (gene.start + Mb.buffer))
+    if(length(downstream) > 0){
+      down.chr.hits <- which(scan1.result[chr.locale[downstream],i] > lod.thresh)
+      down.chr.trans <- scan1.result[chr.locale[downstream[down.chr.hits]],i]
+    }else{
+      down.chr.trans <- NULL
+    }
+
+    all.trans.loci <- c(not.chr.trans, up.chr.trans, down.chr.trans)
+    trans.loci[[i]] <- all.trans.loci
+  }
+  saveRDS(trans.loci, trans.locus.file)
+}
 ```
