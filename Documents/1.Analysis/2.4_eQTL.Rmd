@@ -62,8 +62,8 @@ if(!file.exists(trans.locus.file)){
     chr <- annots[i,3]
     gene.start <- annots[i,4]
     gene.end <- annots[i,5]
-    nearest.marker <- annots[i,8]
-    cis.lod <- scan1.result[nearest.marker,i]
+    #nearest.marker <- annots[i,8]
+    #cis.lod <- scan1.result[nearest.marker,i]
 
     #check for trans loci on other chromosomes
     not.chr.locale <- which(scan1.chr != chr)
@@ -100,4 +100,6 @@ if(!file.exists(trans.locus.file)){
   }
   saveRDS(trans.loci, trans.locus.file)
 }
+
+barplot(sapply(trans.loci, length))
 ```
