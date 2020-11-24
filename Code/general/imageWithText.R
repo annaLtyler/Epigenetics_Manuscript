@@ -148,7 +148,8 @@ sig.digs = 3, use.pheatmap.colors = FALSE, na.col = "lightgray", gridlines = FAL
 						}
 	
 					#make the function to generate 
-					col.vals <- get.color2(col.scale[cl], col.gap = color.spread)
+					#col.vals <- get.color2(col.scale[cl], col.gap = color.spread)
+					col.vals <- get.color(col.scale[cl], light.dark = light.dark)
 										
 					color.locale <- which(names(color.scales) == classes[cl])
 					color.scales[[color.locale]] <- colorRampPalette(col.vals[dir.list[[color.locale]]])

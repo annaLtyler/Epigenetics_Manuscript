@@ -8,7 +8,8 @@
 
 plot.enrichment.group <- function(enrichment.list, n.terms = 10, max.char = 40, 
 cluster_cols = TRUE, cluster_rows = TRUE, transformation = NULL, plot.results = TRUE,
-plot.label = NULL, sort.by = c("p_value", "default"), max.term.size = NULL){
+plot.label = NULL, sort.by = c("p_value", "default"), max.term.size = NULL, 
+filter.none = FALSE){
 
 	enrich.list <- lapply(enrichment.list, function(x) x[[1]])
 	
@@ -75,6 +76,12 @@ plot.label = NULL, sort.by = c("p_value", "default"), max.term.size = NULL){
 			term.mat[term.idx,i] <- all.terms[[i]][,2]
 			}
 			
+		#take out columns with no enrichments
+		if(filter.none){
+			has.enrich <- which(apply(term.mat, 2, function(x) !all(x == 0)))
+			term.mat <- term.mat[,has.enrich]
+		}
+		
 		if(!is.null(max.char)){
 			trimmed.names <- sapply(rownames(term.mat), function(x) trim.name(x, max.char))
 			rownames(term.mat) <- trimmed.names

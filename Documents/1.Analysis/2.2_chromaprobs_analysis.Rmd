@@ -21,6 +21,7 @@ This workflow compares the eQTL mapped to chromatin and to haplotypes.
 ```{r load_libraries, message = FALSE, warning = FALSE, error = FALSE}
 library(here);library(qtl2);library(gprofiler2);library(stringr)
 library(msigdbr);library(fgsea);library(pheatmap);library(biomaRt)
+library(knitr)
 ```
 
 ```{r load_biomart}
@@ -48,7 +49,6 @@ chrom.colors <- colors.from.values(1:8, use.pheatmap.colors = TRUE)
 ## Load data
 
 ```{r load_data}
-transcript.info <- readRDS(here("Data", "RNASeq", "RNASeq_gene_info.RData"))
 ch.coef <- readRDS(here("Results", "chQTL", "chQTL.coef.RDS"))
 ch.lod <- readRDS(here("Results", "chQTL", "chQTL.lod.RDS"))
 ch.r2 <- readRDS(here("Results", "chQTL", "chQTL.R2.RDS"))
@@ -57,7 +57,6 @@ e.lod <- readRDS(here("Results", "eQTL", "eQTL.lod.RDS"))
 e.r2 <- readRDS(here("Results", "eQTL", "eQTL.R2.RDS"))
 
 chrom.mats <- readRDS(here("Results", "ChromHMM", "008_states_C", "Chromatin_States_8_full_gene_1000.RData"))
-gene.names <- transcript.info[match(rownames(e.lod), transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
 chrom.states <- readRDS(here("Data", "chQTL", "Expanded_Chromatin.RDS"))
 
 do.data <- load(here("Data", "DOQTL", "Svenson_DO850_for_eQTL_viewer_v9.RData"))
@@ -71,24 +70,163 @@ strain.key <- read.table(here("Data", "support_files", "strain.color.table.txt")
 sep = "\t", stringsAsFactors = FALSE, comment.char = "*")
 ```
 
-## Diet-interacting eQTLs
-Here we investigate which eQTLs are influenced by diet. 
-In the previous workflow, we calculated LOD scores with and without diet 
-as an interacting covariate. Here we show those LOD scores plotted against 
-each other.
+```{r transcript_info}
+transcript.info.file <- here("Data", "RNASeq", "RNASeq_gene_info.RData")
+if(!file.exists(transcript.info.file)){
+    all.genes <- unique(names(chrom.states), colnames(expr))
+    transcript.info <- getBM(attributes = c("ensembl_gene_id", "external_gene_name", 
+    "chromosome_name", "start_position", "end_position", "transcription_start_site", 
+    "exon_chrom_start", "exon_chrom_end", "5_utr_start","5_utr_end","3_utr_start", 
+    "3_utr_end", "strand"), 
+    filters = "ensembl_gene_id", values = all.genes, mart = mus)
+    saveRDS(transcript.info, transcript.info.file)
+}else{
+  transcript.info <- readRDS(transcript.info.file)
+}
+gene.names <- transcript.info[match(rownames(e.lod), transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
+```
 
-```{r diet_int}
-par(mfrow = c(1,2))
-plot(e.lod[,1:2], main = "Genetic eQTL LOD scores")
-abline(0,1)
+## Matching genetic eQTLs with chromatin eQTLs
 
+The following plot shows the LOD scores of genetic eQTLs and chromatin eQTLs
+plotted against each other. For the most part, the LOD scores agree with each
+other very well. However, there is also a fairly large group of genes for which
+there is a mismatch between the two associations. The distribution of those 
+differences is shown in the right-hand panel.
+
+```{r e.ch.comp, fig.width = 8, fig.height = 4}
 max.ch.lod <- t(sapply(ch.lod, function(x) if(length(x) > 0){apply(x, 2, function(y) max(y, na.rm = TRUE))}else{rep(NA, 4)}))
-plot(max.ch.lod[,1:2], main = "Chromatin State eQTL LOD Scores")
+par(mfrow = c(1,2))
+plot(e.lod[,1], max.ch.lod[,1], pch = 16, col = "gray", cex = 0.8,
+xlab = "genetic eQTL LOD score", ylab = "chromatin eQTL LOD score",
+main = "Genetic vs. Chromatin-based eQTL LOD scores")
 abline(0,1)
 
-plot(e.lod[,4], max.ch.lod[,4])
+lod.diff <- e.lod[,1] - max.ch.lod[,1]
+hist(lod.diff, breaks = 100, main = "LOD score differences")
+ordered.lod <- sort(lod.diff, decreasing = TRUE)
+```
 
-pheatmap(cor(e.lod, use = "pairwise.complete.obs"))
+We have multiple hypotheses that could explain these mismatches. We will go 
+through each to see if we can describe this group of genes. For each
+hypothesis, we are not necessarily interseted in describing the full
+set of genes, but rather determining whether there are any genes in the
+mismatch group that fit the criteria. The hypotheses are as follows:
+
+1. Altered chromatin-based regulation due to high-fat diet:
+A high fat diet may alter the chromatin regulation of some genes in the
+liver. We would expect these genes to have a diet-interactive chromatin-based
+eQTL. If these changes can be explained by a diet-interactive genetics-based
+eQTL, does that 
+
+2. Cell type alterations:
+The high-fat diet may change the cellular composition of the liver, i.e.
+there may be immune cells infiltrating the livers of mice on the high-fat
+diet that we don't see in the control mice. Such changes in cell type 
+composition would change the apparent eQTLs because different cell types
+have differential regulation of transcript abundance. 
+
+## Altered chromatin regulation due to high-fat diet
+
+To test whether there were transcripts whose regulation by chromatin
+is affected by high-fat diet, we modeled each transcript with diet as
+an additive covariate and as an interactive covariate, and examined
+the difference in LOD score between the two models. 
+
+The figures below show the LOD scores from the two models plotted 
+against each other both for genetic-based eQTLs (left), and 
+chromatin-based eQTLs (right).
+
+Almost all eQTLs had higher LOD scores when diet was used as an 
+interactive covariate. However, some transcripts were affected
+more than others. 
+
+```{r diet_int, fig.width = 8, fig.height = 4}
+e.lod.change <- e.lod[,2]-e.lod[,1]
+ch.lod.change <- max.ch.lod[,2]-max.ch.lod[,1]
+names(ch.lod.change) <- rownames(e.lod)
+
+par(mfrow = c(1,2))
+pt.col <- colors.from.values(abs(e.lod.change), use.pheatmap.colors = TRUE)
+plot(e.lod[,1:2], main = "Genetic eQTL LOD scores", col = pt.col, pch = 16, cex = 0.5)
+abline(0,1)
+
+pt.col <- colors.from.values(abs(ch.lod.change), use.pheatmap.colors = TRUE)
+plot(max.ch.lod[,1:2], main = "Chromatin State eQTL LOD scores", col = pt.col, 
+pch = 16, cex = 0.5)
+abline(0,1)
+```
+
+The distributions of the LOD score differences are shown below. 
+The genetics-based eQTLs had larger LOD score changes overall than the 
+chromatin-based eQTLs.
+
+```{r lod_diff_dist, fig.width = 8, fig.height = 4}
+boxplot(list("Genetics-Based" = e.lod.change, "Chromatin-Based" = ch.lod.change))
+lod.change.thresh = 2
+```
+
+The following plots show the relationship between the magnitude of the 
+genetic-chromatin LOD score mismatch and the change in LOD score based
+on diet. 
+
+For the genetic-based eQTLs there does seem to be a very slight 
+relationship between diet-interactive eQTLs and the mismatch between
+chromatin-based and genetic-based eQTL LOD scores. 
+
+Genes in the upper left had very large changes in eQTL due to diet, 
+but virtually no discrepancy between the 
+
+```{r diet_v_genetics}
+par(mfrow = c(1,2))
+
+plot.with.model(lod.diff, e.lod.change, xlab = "LOD score mismatch", 
+ylab = "Genetics-Based LOD score diff by Diet", main = "Genetics-Based",
+pch = 16)
+abline(h = 2, v = 2, col = "red")
+plot.with.model(lod.diff, ch.lod.change, xlab = "LOD score mismatch",
+ylab = "Chromatin-Based LOD score diff by Diet", main = "Chromatin-Based", 
+report = "cor.test")
+```
+
+
+If we look at just the transcripts whose LOD score change by more than
+`r lod.change.thresh`, we see that the list for the genetic diet-interactive 
+eQTLs is much bigger than the list for the chromatin state diet-interactive eQTLs, 
+and almost completely subsumes that list.
+
+```{r e.ch.overlap}
+big.e.change <- names(e.lod.change)[which(e.lod.change > lod.change.thresh)]
+big.ch.change <- names(ch.lod.change)[which(ch.lod.change > lod.change.thresh)]
+plotVenn(list("Genetic" = big.e.change, "Chromatin" = big.ch.change))
+gsea.diff.list <- list("Big.Genetics.eQTL.Change" = big.e.change, 
+"Big.Chromatin.eQTL.Change" = big.ch.change)
+```
+
+The plot below shows the genes with large genetics-based LOD scores (blue),
+large chromatin-based LOD scores (red), and those with large differences
+in both (purple) overlayed on the chromatin-genetics mismatch plot. There
+Does not appear to be any pattern.
+
+```{r lod_diff_overlap}
+pt.col = rep("gray", nrow(e.lod))
+pt.col[match(big.e.change, rownames(e.lod))] <- "blue"
+pt.col[match(big.ch.change, rownames(e.lod))] <- "red"
+pt.col[match(intersect(big.ch.change, big.e.change), rownames(e.lod))] <- "purple"
+
+plot(e.lod[,1], max.ch.lod[,1], pch = 16, col = pt.col, cex = 0.5,
+xlab = "genetic eQTL LOD score", ylab = "chromatin eQTL LOD score",
+main = "Genetic vs. Chromatin-based eQTL LOD scores")
+abline(0,1)
+```
+
+We used GSEA to confirm that there was no enrichment of these diet-interactive
+QTLs among the transcripts with mismatched genetic and chromatin eQTL LOD scores.
+
+```{r chr_diff_gsea, results = "asis"}
+lod.diff.enrich <- fgsea::fgseaMultilevel(pathways = gsea.diff.list, 
+  stats = ordered.lod, minSize=15, maxSize=600, gseaParam = 1)
+kable(lod.diff.enrich)
 ```
 
 ## Genetic and Chromatin eQTL LOD score comparison
@@ -131,15 +269,15 @@ cases in which the chromatin explains a lot more than the genetics.
 
 ```{r max_r2, fig.width = 5, fig.height = 5}
 if(is.interactive){quartz(width = 5, height = 5)}
-max.ch.r2 <- t(sapply(ch.r2, function(x) if(length(x) == 0){return(rep(NA, 3))}else{apply(x, 2, function(y) max(y, na.rm = TRUE))}))
+max.ch.r2 <- t(sapply(ch.r2, function(x) if(length(x) == 0){return(rep(NA, 4))}else{apply(x, 2, function(y) max(y, na.rm = TRUE))}))
 r2.diff <- e.r2 - max.ch.r2
 boxplot(r2.diff)
 
-par(mfrow = c(1,3))
-for(i in 1:3){
+par(mfrow = c(2,2))
+for(i in 1:ncol(r2.diff)){
   pt.col <- rep("gray", nrow(r2.diff))
   pt.col[which(r2.diff[,i] < 0)] <- "red"
-  plot(e.r2[,i], max.ch.r2[,i], xlab = "eQTL R2", cex = 0.5,
+  plot.with.model(e.r2[,i], max.ch.r2[,i], xlab = "eQTL R2", cex = 0.5,
   ylab = "Maximum Chromatin eQTL R2", col = "gray", pch = 16,
   main = colnames(r2.diff)[i])
   abline(0,1)
@@ -185,7 +323,6 @@ plot(r2.diff[,"Chow"], r2.diff[,"HF"],
 xlab = "R2 Differences in Chow Animals", ylab = "R2 Differences in HF Animals")
 abline(0,1)
 abline(h = 0, v = 0, col = "gray", lty = 2)
-
 ```
 
 There are some genes for which there is a big genetic eQTL, but very little

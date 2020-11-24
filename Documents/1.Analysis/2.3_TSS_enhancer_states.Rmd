@@ -1,0 +1,172 @@
+---
+title: "TSS enhancer states"
+author: Anna L Tyler
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  html_document:
+    code_folding: hide
+    collapsed: no
+    toc: yes
+    toc_float: yes
+---
+
+## Introduction
+
+The purpose of this workflow is to look at the genes that have 
+differential states across strains at the TSS. 
+
+Here we look at which states are represented at the TSS, and 
+which genes have variation there.
+  
+```{r load_libraries, message = FALSE, warning = FALSE, error = FALSE}
+library(here);library(gprofiler2);library(pheatmap);library(fgsea)
+```
+
+```{r source_code}
+is.interactive = FALSE
+#is.interactive = TRUE
+all.code.dir <- list.files(here("Code"), full.names = TRUE)
+for(i in 1:length(all.code.dir)){
+	all.fun <- list.files(all.code.dir[i], full.names = TRUE)
+	for(j in 1:length(all.fun)){source(all.fun[j])}
+}
+```
+
+## Load data
+
+```{r load_data}
+transcript.info <- readRDS(here("Data", "RNASeq", "RNASeq_gene_info.RData"))
+chrom.mats <- readRDS(here("Results", "ChromHMM", "008_states_C", "Chromatin.States.Gene.Coords.RDS"))
+ch.coef <- readRDS(here("Results", "chQTL", "chQTL.coef.RDS"))
+```
+
+Find the states at the TSS of each transcript
+
+```{r tss_states}
+get_tss_states <- function(chrom.mat){
+    if(length(chrom.mat) == 1){return(rep(NA, 9))}
+    tss.pos <- get.nearest.pt(as.numeric(rownames(chrom.mat)), 0)
+    return(chrom.mat[tss.pos,,drop=FALSE])
+}
+
+#get all the states right at the TSS
+tss.states <- t(sapply(chrom.mats, get_tss_states))
+
+#tally which states are present there
+state.counts <- t(apply(tss.states, 1, function(y) sapply(1:8, function(x) length(which(y == x)))))
+colnames(state.counts) <- 1:8
+
+#find all the genes with variation
+var.genes <- which(apply(state.counts, 1, function(x) length(which(x != 0)) > 1))
+```
+
+There are `r length(var.genes)` out of `r nrow(state.counts)` total genes
+with variation at the TSS. The figure below shows genes in rows and states
+in columns. Each cell contains the number of strains that had each state
+at the TSS for that gene. State 7 is the most abundant state at the TSS
+even for genes with variation at this position. State 1 is the next most
+abundant.
+
+```{r tss_var, fig.width = 6, fig.height = 7}
+var.mat <- state.counts[var.genes,]
+pheatmap(var.mat, show_rownames = FALSE)
+```
+
+The figure below shows which states tend to co-occur at the 
+TSS. Most of the states are negatively correlated with each
+other. State 7 tends to co-occur with state 8, but is very 
+negatively correlated with state 1. 
+
+States 1, 2, and 3, all negative states, tend to co-occur,
+and states 4 and 5 tend to co-occur.
+
+```{r state_pairs, fig.width = 6, fig.height = 6}
+cor.mat <- var.mat
+cor.mat[which(var.mat > 0)] <- 1
+state.cor <- cor(cor.mat)
+diag(state.cor) <- NA
+imageWithText(state.cor, split.at.vals = TRUE, col.scale = c("blue", "brown"),
+grad.dir = "ends")
+```
+
+```{r decomp, eval = FALSE}
+state.decomp <- plot.decomp(cor.mat, pc = 8, mean.center = FALSE)
+
+plot(state.decomp$v[,1:2], pch = 16, 
+col = colors.from.values(1:8, use.pheatmap.colors = TRUE), xlab = "PC1", ylab = "PC2")
+text(state.decomp$v[,1], state.decomp$v[,2], 1:8, pos = 4)
+
+pairs(state.decomp$u[,1:5])
+```
+
+```{r classify_var, fig.height = 10, fig.width = 4}
+state.pairs <- pair.matrix(1:8)
+state.pair.names <- apply(state.pairs, 1, function(x) paste(x, collapse = "_"))
+has_pair  <- function(state.mat, state1, state2){
+    return(which(apply(state.mat, 1, function(x) x[state1] > 0 && x[state2] > 0)))
+}
+
+with_state_pair <- apply(state.pairs, 1, function(x) has_pair(var.mat, x[1], x[2]))
+names(with_state_pair) <- state.pair.names
+state.pair.count <- sapply(with_state_pair, length)
+pair.count.order <- order(state.pair.count)
+barplot(state.pair.count[pair.count.order], las = 2, horiz = TRUE, cex.names = 1)
+```
+
+## Chromatin State Enrichment {.tabset .tabset-fade .tabset-pills}
+
+We looked at functional enrichments for genes with each pair of states
+present at the TSS.
+
+Some of these genes have more than two states at the TSS, so the 
+groups are overlapping somewhat, but using more categories was 
+a bit too disorganized.
+
+```{r state_effects, results = "asis", fig.width = 8, fig.height = 6}
+enrich.file <- here("Results", "chQTL", "State_Pair_Enrichment.RDS")
+
+if(!file.exists(enrich.file)){
+    state_enrich <- vector(mode = "list", length = length(state.pair.count))
+    names(state_enrich) <- names(state.pair.count)
+    for(i in 1:length(with_state_pair)){
+        enrichment <- gost(names(with_state_pair[[i]]), organism = "mmusculus", sources = "GO")
+        if(!is.null(enrichment)){
+            state_enrich[[i]] <- enrichment
+        }
+    }
+    saveRDS(state_enrich, enrich.file)
+}else{
+    state_enrich <- readRDS(enrich.file)
+}
+
+for(i in 1:length(state_enrich)){
+    cat("###", state.pair.names[i], "\n")
+    plot.enrichment(state_enrich[[i]], 20, plot.label = state.pair.names[i],
+    order.by = "p_value", max.term.size = 500)
+    cat("\n\n")
+}
+
+state_gene_names <- lapply(with_state_pair, function(x) transcript.info[match(names(x), transcript.info[,"ensembl_gene_id"]),"external_gene_name"])
+```
+
+We looked to see if any of the genes with particular state combinations
+at the TSS were enriched in the mismatched genes. None of the groups
+were enriched.
+
+```{r mismatches}
+ch.lod <- readRDS(here("Results", "chQTL", "chQTL.lod.RDS"))
+e.lod <- readRDS(here("Results", "eQTL", "eQTL.lod.RDS"))
+
+max.ch.lod <- t(sapply(ch.lod, function(x) if(length(x) > 0){apply(x, 2, function(y) max(y, na.rm = TRUE))}else{rep(NA, 4)}))
+rownames(max.ch.lod) <- rownames(e.lod)
+
+lod.diff <- e.lod - max.ch.lod
+
+ordered.genes <- sort(lod.diff[,1], decreasing = TRUE)
+plot(ordered.genes)
+
+state_gene_list <- lapply(with_state_pair, function(x) names(x))
+lod.diff.enrich <- fgsea::fgseaMultilevel(pathways = state_gene_list, 
+  stats = ordered.genes, minSize=15, maxSize=600, gseaParam = 1)
+plot.gsea.results(lod.diff.enrich)
+```

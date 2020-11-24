@@ -1,0 +1,40 @@
+---
+title: "Full eQTL"
+author: Anna L Tyler
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  html_document:
+    code_folding: hide
+    collapsed: no
+    toc: yes
+    toc_float: yes
+---
+
+## Introduction
+
+The purpose of this workflow is to perform the full eQTL scan in the DO
+liver data. This will enable us to investigate whether transcripts with 
+trans eQTL are enriched in our set of genes with a mismatch between the
+genetic eQTL and the chromatin eQTL.
+
+Load libraries.
+
+```{r load_libraries}
+library(here);library(qtl2)
+```
+
+Load data.
+
+```{r load_data}
+do.data <- load(here("Data", "DOQTL", "Svenson_DO850_for_eQTL_viewer_v9.RData"))
+expr <- dataset.mrna$data$rz
+covar <- dataset.mrna$covar.matrix
+```
+
+Run the eQTL scan.
+
+```{r run_eqtl}
+scan1.result <- scan1(genoprobs, expr[,1:10], kinship = K, addcovar = covar)
+
+saveRDS(scan1.result, here("Results", "eQTL", "Full.Transcriptome.RDS"))
+```
