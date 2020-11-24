@@ -35,8 +35,13 @@ Run the eQTL scan.
 
 ```{r run_eqtl}
 n.cores <- detectCores() - 1
-scan1.result <- scan1(genoprobs, expr, kinship = K, addcovar = covar, cores = n.cores)
-saveRDS(scan1.result, here("Results", "eQTL", "Full.Transcriptome.RDS"))
+scan1.file <- here("Results", "eQTL", "Full.Transcriptome.RDS")
+if(!file.exists(scan1.file)){
+  scan1.result <- scan1(genoprobs, expr, kinship = K, addcovar = covar, cores = n.cores)
+  saveRDS(scan1.result, scan1.file)
+}else{
+  scan1.result <- readRDS(scan1.file)
+}
 ```
 
 Detect transcripts with trans eQTL.
@@ -62,8 +67,11 @@ if(!file.exists(trans.locus.file)){
     chr <- annots[i,3]
     gene.start <- annots[i,4]
     gene.end <- annots[i,5]
-    #nearest.marker <- annots[i,8]
-    #cis.lod <- scan1.result[nearest.marker,i]
+    
+    nearest.marker <- annots[i,8]
+    if(!is.na(nearest.marker)){
+      cis.lod <- scan1.result[nearest.marker,i]
+    }
 
     #check for trans loci on other chromosomes
     not.chr.locale <- which(scan1.chr != chr)
