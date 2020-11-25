@@ -50,7 +50,7 @@ eQTL, so we will only look for trans eQTL on chromsomes other than
 the one encoding the transcript.
 
 ```{r trans_eQTL}
-lod.thresh = 8
+lod.thresh = 6
 check.same.chr <- FALSE
 Mb.buffer = 10 #miminum distance of a trans effect
 annots <- dataset.mrna$annot.mrna
