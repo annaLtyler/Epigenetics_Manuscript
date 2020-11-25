@@ -37,7 +37,8 @@ Run the eQTL scan.
 n.cores <- detectCores() - 1
 scan1.file <- here("Results", "eQTL", "Full.Transcriptome.RDS")
 if(!file.exists(scan1.file)){
-  scan1.result <- scan1(genoprobs, expr, kinship = K, addcovar = covar, cores = n.cores)
+  #scan1.result <- scan1(genoprobs, expr, kinship = K, addcovar = covar, cores = n.cores)
+  scan1.result <- scan1(genoprobs, expr, addcovar = covar, cores = n.cores)
   saveRDS(scan1.result, scan1.file)
 }else{
   scan1.result <- readRDS(scan1.file)
