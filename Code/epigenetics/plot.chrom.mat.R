@@ -3,7 +3,8 @@
 #state colors
 #island.bins is for drawing outlines of methyl bins
 
-plot.chrom.mat <- function(state.mat, num.states = 8, xlim = NULL, island.bins = NULL){
+plot.chrom.mat <- function(state.mat, num.states = 8, xlim = NULL, island.bins = NULL,
+line.color = "gray"){
 
     #pheatmap(state.mat, cluster_rows = FALSE, cluster_cols = FALSE)
 
@@ -60,7 +61,7 @@ plot.chrom.mat <- function(state.mat, num.states = 8, xlim = NULL, island.bins =
             island.locale <- which(island.bins[,1] == u_islands[i])
             island.start <- min(island.bins[island.locale,2])
             island.end <- max(island.bins[island.locale,2])
-            draw.rectangle(island.start, island.end, 0.5, nrow(state.mat)+0.5)
+            draw.rectangle(island.start, island.end, 0.5, nrow(state.mat)+0.5, border = line.color)
         }
     }
 
@@ -77,7 +78,8 @@ plot.chrom.mat <- function(state.mat, num.states = 8, xlim = NULL, island.bins =
     yseg <- segment.region(ymin, ymax, num.states+1, alignment = "ends")
     par(xpd = TRUE)
     for(i in 1:(length(yseg)-1)){
-        draw.rectangle(xmin, xmax, yseg[i], yseg[i+1], fill = state.cols[i])
+        draw.rectangle(xmin, xmax, yseg[i], yseg[i+1], fill = state.cols[i], 
+        border.col = line.color)
         text(x = xmid, y = mean(c(yseg[i], yseg[i+1])), labels = i)
     }
 

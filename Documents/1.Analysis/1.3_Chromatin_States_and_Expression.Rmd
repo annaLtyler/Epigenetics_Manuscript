@@ -73,7 +73,7 @@ is.interactive = as.logical(args[3]) #keep this as FALSE when running render()
 delete.previous = as.logical(args[4]) #whether to delete and regenerate files 
                     #from previous a run.
 num.states = 8; offline = FALSE; is.interactive = FALSE; delete.previous = FALSE
-#num.states = 8; offline = FALSE; is.interactive = FALSE; delete.previous = FALSE
+#num.states = 8; offline = FALSE; is.interactive = TRUE; delete.previous = FALSE
 ```
 
 
@@ -176,6 +176,13 @@ All animals are female, so we do not need to do a correction for sex.
 rna.seq.file <- here("Data", "RNASeq", "StrainsEffCts9_vst.RDS")
 rna.seq <- readRDS(rna.seq.file)
 boxplot(rna.seq, las = 2)
+
+col.order <- match.order(substr(colnames(rna.seq), 1, 2), col.table[,1], col.table)
+expr.decomp <- plot.decomp(t(rna.seq), cols = col.table[col.order,3], pc = 5)
+
+#pc = 5
+#boxplot(expr.decomp$u[,pc]~as.factor(col.table[col.order,1]), col = col.table[,3])
+
 ```
 
 ```{r gene_info}
@@ -269,18 +276,16 @@ if(length(low.var) > 0){
 ```
 
 ## DO eQTL data
-We want to compare histone effects on expression with genetic effects. To identify genetic
-effects we use the DO478. Here we use an eQTL analysis run Bo Ji. These data were collected
-from whole DO mouse liver. In this data object are included eQTL coefficients for all 
-transcripts and all haplotypes. Only the chromosome on which the transcript is encoded is 
-included. Therefore we only have access to cis eQTL coefficients in this object.
+We want to compare histone effects on expression with genetic effects. To identify
+genetic effects we use the DO478. These data were collected from whole DO mouse liver. 
+
 
 ```{r do_QTL}
 #A file containing the cis eQTL coefficients for each haplotype and each transcript
-do.qtl.file <- here("Data", "DOQTL", "DO478_tpm_20360_cis_allele_coef.RData")
+do.qtl.file <- here("Data", "DOQTL", "Svenson_DO850_for_eQTL_viewer_v9.RData")
 do.eqtl.loaded <- as.logical(length(which(all.var == "do.eqtl")))
 if(!do.eqtl.loaded){
-    do.eqtl <- readRDS(do.qtl.file)
+    do.eqtl <- load(do.qtl.file)
     qtl.ids <- lapply(do.eqtl, function(x) x[[1]][1,1])
     is.missing <- unlist(lapply(qtl.ids, function(x) is.null(x)))
     qtl.ids[is.missing] <- "NA"

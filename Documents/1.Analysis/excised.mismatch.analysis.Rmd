@@ -1,0 +1,456 @@
+
+## extra
+
+
+
+
+## back to LOD
+
+There are `r length(small.change)` transcripts whose LOD score is within
+`r lod.change.thresh` between the genetic and chromatin eQTLs. There
+are `r length(big.change)` transcripts whose LOD score difference is
+outside that range. That's a lot of genes. There are many possible
+interesting biological explanations for these differences. We will go 
+through each to see if we can describe this group of genes. The hypotheses 
+are as follows:
+
+1. Altered chromatin-based regulation due to high-fat diet:
+Chromatin is dynamically remodeled in response to environmental
+factors. Exposure to a high-fat diet could potentially cause alterations
+in local chromatin state in those animals. Because we impute the chromatin
+state from control inbred animals, we would miss any alterations due to
+high-fat diet. 
+
+2. Cell type alterations:
+The high-fat diet may change the cellular composition of the liver, i.e.
+there may be immune cells infiltrating the livers of mice on the high-fat
+diet that we don't see in the control mice. Such changes in cell type 
+composition would change the apparent eQTLs because different cell types
+have differential regulation of transcript abundance. 
+
+3. Trans regulation 
+In addition to being regulated by cis-acting factors, gene expression 
+can be regulated by trans-acting factors. Because we only look here 
+at cis-effects we will miss trans effects. Here we investigate whether 
+the mis-matches 
+
+## Altered chromatin regulation due to high-fat diet
+
+It is possible that high-fat diet causes changes in chromatin state
+in those animals exposed to it, and that these changes result in 
+alterations in gene expression. 
+
+Because we impute the chromatin state from control inbred animals,
+we cannot identify chromatin state changes related to diet or other
+environmental effects in the DO animals. What are the characteristics 
+of genes whose expression is related to high-fat diet-induced changes 
+in chromatin?
+
+Genetics does not change in response to diet.
+Expression can change in response to diet for many reasons, but we 
+are interested not just in a change of expression, but in a change 
+of regulation of the expression.
+
+Transcripts for which the genetic LOD score is similar in between the
+diets, but whose chromatin LOD score is reduced in the HF condition?
+
+The histogram below shows the distribution of genetic eQTL LOD score 
+differences between the chow and HF diets. Positive values indicate 
+transcripts for which the LOD score in the chow diet is greater than
+the LOD score in the HF diet. Most transcripts have positive values
+indicating that the local genetics predict gene expression better 
+in the chow diet animals.
+
+```{r diet_comparison_genetics}
+#positive values indicate higher LOD for the chow diet
+genetic.chow.hf.diff <- e.lod[,"Chow"] - e.lod[,"HF"]
+hist(genetic.chow.hf.diff, breaks = 100, main = "Genetic LOD score differences",
+xlab = "LOD score difference between HF and chow")
+text(x = 5, y = 1000, "Stronger cis-Effect in Chow Animals", adj = 0, cex = 0.8)
+arrows(x0 = 5, x1 = 30, y0 = 950, length = 0.1)
+text(x = -32, y = 1000, "Stronger cis-Effect in HF Animals", adj = 0, cex = 0.8)
+arrows(x0 = -10, x1 = -30, y0 = 950, length = 0.1)
+abline(v = 0, col = "red")
+```
+
+We looked at GO term
+
+Transcripts with stronger cis-effects in the chow animals are enriched
+for redox/mitochondrial genes. Transcripts with stronger cis-effects
+in the HF animals are enriched for ribosomal 
+
+```{r gen_cis_enrich}
+chow.gen.enrich <- gost(names(genetic.chow.hf.diff)[which(genetic.chow.hf.diff > 10)], 
+organism = "mmusculus", sources = c("GO", "KEGG", "REACTOME"))
+plot.enrichment(chow.gen.enrich, num.terms = 30, order.by = "p_value", 
+max.term.size = 600, plot.label = "Chow Genetic cis")
+
+hf.gen.enrich <- gost(names(genetic.chow.hf.diff)[which(genetic.chow.hf.diff < 10)], 
+organism = "mmusculus", sources = c("GO", "KEGG", "REACTOME"))
+plot.enrichment(hf.gen.enrich, num.terms = 30, order.by = "p_value", 
+max.term.size = 600, plot.label = "HF Genetic cis")
+```
+
+The histogram below shows the same distribution for the chromatin eQTLs.
+Once again the distribution is shifted toward positive values indicating
+that chromatin state also does a better job explaining gene expression in
+the chow diet animals. 
+
+```{r diet_comparison_chromatin}
+#positive values indicate higher LOD for the chow diet.
+chromatin.chow.hf.diff <- max.ch.lod[,"Chow"] - max.ch.lod[,"HF"]
+names(chromatin.chow.hf.diff) <- names(genetic.chow.hf.diff)
+hist(chromatin.chow.hf.diff, breaks = 100, main = "Chromatin LOD score differences",
+xlab = "LOD score difference between HF and chow")
+text(x = 5, y = 800, "Stronger cis-Effect in Chow Animals", adj = 0, cex = 0.8)
+arrows(x0 = 5, x1 = 30, y0 = 780, length = 0.1)
+text(x = -32, y = 800, "Stronger cis-Effect in HF Animals", adj = 0, cex = 0.8)
+arrows(x0 = -10, x1 = -30, y0 = 780, length = 0.1)
+abline(v = 0, col = "red")
+
+chow.chrom.enrich <- gost(names(chromatin.chow.hf.diff)[which(chromatin.chow.hf.diff > 10)],
+organism = "mmusculus", sources = "GO")
+plot.enrichment(chow.chrom.enrich, num.terms = 30, order.by = "p_value", 
+max.term.size = 600, plot.label = "Chow Chromatin cis")
+
+hf.chrom.enrich <- gost(names(chromatin.chow.hf.diff)[which(chromatin.chow.hf.diff < 10)],
+organism = "mmusculus", sources = "GO")
+plot.enrichment(hf.chrom.enrich, num.terms = 30, order.by = "p_value", 
+max.term.size = 600, plot.label = "HF Chromatin cis")
+```
+
+Is it interesting that both genetics and chromatin state better explain
+expression in the chow animals than in the HF animals? Does this indicate
+a reduction of the importance of cis effects in general in the HF animals?
+At least for a subset of genes?
+
+There are also genes for which the cis effects get much stronger in the
+HF animals (negative values).
+Are there any genes for which 
+
+```{r}
+boxplot(genetic.chow.hf.diff, chromatin.chow.hf.diff);abline(h = 0)
+
+plot(genetic.chow.hf.diff, chromatin.chow.hf.diff)
+abline(0, 1, h = 0, v = 0)
+
+par(mfrow = c(1,2))
+plot(e.lod[,"Chow"], e.lod[,"HF"], xlab = "Chow", ylab = "HF",
+main = "Genetic eQTL LOD", col = "gray", pch = 16)
+abline(0,1)
+
+plot(max.ch.lod[,"Chow"], max.ch.lod[,"HF"], xlab = "Chow", ylab = "HF",
+main = "Chromatin eQTL LOD", col = "gray", pch = 16)
+abline(0,1)
+
+```
+
+
+```{r diet_int, fig.width = 8, fig.height = 4}
+e.lod.change <- e.lod[,2]-e.lod[,1]
+ch.lod.change <- max.ch.lod[,2]-max.ch.lod[,1]
+names(ch.lod.change) <- rownames(e.lod)
+
+par(mfrow = c(1,2))
+pt.col <- colors.from.values(abs(e.lod.change), use.pheatmap.colors = TRUE)
+plot(e.lod[,1:2], main = "Genetic eQTL LOD scores", col = pt.col, pch = 16, cex = 0.5)
+abline(0,1)
+
+pt.col <- colors.from.values(abs(ch.lod.change), use.pheatmap.colors = TRUE)
+plot(max.ch.lod[,1:2], main = "Chromatin State eQTL LOD scores", col = pt.col, 
+pch = 16, cex = 0.5)
+abline(0,1)
+```
+
+The distributions of the LOD score differences are shown below. 
+The genetics-based eQTLs had larger LOD score changes overall than the 
+chromatin-based eQTLs.
+
+```{r lod_diff_dist, fig.width = 8, fig.height = 4}
+boxplot(list("Genetics-Based" = e.lod.change, "Chromatin-Based" = ch.lod.change))
+lod.change.thresh = 2
+```
+
+The following plots show the relationship between the magnitude of the 
+genetic-chromatin LOD score mismatch and the change in LOD score based
+on diet. 
+
+For the genetic-based eQTLs there does seem to be a very slight 
+relationship between diet-interactive eQTLs and the mismatch between
+chromatin-based and genetic-based eQTL LOD scores. 
+
+Genes in the upper left had very large changes in eQTL due to diet, 
+but virtually no discrepancy between the 
+
+```{r diet_v_genetics}
+par(mfrow = c(1,2))
+
+plot.with.model(lod.diff, e.lod.change, xlab = "LOD score mismatch", 
+ylab = "Genetics-Based LOD score diff by Diet", main = "Genetics-Based",
+pch = 16)
+abline(h = 2, v = 2, col = "red")
+plot.with.model(lod.diff, ch.lod.change, xlab = "LOD score mismatch",
+ylab = "Chromatin-Based LOD score diff by Diet", main = "Chromatin-Based", 
+report = "cor.test")
+```
+
+
+If we look at just the transcripts whose LOD score change by more than
+`r lod.change.thresh`, we see that the list for the genetic diet-interactive 
+eQTLs is much bigger than the list for the chromatin state diet-interactive eQTLs, 
+and almost completely subsumes that list.
+
+```{r e.ch.overlap}
+big.e.change <- names(e.lod.change)[which(e.lod.change > lod.change.thresh)]
+big.ch.change <- names(ch.lod.change)[which(ch.lod.change > lod.change.thresh)]
+plotVenn(list("Genetic" = big.e.change, "Chromatin" = big.ch.change))
+gsea.diff.list <- list("Big.Genetics.eQTL.Change" = big.e.change, 
+"Big.Chromatin.eQTL.Change" = big.ch.change)
+```
+
+The plot below shows the genes with large genetics-based LOD scores (blue),
+large chromatin-based LOD scores (red), and those with large differences
+in both (purple) overlayed on the chromatin-genetics mismatch plot. There
+Does not appear to be any pattern.
+
+```{r lod_diff_overlap}
+pt.col = rep("gray", nrow(e.lod))
+pt.col[match(big.e.change, rownames(e.lod))] <- "blue"
+pt.col[match(big.ch.change, rownames(e.lod))] <- "red"
+pt.col[match(intersect(big.ch.change, big.e.change), rownames(e.lod))] <- "purple"
+
+plot(e.lod[,1], max.ch.lod[,1], pch = 16, col = pt.col, cex = 0.5,
+xlab = "genetic eQTL LOD score", ylab = "chromatin eQTL LOD score",
+main = "Genetic vs. Chromatin-based eQTL LOD scores")
+abline(0,1, col = "gray")
+abline(-lod.change.thresh,1, lty = 2, col = "salmon")
+abline(lod.change.thresh,1, lty = 2, col = "salmon")
+```
+
+We used GSEA to confirm that there was no enrichment of these diet-interactive
+QTLs among the transcripts with mismatched genetic and chromatin eQTL LOD scores.
+
+```{r chr_diff_gsea, results = "asis"}
+lod.diff.enrich <- fgsea::fgseaMultilevel(pathways = gsea.diff.list, 
+  stats = ordered.lod, minSize=15, maxSize=600, gseaParam = 1)
+kable(lod.diff.enrich)
+```
+
+## Genetic and Chromatin eQTL LOD score comparison
+
+The following plot compares the maximum LOD score from each chromatin 
+eQTL to the LOD scores from the cis genetic haplotypes. 
+
+```{r max_lod, fig.width = 5, fig.height = 5}
+if(is.interactive){quartz(width = 5, height = 5)}
+max.ch.lod <- t(sapply(ch.lod, function(x) if(length(x) > 1){apply(x, 2, function(y) max(y, na.rm = TRUE))}else{rep(NA, 4)}))
+lod.diff <- e.lod - max.ch.lod
+boxplot(lod.diff)
+par(mfrow = c(2,2))
+for(i in 1:ncol(e.lod)){
+  pt.col <- rep("gray", length(lod.diff[,i]))
+  pt.col[which(lod.diff[,i] < 0)] <- "red"
+  plot(e.lod[,i], max.ch.lod[,i], xlab = "eQTL LOD score", cex = 0.5,
+  ylab = "Maximum Chromatin eQTL LOD Score", pch = 16, col = pt.col,
+  main = colnames(max.ch.lod)[i])
+  abline(0,1)
+}
+```
+
+## Genetic and Chromatin R2 Comparison
+
+We also calculated the R2 for each linear model using either haplotype
+probabilities or chromatin probabilities plus covariates to explain 
+transcript level. This way we can get a sense of how much variance
+in the expression each type of data is explaining.
+
+The chromatin variance explained and genetics variance explained are 
+very highly correlated. There are many cases in which the chromatin does
+not explain as much variance as the genetics. There are also cases in 
+which the chromatin explains more variance, but all of these cases 
+are probably within the error of the model. There are not outstanding
+cases in which the chromatin explains a lot more than the genetics.
+
+```{r max_r2, fig.width = 5, fig.height = 5}
+if(is.interactive){quartz(width = 5, height = 5)}
+max.ch.r2 <- t(sapply(ch.r2, function(x) if(length(x) == 0){return(rep(NA, 4))}else{apply(x, 2, function(y) max(y, na.rm = TRUE))}))
+r2.diff <- e.r2 - max.ch.r2
+boxplot(r2.diff)
+
+par(mfrow = c(2,2))
+for(i in 1:ncol(r2.diff)){
+  pt.col <- rep("gray", nrow(r2.diff))
+  pt.col[which(r2.diff[,i] < 0)] <- "red"
+  plot.with.model(e.r2[,i], max.ch.r2[,i], xlab = "eQTL R2", cex = 0.5,
+  ylab = "Maximum Chromatin eQTL R2", col = "gray", pch = 16,
+  main = colnames(r2.diff)[i])
+  abline(0,1)
+}
+```
+
+The following plot shows the distribution of the difference in R2 between 
+the genetic eQTL and the chromatin eQTL. 
+
+```{r r2_diff, fig.width = 9, fig.height = 3}
+r2.diff <- e.r2-max.ch.r2
+boxplot(r2.diff)
+```
+
+The following plot compares the genetic-chromatin R2 difference 
+in the chow and HF animals. 
+
+Genes above the line y = x are those in which there was a bigger
+difference between the genetic and chromatin R2 in the HF animals
+than in the chow animals. I was expecting this group to be the 
+bigger group of genes.
+
+Genes below the line y = x are those in which there was a bigger 
+difference between the genetic R2 and the chromatin R2 in the chow animals 
+than in the HF animals. There are many more of these than I thought 
+there would be. Does this indiate an error, or another biological mystery.
+
+
+The scatter was more than I was 
+expecting. 
+
+A priori, I thought that the inbred chromatin states would
+be better at predicting gene expression in the chow animals than in the
+HF animals. I hypothesized that the chromatin states from the inbred
+animals would align well with the chow animals. And since we showed 
+earlier that chromatin and genetics seem to carry a lot of the same 
+information that a better chromatin state match would result in a 
+very close match between the genetic R2 and the chromatin R2.
+
+
+```{r r2_comp}
+plot(r2.diff[,"Chow"], r2.diff[,"HF"],
+xlab = "R2 Differences in Chow Animals", ylab = "R2 Differences in HF Animals")
+abline(0,1)
+abline(h = 0, v = 0, col = "gray", lty = 2)
+```
+
+There are some genes for which there is a big genetic eQTL, but very little
+variation in the chromatin. Here we spend some time exploring these 
+mismatched genes. 
+
+## Investigating Genetic and Chromatin Differences {.tabset .tabset-fade .tabset-pills}
+
+We defined genes with a big mismatch between the genetic and chromatin 
+eQTL scores as genes with an R2 difference greater than 0.1. 
+
+
+```{r define_mismatch}
+r2diff.order <- apply(r2.diff, 2, function(x) order(x, decreasing = TRUE))
+big.diff <- apply(r2.diff, 2, function(x) rownames(r2.diff)[which(x > 0.1)])
+```
+
+This set of `r length(big.diff)` genes is highly enriched for
+ribosomal genes. 
+
+```{r mismatch_enrich, fig.height = 10, fig.width = 7}
+enrich <- lapply(big.diff, function(x) gost(x, organism = "mmusculus", source = "GO"))
+if(is.interactive){quartz(height = 10, width = 7)}
+plot.enrichment.group(enrich, sort.by = "p_value", n.terms = 30, max.term.size = 500)
+```
+
+We looked at the expression of these genes. The expression is not
+very highly correlated.
+
+```{r}
+big.diff.id <- transcript.info[match(big.diff, transcript.info[,"external_gene_name"]),"ensembl_gene_id"]
+id.locale <- match(big.diff.id, colnames(expr))
+big.diff.expr <- expr[,id.locale]
+pheatmap(cor(big.diff.expr, use = "pairwise.complete.obs"), show_rownames = FALSE, 
+show_colnames = FALSE)
+```
+
+We decomposed the expression matrix using PCA. There was no obvious way 
+to cluster the genes into multiple groups, so we mapped the full group.
+
+```{r expr_decomp}
+expr.decomp <- plot.decomp(t(big.diff.expr))
+
+eigengene.decomp <- plot.decomp(big.diff.expr, pc = 2, plot.results = FALSE)
+eigengenes <- eigengene.decomp$u
+rownames(eigengenes) <- rownames(expr)
+```
+
+We scanned these top two eigengenes to look for trans eQTL. Both eigengenes do 
+have QTLs. Both QTLs encompass genes in the expression block. 
+I will take these out and rescan.
+
+```{r scan_eigengenes, results = "asis"}
+eigengene.scan <- scan1(genoprobs, eigengenes, kinship = K, addcovar = covar)
+
+for(i in 1:ncol(eigengenes)){
+  if(is.interactive){quartz(width = 10, height = 3)}
+  par(mar = c(2,4,2,2))
+  plot(eigengene.scan, lodcol = i, map = map, main = paste("Eigengene", i))
+}
+
+qtl.peaks <- find_peaks(eigengene.scan, map = map, threshold = 6, prob = 0.95)
+qtl.genes <- local.genes <- vector(mode = "list", length = nrow(qtl.peaks))
+for(i in 1:length(qtl.genes)){
+  region <- paste0(qtl.peaks[i,3], ":", qtl.peaks[i,6]*1e6, ":", qtl.peaks[i,7]*1e6)
+  qtl.genes[[i]] <- getBM("external_gene_name", "chromosomal_region",  region, mus)
+  local.genes[[i]] <- intersect(qtl.genes[[i]][,1], big.diff)
+}
+```
+
+Take out local genes and rescan. The chromosome 11 QTL is still there,
+but the chromosome 3 QTL dips down a fair bit. Hmm...
+
+```{r scan_eigengenes2, results = "asis"}
+out.genes <- setdiff(big.diff, unlist(local.genes))
+out.id <- transcript.info[match(out.genes, transcript.info[,"external_gene_name"]), "ensembl_gene_id"]
+id.locale <- match(out.id, colnames(expr))
+sub.expr <- expr[,id.locale]
+
+eigengene.decomp <- plot.decomp(sub.expr, pc = 2, plot.results = FALSE)
+eigengenes <- eigengene.decomp$u
+rownames(eigengenes) <- rownames(expr)
+
+eigengene.scan <- scan1(genoprobs, eigengenes, kinship = K, addcovar = covar)
+
+for(i in 1:ncol(eigengenes)){
+  if(is.interactive){quartz(width = 10, height = 3)}
+  par(mar = c(2,4,2,2))
+  plot(eigengene.scan, lodcol = i, map = map, main = paste("Eigengene", i))
+}
+```
+
+
+
+## Investigating Chromatin and Genetic Differences
+
+Because the chromatin was measured in inbred hepatocytes, and DO gene
+expression was measured in whole liver, perhaps the genes for which
+the chromatin and genetic eQTLs differ are genes that are expressed
+in a cell type other than hepatocytes. That cell type might have 
+a genetic eQTL and even have matching chromatin, but we would see
+a different chromatin pattern because we measured chromatin in hepatocytes
+only. 
+
+
+
+I also tried transcription factor gene lists, and immune gene lists,
+and none had any significant enrichments.
+
+## GSEA of mismatched genes for other things {.tabset .tabset-fade .tabset-pills}
+
+```{r msigdb_tf, results = "asis"}
+#get GO term gene sets
+#see https://www.gsea-msigdb.org/gsea/msigdb/genesets.jsp?
+gene.sets <- msigdbr(species = "Mus musculus", category = "H") #hallmark gene sets
+gene.sets <- msigdbr(species = "Mus musculus", category = "C8") #cell-specific gene sets
+
+gene.lists <- set_to_list(gene.sets)
+gene.enrich <- fgsea::fgseaMultilevel(pathways = gene.lists, stats = ordered.genes, 
+  minSize=15, maxSize=600, gseaParam = 0)
+plot.gsea.results(gene.enrich)
+```
+
+### GTRD
+```{r gtrd_results}
+plot.gsea.results(cell.enrich, "padj", p.thresh = 0.1)
+```

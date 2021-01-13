@@ -5,7 +5,7 @@
 
 get.gene.expr <- function(rnaseq.gene.info, rna.seq, gene.name, strain.name, treatment.name, 
 col.table, average.replicates = TRUE){
-	
+	result <- NA
 	strains <- substr(colnames(rna.seq), 1, 2)
 	treatments <- substr(colnames(rna.seq), 3,3)
 	

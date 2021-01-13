@@ -1,0 +1,58 @@
+---
+title: "Analyzing ChromHMM Results"
+author: Anna L Tyler
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  html_document:
+    code_folding: hide
+    collapsed: no
+    toc: yes
+    toc_float: yes
+---
+
+## Introduction
+The purpose of this workflow is to run all eQTL scans in the DO data.
+
+```{r load_libraries}
+library(here); library(qtl2)
+```
+
+```{r source_code}
+all.code.dir <- list.files(here("Code"), full.names = TRUE)
+for(i in 1:length(all.code.dir)){
+	all.fun <- list.files(all.code.dir[i], full.names = TRUE, pattern = ".R")
+	for(j in 1:length(all.fun)){source(all.fun[j])}
+}
+```
+
+```{r load_data}
+#A file containing the cis eQTL coefficients for each haplotype and each transcript
+do.qtl.file <- here("Data", "DOQTL", "Svenson_DO850_for_eQTL_viewer_v9.RData")
+do.data <- load(do.qtl.file)
+```
+
+Do local scans only for each transcript.
+
+```{r run_eQTL}
+mrna <- dataset.mrna$data$rz
+mrna.info <- dataset.mrna$annot.mrna
+covar <- dataset.mrna$covar.matrix
+eqtl.results <- vector(mode = "list", length = nrow(mrna.info))
+names(eqtl.results) <- unlist(mrna.info[,1])
+
+scan.one.transcript <- function(idx){
+    transcript.result <- NA
+    mrna.chr <- unlist(mrna.info[idx,"chr"])
+    chr.locale <- which(names(genoprobs) == mrna.chr)
+    transcript.vals <- mrna[,idx]
+    if(mrna.chr != "X"){
+        transcript.result <- scan1(genoprobs[,chr.locale], transcript.vals, 
+        kinship = K[[chr.locale]], addcovar = covar)
+    }
+return(transcript.result)
+}
+
+eqtl.file <- here("Data", "DOQTL", "eQTL_statistics.RDS")
+save.periodically(scan.one.transcript, max.iter = nrow(mrna.info), 
+filename = eqtl.file, save.every = 100)
+```

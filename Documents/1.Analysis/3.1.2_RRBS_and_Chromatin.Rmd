@@ -1,0 +1,273 @@
+---
+title: "RRBS and Chromatin Modifications"
+author: Anna L Tyler
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  html_document:
+    code_folding: hide
+    collapsed: no
+    toc: yes
+    toc_float: yes
+---
+
+The purpose of this workflow is combine data about DNA methylation and 
+chromatin modifications. Here we look at whether the effect of DNA methylation
+on expression is affected by chromatin state.
+
+
+```{r load_libraries, echo = FALSE}
+is.interactive = FALSE
+#is.interactive = TRUE
+needed.packages <- c("here", "pheatmap", "hexbin", "RColorBrewer", "gprofiler2",
+"knitr")
+for(i in 1:length(needed.packages)){library(needed.packages[i], character.only = TRUE)}
+```
+
+```{r source_code}
+all.code.dir <- list.files(here("code"), full.names = TRUE)
+for(i in 1:length(all.code.dir)){
+	all.fun <- list.files(all.code.dir[i], full.names = TRUE)
+	for(j in 1:length(all.fun)){source(all.fun[j])}
+}
+```
+
+```{r read_data}
+#DNA methylation data aligned across strains
+rrbs.strain.mat.file <- here("Results", "RRBS", "Aligned.Methyl.Mats.RDS")
+rrbs.mats <- readRDS(rrbs.strain.mat.file)
+chrom.mats <- readRDS(here("Results", "ChromHMM", "008_states_C", "Chromatin_States_8_full_gene_1000.RData"))
+strain.expr <- readRDS(here("Data", "RNASeq", "Strain_Mean_C_Expression.RData"))
+transcript.info <- readRDS(here("Data", "RNASeq", "RNASeq_gene_info.RData"))
+```
+
+```{r scale_expression_data}
+scaled.expr <- lapply(strain.expr, scale)
+#scaled.expr <- lapply(strain.expr, function(x) x - x[2]) #center on B6
+
+col.table <- as.matrix(read.table(here("Data", "support_files", "strain.color.table.txt"), 
+sep = "\t", comment.char = "%", stringsAsFactors = FALSE))
+```
+
+```{r align_data}
+#align the genes in the chromatin, expression, and methylation data for ease of use later
+rrbs.gene.id <- transcript.info[match(names(rrbs.mats), transcript.info[,"external_gene_name"]),"ensembl_gene_id"]
+common.id <- Reduce("intersect", list(rrbs.gene.id, names(chrom.mats), names(strain.expr)))
+common.chrom.locale <- match(common.id, names(chrom.mats))
+common.rrbs.locale <- match(common.id, rrbs.gene.id)
+common.expr.locale <- match(common.id, names(strain.expr))
+
+matched.chrom <- chrom.mats[common.chrom.locale]
+matched.rrbs <- rrbs.mats[common.rrbs.locale]
+names(matched.rrbs) <- common.id
+matched.expr <- strain.expr[common.expr.locale]
+
+gene.names <- transcript.info[match(common.id, transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
+```
+
+```{r center_chrom}
+#center chromatin between TSS and TES
+norm.chrom.file <- here("Results", "ChromHMM", "Centered_Chromatin_Mats.RDS")
+if(!file.exists(norm.chrom.file)){
+    chrom.gene.names <- transcript.info[match(names(matched.chrom), 
+    transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
+    norm.chrom <- lapply_pb(1:length(matched.chrom), 
+    function(x) if(length(matched.chrom[[x]]) > 1){center.on.feature(chrom.gene.names[x], 
+    transcript.info, matched.chrom[[x]][,1], feature = "full")}else{NA})
+    norm.chrom.mats <- matched.chrom
+    for(i in 1:length(norm.chrom.mats)){
+        rownames(norm.chrom.mats[[i]]) <- names(norm.chrom[[i]])
+    }    
+    saveRDS(norm.chrom.mats, norm.chrom.file)
+}else{
+    norm.chrom.mats <- readRDS(norm.chrom.file)
+}
+```
+
+## Methylation and chromatin state
+Is there a relationship between methylation percent and chromatin state?
+Create a chromatin state matrix that encompasses the methylation marks.
+
+```{r methyl_chrom}
+chrom_states_near_methyl <- vector(mode = "list", length = length(matched.chrom))
+names(chrom_states_near_methyl) <- gene.names
+
+for(i in 1:length(matched.chrom)){
+    #if(is.interactive){report.progress(i, length(matched.chrom)))}
+    chrom.coords <- as.numeric(rownames(matched.chrom[[i]]))
+    methyl.coords <- as.numeric(colnames(matched.rrbs[[i]]))
+    if(length(chrom.coords) > 1 && length(methyl.coords) > 1){
+        #for each methylation mark, identify the chromatin bin.
+        nearest_pts <- sapply(methyl.coords, function(x) get.nearest.pt(chrom.coords, x))
+        nearest_methyl_states <- t(matched.chrom[[i]][nearest_pts,])
+        #par(mfrow = c(2,1))
+        #imageWithText(nearest_methyl_states, use.pheatmap.colors = TRUE, show.text = FALSE,
+        #col.names = NULL)
+        #imageWithText(matched.rrbs[[i]], use.pheatmap.colors = TRUE, show.text = FALSE,
+        #col.names = NULL)
+        chrom_states_near_methyl[[i]] <- nearest_methyl_states
+    }
+}
+```
+
+First, we asked whether methylated positions within particular chromatin states
+were differentially methylated regardless of position in the gene body.
+
+```{r methyl_by_state}
+state_methylation <- vector(mode = "list", length = 8)
+names(state_methylation) <- paste("State", 1:8)
+for(st in 1:8){
+    state_locale <- lapply(chrom_states_near_methyl, function(x) which(x == st))
+    state_methyl  <- lapply(1:length(state_locale), 
+    function(x) if(length(state_locale[[x]] > 0)){matched.rrbs[[x]][state_locale[[x]]]})
+    methylv <- unlist(state_methyl)
+    state_methylation[[st]] <- methylv[which(!is.na(methylv))]
+}
+
+```
+
+
+```{r rel_abundance}
+state_counts <- rep(NA, length = 8)
+for(st in 1:8){
+    state_count <- lapply(chrom_states_near_methyl, function(x) length(which(x == st)))
+    state_counts[st] <- sum(unlist(state_count))
+}
+```
+
+The barplot below shows how many methylated cytosines were identified
+in each state. The vast majority of methylated positions were in states
+1 and 7. The abundance of methylated cytosines in state 7 makes sense 
+since it is concentrated at the TSS where the densest methylation occurs.
+
+State 1 also makes sense, since it is a relatively abundant state overall.
+
+```{r state_methylation_barplot}
+state_methyl_count <- sapply(state_methylation, length)
+barplot(state_methyl_count, names = paste0("State", 1:8),
+ylab = "Number of Methylated Positions")
+```
+
+The barplot below shows the total number of methylated cytosines identified
+for each state normalized by the total number of times each state appeared.
+This shows that States 3 and 7 had higher rates of methylated cytosines 
+than the other states, which makes sense, since these states are highly 
+abundant at the TSS.
+
+```{r rel_state_barplot}
+barplot(state_methyl_count/state_counts, names = paste0("State", 1:8),
+main = "Percent State Appearences with Methylated Cytosines")
+```
+
+One thing these plots show is that there are no states that do not 
+contain any methylated cytosines. The boxplot below shows the distribution
+of percent methylation of the sites found in different states.
+
+```{r state_methylation_boxplot}
+boxplot(state_methylation, main = "Percent Methylation by Chromatin State",
+xlab = "Chromatin State", ylab = "Percent Methylation")
+```
+
+Interestingly enough, there were some differences. State 1, which is the absence
+of chromatin modifications was relatively hypermethylated. This state tends 
+to be depleted at the TSS, and increases over the gene body. We know that 
+DNA is hypomethylated at the TSS, and hypermethylated in the gene body, so 
+the hypermethylation of cytosines in State 1 is expected. 
+
+Cytosines in states 3 and 7, and to a lesser extent State 2 tended to be 
+hypomethylated. This pattern too is expected based on the relative distributions
+of these states: most abundant at the TSS.
+
+## Chromatin state, methylation, and expression
+We next investigated whether the chromatin state housing the 
+methylated DNA had any effect on the methylation's effect on expression.
+
+For example, methylating DNA at the TSS in state 7 may have a negative
+effect on expression, whereas methylating DNA at the TSS in state 3
+may have no effect.
+
+```{r plot_example, fig.width = 10, fig.height = 5}
+gene.name = "Hsd3b1"
+gene.locale <- which(gene.names == gene.name)
+plot.chrom.rrbs(methyl.mat = t(rrbs.mats[[gene.locale]]), 
+chrom.mat = norm.chrom.mats[[gene.locale]], gene.name = gene.name, 
+gene.expr = strain.expr[[gene.locale]], col.table = col.table,
+gene.info = transcript.info)
+```
+
+Align chromatin state, with methylation percent and expression.
+
+```{r chrom_methyl}
+expr.order <- match.order(rownames(rrbs.mats[[1]]), names(strain.expr[[gene.locale]]), col.table)
+
+align_methyl_chrom_expr <- function(gene.name){
+    gene.locale <- which(gene.names == gene.name)
+    methyl.mat <- rrbs.mats[[gene.locale]]
+    chrom.mat <- t(norm.chrom.mats[[gene.locale]])
+    gene.expr <- strain.expr[[gene.locale]][expr.order]
+
+    methyl.coords <- as.numeric(colnames(methyl.mat))
+    chrom.coords <- as.numeric(colnames(chrom.mat))
+
+    low.bound <- max(c(min(methyl.coords), min(chrom.coords)))
+    hi.bound <- min(c(max(methyl.coords), max(chrom.coords)))
+
+    #for each methylated position, find the state in the chromatin matrix
+    methyl.which <- intersect(which(methyl.coords >= low.bound), which(methyl.coords <= hi.bound))
+
+    if(length(methyl.which) == 0){
+        return(NA)
+    }
+
+    chrom.matched.methyl <- vector(mode = "list", length = length(methyl.which))
+
+    for(i in 1:length(methyl.which)){
+        methyl.pos <- methyl.coords[methyl.which[i]]
+        lower.chrom <- which(chrom.coords < methyl.pos)
+        higher.chrom <- which(chrom.coords > methyl.pos)
+
+        if(min(lower.chrom) > max(higher.chrom)){
+            chrom.pos <- c(max(higher.chrom), min(lower.chrom))
+        }else{
+            chrom.pos <- c(max(lower.chrom), min(higher.chrom))
+        }
+        chrom.pos.states <- chrom.mat[,chrom.pos]
+        chrom.matched.methyl[[i]] <- cbind(chrom.pos.states, methyl.mat[,methyl.which[i],drop=FALSE], gene.expr)
+    }
+    return(chrom.matched.methyl)
+}
+
+
+test_assoc <- function(gene.name){
+    epi.align <- align_methyl_chrom_expr(gene.name)
+
+    if(length(epi.align) == 1){return(NA)}
+
+    models <- vector(mode = "list", length = length(epi.align))
+    for(i in 1:length(epi.align)){
+        model.mat <- data.frame(epi.align[[i]])
+        colnames(model.mat) <- c("chr1", "chr2", "methyl", "expression")
+        if(all(apply(model.mat, 2, function(x) length(which(!is.na(x)))) > 2)){
+            models[[i]] <- lm(expression~ chr1 + chr2 + methyl + chr1:methyl + chr2:methyl, data = model.mat)
+        }else{
+            models[[i]] <- NA
+        }
+    }
+
+    model.coef <- sapply(models, function(x) if(length(x) > 1){coef(x)}else{rep(NA, 6)})
+    pheatmap(model.coef[2:nrow(model.coef),], cluster_rows = FALSE, cluster_cols = FALSE)
+    return(model.coef)
+}
+
+for(i in 140:length(gene.names)){
+    report.progress(i, length(gene.names))
+    test <- test_assoc(gene.names[i])
+}
+gene.coef <- lapply_pb(gene.names[1:3114], test_assoc)
+#pheatmap(model.coef[2:nrow(model.coef),], cluster_rows = FALSE, cluster_cols = FALSE)
+```
+
+```{r, eval = FALSE}
+methyl.table <- t(rrbs.mats[[gene.locale]])
+
+
+```

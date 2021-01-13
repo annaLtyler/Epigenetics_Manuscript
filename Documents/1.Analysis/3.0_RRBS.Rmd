@@ -1,0 +1,190 @@
+---
+title: "RRBS Analysis"
+author: Anna L Tyler
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  html_document:
+    code_folding: hide
+    collapsed: no
+    toc: yes
+    toc_float: yes
+---
+
+The purpose of this workflow is to start analyzing the RRBS data from Annat's 
+workflow.
+
+This workflow does the following things:
+
+1. Create soft links from Annat's output to this project directory
+2. Collate RRBS data into a single RDS object.
+3. Check alignment of methylation around specific genes.
+
+```{r load_libraries, echo = FALSE}
+needed.packages <- c("here", "pheatmap")
+for(i in 1:length(needed.packages)){library(needed.packages[i], character.only = TRUE)}
+
+```
+
+```{r soft_links, eval = FALSE}
+annat.output <- "/projects/carter-lab/hepatocytes/RRBS_alignmentsCalling/output/bismark_bedfiles_B6Co"
+all.bed.files <- list.files(path = annat.output, pattern = ".bed", full.names = TRUE)
+unmapped.idx <- grep("unmapped", all.bed.files)
+all.bed.files <- all.bed.files[-unmapped.idx]
+new.bed.dir <- here("data", "bed_files")
+new.bed.files <- gsub(annat.output, new.bed.dir, all.bed.files)
+
+for(i in 1:length(all.bed.files)){
+	link.line <- paste("ln -s", all.bed.files[i], new.bed.files[i])
+	system(link.line)
+}
+```
+
+```{r soft_links_b6, eval = FALSE}
+#because the B6 files don't need to go through G2G, they are in 
+#a different location
+orig.bed.path <- "/projects/carter-lab/hepatocytes/RRBS_alignmentsCalling/output/bismark"
+b6.bed.path <- list.files(pattern = "B6", path = orig.bed.path, full.names = TRUE)
+
+for(i in 1:length(b6.bed.path)){
+
+}
+
+
+```
+
+```{r source_code}
+all.code.dir <- list.files(here("code"), full.names = TRUE)
+for(i in 1:length(all.code.dir)){
+	all.fun <- list.files(all.code.dir[i], full.names = TRUE)
+	for(j in 1:length(all.fun)){source(all.fun[j])}
+}
+```
+
+```{r collate_data}
+all.var <- ls()
+methyl.loaded <- as.logical(length(which(all.var == "all.rrbs")))
+
+if(!methyl.loaded){
+	collated.data.file <- here("data", "All.Methylation.RDS")
+
+	data.files <- list.files(here("data", "bed_files"), full.names = TRUE)
+	data.names <- basename(data.files)
+	ind.name <- sapply(strsplit(data.names, "\\."), function(x) x[1])
+	ind.label <- sapply(strsplit(ind.name, ""), function(x) paste(tail(x, 2), collapse = ""))
+	treat.label <- substr(ind.label, 1, 1)
+	ind <- substr(ind.label, 2,2)
+	strain <- mapply(function(x,y) gsub(x, "", y), ind.label, ind.name)
+	u_strain <- unique(strain)
+
+	id.table <- cbind(strain, treat.label, ind)
+
+	if(!file.exists(collated.data.file)){
+		all.rrbs <- vector(mode = "list", length = length(data.files))
+		for(i in 1:length(data.files)){
+			print(i)
+			all.rrbs[[i]] <- read.table(data.files[i], sep = "\t", stringsAsFactors = FALSE, skip = 1)
+			all.rrbs[[i]][,1] <- gsub("chr", "", all.rrbs[[i]][,1])
+		}
+		names(all.rrbs) <- ind.name
+		saveRDS(all.rrbs, collated.data.file)
+	}else{
+		all.rrbs <- readRDS(collated.data.file)
+	}
+}
+```
+
+The following histograms show the distribution of all methylation percentages for
+each individual mouse. Most sites are unmethylated or fully methylated.
+
+```{r histograms, fig.height = 9, fig.width = 9}
+par(mfrow = c(3,3))
+for(i in 1:length(all.rrbs)){
+	hist(all.rrbs[[i]][,4], xlab = "Percent Methylated", main = ind.name[i])
+	}
+```
+
+```{r load_expression_data}
+gene.info <- readRDS(here("data", "support_files", "RNASeq_gene_info.RData"))
+expr <- readRDS(here("data", "support_files", "9StrainsEffCts_vst.RDS"))
+col.table <- as.matrix(read.table(here("data", "support_files", "strain.color.table.txt"), 
+sep = "\t", comment.char = "%", stringsAsFactors = FALSE))
+```
+
+```{r pick.gene}
+gene.name <- "Corin"
+upstream.buffer = 1000
+downstream.buffer = 1000
+```
+
+The following figure shows methylation around the gene `r gene.name` 
+(including 1kb up and downstream). 
+The methylation patterns for the different strains align very nicely. 
+
+```{r methylation_alignments, fig.height = 4, fig.width = 12}
+gene.locale <- which(gene.info[,"external_gene_name"] == gene.name)
+gene.chr <- unique(gene.info[gene.locale,"chromosome_name"])
+gene.start <- unique(gene.info[gene.locale,"start_position"])
+gene.end <- unique(gene.info[gene.locale,"end_position"])
+gene.strand <- unique(gene.info[gene.locale,"strand"])
+
+gene.expr <- get.gene.expr(gene.info, expr, gene.name, 
+strain.name = u_strain, treatment = "C", col.table = col.table, average.replicates = FALSE)
+colnames(gene.expr) <- substr(colnames(gene.expr), 1, 2)
+expr.order <- order(colMeans(gene.expr))
+
+methyl.table <- get.methyl.pos(all.methyl.data = all.rrbs, 
+strain.name = unique(id.table[,1]), treatment.name = "C", 
+id.table, chr = gene.chr, start.pos = gene.start - upstream.buffer, 
+stop.pos = gene.end + downstream.buffer, average.replicates = TRUE)
+colnames(methyl.table) <- gsub("_C", "", colnames(methyl.table))
+
+#put the methylation rows in the same order as expression for easier
+#comparison
+methyl.order <- order.strains(colnames(gene.expr[,expr.order]), colnames(methyl.table), 
+col.table)
+methyl.order <- methyl.order[which(!is.na(methyl.order))]
+pheatmap(t(methyl.table[,rev(methyl.order)]), cluster_rows = FALSE, cluster_cols = FALSE, 
+show_colnames = FALSE)
+
+```
+
+The following figure shows the expression of this gene for each strain. The strains are
+ordered to match the order of expression. As we expect, the correlation between percent
+methylation and expression is most strongly negative right around the transcription 
+start site.
+
+
+```{r expr.plot, fig.height = 6, fig.width = 4}
+boxplot(gene.expr[,expr.order], horizontal = TRUE)
+mean.expr <- colMeans(gene.expr[,expr.order])
+```
+
+We looked at the correlation between expression and percent methylation across a sliding window.
+The following bar plot shows the correlation between methylation percent in each sliding window
+and inbred gene expression. The arrow shows the direction of transcription.
+
+```{r window.methyl}
+window.size = ceiling(nrow(methyl.table)/10)
+gap.size = ceiling(window.size/2)
+
+window.idx <- sliding.window.el(1:nrow(methyl.table), window.size, gap.size)
+strain.methyl <- lapply(window.idx, 
+function(x) colMeans(methyl.table[x,methyl.order,drop=FALSE], na.rm = TRUE))
+
+arrow.start <- get.nearest.pt(gene.start, sapply(window.idx, 
+function(x) mean(as.numeric(rownames(methyl.table)[x]))))
+
+arrow.end <- get.nearest.pt(gene.end, sapply(window.idx, 
+function(x) mean(as.numeric(rownames(methyl.table)[x]))))
+
+methyl.cor <- sapply(strain.methyl, function(x) cor(x, mean.expr, use = "complete"))
+barplot(methyl.cor, ylim = c(-1,1), 
+ylab = "Correlation between methylation percent and expression", xlab = "Window")
+par(xpd = TRUE)
+if(gene.strand == 1){
+	arrows(x1 = arrow.start, x0 = arrow.end, y0 = -1, y1 = -1, lwd = 3)
+}else{
+	arrows(x0 = arrow.end, x1 = arrow.start, y0 = -1, y1 = -1, lwd = 3)
+}
+par(xpd = FALSE)
+```

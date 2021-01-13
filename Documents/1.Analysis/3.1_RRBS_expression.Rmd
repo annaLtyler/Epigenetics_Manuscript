@@ -1,0 +1,834 @@
+---
+title: "RRBS Analysis"
+author: Anna L Tyler
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  html_document:
+    code_folding: hide
+    collapsed: no
+    toc: yes
+    toc_float: yes
+---
+
+The purpose of this workflow is to look for correlations between DNA methylation
+and gene expression within a single strain
+
+This workflow uses the output from the RRBS workflow.
+
+```{r load_libraries, echo = FALSE}
+is.interactive = FALSE
+#is.interactive = TRUE
+needed.packages <- c("here", "pheatmap", "hexbin", "RColorBrewer")
+for(i in 1:length(needed.packages)){library(needed.packages[i], character.only = TRUE)}
+```
+
+```{r source_code}
+all.code.dir <- list.files(here("code"), full.names = TRUE)
+for(i in 1:length(all.code.dir)){
+	all.fun <- list.files(all.code.dir[i], full.names = TRUE)
+	for(j in 1:length(all.fun)){source(all.fun[j])}
+}
+```
+
+```{r read_rrbs}
+rrbs.file <- here("Data", "RRBS", "All.Methylation.RDS")
+all.var <- ls()
+rrbs.loaded <- as.logical(length(which(all.var == "all.rrbs")))
+
+if(!rrbs.loaded){
+	all.rrbs <- readRDS(rrbs.file)
+}
+
+ind.name <- names(all.rrbs)
+ind.label <- sapply(strsplit(ind.name, ""), function(x) paste(tail(x, 2), collapse = ""))
+treat.label <- substr(ind.label, 1, 1)
+ind <- substr(ind.label, 2,2)
+strain <- mapply(function(x,y) gsub(x, "", y), ind.label, ind.name)
+u_strain <- unique(strain)
+id.table <- cbind(strain, treat.label, ind)
+```
+
+```{r load_expression_data}
+gene.info <- readRDS(here("Data", "RNASeq", "RNASeq_gene_info.RData"))
+expr <- readRDS(here("Data", "RNASeq", "StrainsEffCts9_vst.RDS"))
+
+col.table <- as.matrix(read.table(here("Data", "support_files", "strain.color.table.txt"), 
+sep = "\t", comment.char = "%", stringsAsFactors = FALSE))
+
+u_genes <- unique(gene.info[,"external_gene_name"])
+```
+
+
+```{r strain}
+strains <- col.table[,1]
+
+test.num <- length(u_genes)
+survey.buffer = 5000 #The number of bp to look up and downstream of specified regions
+plot.buffer = 2000 #The number of bp around a point to plot
+mean.buffer = 1000 # The number of bp around a point for calculating mean methylation
+methyl.bins <- c(0, 50, 100) #Where to bin methylation percentages
+```
+
+Get methylation percentages for all genes and all strains.
+
+```{r gene_methyl}
+strain.gene.methylation <- vector(mode = "list", length = length(strains))
+names(strain.gene.methylation) <- strains
+
+for(st in 1:length(strains)){
+  gene.methyl.file <- here("Results", "RRBS", paste0("All.Gene.Methylation.", strains[st], ".RDS"))
+
+  if(!file.exists(gene.methyl.file)){
+    cat("Getting methylation for", strains[st], "\n")
+    gene.methyl <- lapply_pb(u_genes[1:test.num], 
+    function(x) get.methyl.by.gene(x, gene.info.table = gene.info, 
+    methyl.data = all.rrbs, methyl.id.table = id.table, 
+    upstream.buffer = survey.buffer, downstream.buffer = survey.buffer, 
+    strains = strains[st], treatment = "C", strain.means = FALSE))
+    names(gene.methyl)  <- u_genes[1:test.num]
+    saveRDS(gene.methyl, gene.methyl.file)
+  }else{
+    gene.methyl <- readRDS(gene.methyl.file)
+  }
+  strain.gene.methylation[[st]] <- gene.methyl
+}
+```
+
+Calculate average RRBS for each gene across replicates.
+
+```{r avg_rrbs}
+
+strain_avg_rrbs <- vector(mode = "list", length = length(strains))
+names(strain_avg_rrbs) <- strains
+for(st in 1:length(strains)){
+  strain_avg_rrbs[[st]] <- lapply(strain.gene.methylation[[st]], 
+  function(x) if(length(x) > 3){rowMeans(x, na.rm = TRUE)}else{NA})
+}
+```
+
+
+```{r gene_expr, fig.height = 8, fig.width = 8}
+gene.c.expr.file <- here("Results", "RRBS", paste0("gene.c.expr.", st[1], ".RDS"))
+gene.t.expr.file <- here("Results", "RRBS", paste0("gene.t.expr.", st[1], ".RDS"))
+
+if(!file.exists(gene.c.expr.file)){
+  gene.c.expr <- vector(mode = "list", length = test.num)
+  names(gene.c.expr) <- u_genes[1:test.num]
+  for(i in 1:test.num){
+    gene.c.expr[[i]] <- get.gene.expr(rnaseq.gene.info = gene.info, rna.seq = expr, 
+    gene.name = u_genes[i], strain.name = st[2], treatment.name = "C", 
+    col.table = col.table, average.replicates = FALSE)
+  }
+  saveRDS(gene.c.expr, gene.c.expr.file)
+}else{
+  gene.c.expr <- readRDS(gene.c.expr.file)
+}
+
+if(!file.exists(gene.t.expr.file)){
+  gene.t.expr <- vector(mode = "list", length = test.num)
+  names(gene.t.expr) <- u_genes[1:test.num]
+  for(i in 1:test.num){
+    gene.t.expr[[i]] <- get.gene.expr(rnaseq.gene.info = gene.info, rna.seq = expr, 
+    gene.name = u_genes[i], strain.name = st[2], treatment.name = "T", 
+    col.table = col.table, average.replicates = FALSE)
+  }
+  saveRDS(gene.t.expr, gene.t.expr.file)
+}else{
+  gene.t.expr <- readRDS(gene.t.expr.file)
+}
+
+par(mfrow = c(2,2))
+mean.c.expr <- sapply(gene.c.expr, function(x) mean(x, na.rm = TRUE))
+hist(mean.c.expr, main = "Distribution of Control Gene Expression", breaks = 100,
+xlab = "Mean Expression")
+low.exp <- 6
+high.exp <- 10
+abline(v = c(low.exp, high.exp), lwd = 3)
+
+mean.t.expr <- sapply(gene.t.expr, function(x) mean(x, na.rm = TRUE))
+hist(mean.t.expr, main = "Distribution of Treatment Gene Expression", breaks = 100,
+xlab = "Mean Expression")
+abline(v = c(low.exp, high.exp), lwd = 3)
+
+plot.with.model(mean.c.expr, mean.t.expr, report = "cor.test", xlab = "Control Expression",
+ylab = "Treatment Expression", main = "Treatment vs. Control")
+```
+
+The following sets of figures show correlations between percent methylation
+and gene expression in a number of different ways. Each set corresponds to 
+methylation around one of the following features:
+
+1. Whole gene body plus or minus a `r mean.buffer`bp buffer. 
+
+2. The transcription start site (TSS) plus or minus `r mean.buffer`bp on either side.
+
+3. The promoter, which is generally 700 bp upstream of the TSS and 200 bp downstream
+of the TSS.
+
+4. The transcription end site (TES) plus or minus `r mean.buffer`bp on either side.
+
+5. The first exon. 
+Research has shown that methylation in the first exon of a gene is 
+correlated with lower expression.
+
+We show the correlation between expression and methylation in a number of ways.
+
+1. *Expression/Methylation Correlation:* The correlation between percent methylation of the 
+region specified with gene expression. This plot includes all data points without
+any binning or rounding. The points in these plots are slightly transparent to 
+give a rough idea of density.
+
+2. *Expression by Methylation Bin:* For these plots we rounded percent methylation to the
+nearest 0, 50 or 100 percent, and looked at the distribution of transcript
+expression for each of these bins.
+
+3. *Percent Low by Methylation:* For this plot, we again grouped transcripts into 0, 50,
+or 100% methylated. We then counted the percentage of each of these groups that
+had low expression (which we set at `r low.exp`). 
+We calculated the percent of transcripts in each methylation bin that were lowly 
+expressed.
+
+Overall impressions are that high methylation near the TSS is associated with
+lower expression, but is associated with higher expression upstream of the TES.
+
+
+## Whole Region {.tabset .tabset-fade .tabset-pills}
+
+```{r gene_methyl_expr}
+mean.methyl.pos <- lapply(gene.methyl, function(x) if(class(x) == "matrix"){rowMeans(x, na.rm = TRUE)}else{NA})
+gene.mean.methyl <- sapply(mean.methyl.pos, function(x) mean(x, na.rm = TRUE))
+```
+
+### Expression/Methylation Correlation
+```{r whole_cor}
+plot.with.model(gene.mean.methyl, mean.c.expr, xlab = "Average Methylation Across Region", 
+ylab = "Average Expression", report = "cor.test",
+col = rgb(100/256, 100/256, 100/256, alpha = 0.5))
+```
+
+### Expression By Methylation Bin
+
+```{r whole_strip, fig.width = 7, fig.height = 5}
+rounded.whole.methyl <- bin.vector(gene.mean.methyl, methyl.bins)
+stripchart(round(mean.c.expr, 2)~rounded.whole.methyl, method = "stack", pch = 16, col = "gray", 
+vertical = TRUE, offset = 0.2, xlab = "Percent Methylation", ylab = "Expression",
+main = "Across Region")
+expr.meds <- sapply(methyl.bins, function(x) median(mean.c.expr[which(rounded.whole.methyl == x)], 
+na.rm = TRUE))
+points(x = 1:length(methyl.bins), y = expr.meds, pch = "*", cex = 2, col = "red")
+```
+
+### Percent Low Expressing by Methylation
+
+```{r whole_silenced, width = 7, height = 5}
+bin.cols <- c("#f0f0f0", "#bdbdbd", "#636363")
+num.genes <- sapply(methyl.bins, function(x) length(mean.c.expr[which(rounded.whole.methyl == x)]))
+names(num.genes) <- methyl.bins
+num.silenced <- sapply(methyl.bins, function(x) length(which(mean.c.expr[which(rounded.whole.methyl == x)] < low.exp)) )
+percent.silenced <- round((num.silenced/num.genes)*100)
+names(percent.silenced) <- methyl.bins
+layout(matrix(c(1,2), nrow = 1), widths = c(0.5, 1))
+barplot(matrix(num.genes, ncol = 1), col = bin.cols, main = "# Genes Per Bin")
+barplot(percent.silenced, main = "Whole Region", ylim = c(0, 100), col = bin.cols)
+legend("topleft", fill = bin.cols, legend = methyl.bins)
+abline(h = 50)
+```
+
+
+## TSS {.tabset .tabset-fade .tabset-pills}
+Then we looked at methylation near specific fatures. For single bp positions,
+like TSS and TES, we looked `r mean.buffer` up and downstream from the bp position.
+For regions, like the first exon and the promoter, we looked at methylation within
+the defined region.
+
+```{r tss_calc}
+#center the methylation values on the TSS
+tss.file <- here("results", paste0("TSS.Centered.", st[1], ".RDS"))
+if(!file.exists(tss.file)){
+  tss.centered.methyl <- vector(mode = "list", length = length(mean.methyl.pos))
+  names(tss.centered.methyl) <- names(mean.methyl.pos)
+  for(i in 1:length(mean.methyl.pos)){
+    tss.centered.methyl[[i]] <- center.on.feature(names(mean.methyl.pos)[i], gene.info, 
+    mean.methyl.pos[[i]], feature = "tss")
+  }
+  saveRDS(tss.centered.methyl, tss.file)
+}else{
+  tss.centered.methyl <- readRDS(tss.file)
+}
+```
+
+### Aligned Methylation
+```{r tss_avg, fig.height = 5, fig.width = 7}
+#get the average methylation in the window near the TSS
+methyl.tss.vals <- lapply(tss.centered.methyl, 
+function(x) get.mean.near.center(x, upstream.buffer = plot.buffer, 
+downstream.buffer = plot.buffer, get.mean = FALSE))
+ymax <- 80
+plot.centered.vals(val.list = methyl.tss.vals, plot.label = "TSS All", ylim = c(0, ymax))
+draw.rectangle(-700, 200, 0, 20, lwd = 2, border = "gray")
+```
+
+### Expression/Methylation Correlation
+```{r tss_cor}
+mean.methyl.tss <- sapply(tss.centered.methyl, 
+function(x) get.mean.near.center(x, upstream.buffer = mean.buffer, 
+downstream.buffer = mean.buffer, get.mean = TRUE))
+plot.with.model(mean.methyl.tss, mean.c.expr, xlab = "Average Methylation", 
+ylab = "Average Expression", report = "cor.test", main = "Near TSS",
+col = rgb(100/256, 100/256, 100/256, alpha = 0.5))
+```
+
+### Expression by Methylation Bin
+```{r tss_strip, fig.width = 7, fig.height = 5}
+rounded.tss.methyl <- bin.vector(mean.methyl.tss, methyl.bins)
+stripchart(round(mean.c.expr, 2)~rounded.tss.methyl, method = "stack", 
+pch = 16, col = "gray", vertical = TRUE, offset = 0.2, 
+xlab = "Percent Methylation", ylab = "Expression", main = "TSS")
+expr.meds <- sapply(methyl.bins, function(x) median(mean.c.expr[which(rounded.tss.methyl == x)], 
+na.rm = TRUE))
+points(x = 1:length(methyl.bins), y = expr.meds, pch = "*", cex = 2, col = "red")
+```
+
+### Percent Low Expressing by Methylation
+
+```{r tss_silenced, width = 7, height = 5}
+num.genes <- sapply(methyl.bins, 
+function(x) length(mean.c.expr[which(rounded.tss.methyl == x)]))
+num.silenced <- sapply(methyl.bins, 
+function(x) length(which(mean.c.expr[which(rounded.tss.methyl == x)] < low.exp)))
+names(num.silenced) <- methyl.bins
+percent.silenced <- round((num.silenced/num.genes)*100)
+names(percent.silenced) <- methyl.bins
+layout(matrix(c(1,2), nrow = 1), widths = c(0.5, 1))
+barplot(matrix(num.genes, ncol = 1), col = bin.cols, main = "# Genes Per Bin")
+barplot(percent.silenced, main = "TSS", ylim = c(0, 100), col = bin.cols)
+legend("topleft", fill = bin.cols, legend = methyl.bins)
+abline(h = 50)
+```
+
+### Percent High Expressing
+
+```{r tss_high, width = 7, height = 5}
+num.genes <- sapply(methyl.bins, 
+function(x) length(mean.c.expr[which(rounded.tss.methyl == x)]))
+num.high <- sapply(methyl.bins, 
+function(x) length(which(mean.c.expr[which(rounded.tss.methyl == x)] >= high.exp)) )
+names(num.high) <- methyl.bins
+percent.high <- round((num.high/num.genes)*100)
+names(percent.high) <- methyl.bins
+layout(matrix(c(1,2), nrow = 1), widths = c(0.5, 1))
+barplot(matrix(num.genes, ncol = 1), col = bin.cols, main = "# Genes Per Bin")
+barplot(percent.high, main = "TSS", ylim = c(0, 100), col = bin.cols)
+legend("topleft", fill = bin.cols, legend = methyl.bins)
+abline(h = 50)
+```
+
+
+## Promoter {.tabset .tabset-fade .tabset-pills}
+
+```{r prom_calc}
+#center the methylation values on the TSS
+prom.file <- here("results", paste0("Promoter.Centered.", st[1], ".RDS"))
+if(!file.exists(prom.file)){
+  prom.centered.methyl <- vector(mode = "list", length = length(mean.methyl.pos))
+  names(prom.centered.methyl) <- names(mean.methyl.pos)
+  for(i in 1:length(mean.methyl.pos)){
+    prom.centered.methyl[[i]] <- center.on.feature(names(mean.methyl.pos)[i], gene.info, 
+    mean.methyl.pos[[i]], feature = "promoter")
+  }
+  saveRDS(prom.centered.methyl, prom.file)
+}else{
+  prom.centered.methyl <- readRDS(prom.file)
+}
+
+#get the average methylation upstream, downstream, and within the promoter region
+methyl.prom.vals <- t(sapply(prom.centered.methyl, 
+function(x) get.mean.near.center(x, is.region = TRUE)))
+methyl.prom.list <- lapply(1:ncol(methyl.prom.vals), function(x) round(methyl.prom.vals[,x]))
+```
+
+
+### Average Methylation Around Promoter
+```{r prom_avg_methyl}
+stripchart(methyl.prom.list, method = "stack", vertical = TRUE, pch = 16, col = "gray",
+offset = 0.003, group.names = c("Upstream", "Promoter", "Downstream"))
+prom.med <- sapply(methyl.prom.list, function(x) median(x, na.rm = TRUE))
+points(x = 1:3, y = prom.med, pch = "*", col = "red", cex = 2)
+```
+
+### Expression/Methylation Correlation
+```{r prom_cor}
+mean.methyl.prom <- methyl.prom.vals[,2]
+plot.with.model(mean.methyl.prom, mean.c.expr, xlab = "Average Methylation Near Promoter", 
+ylab = "Average Expression", report = "cor.test", 
+col = rgb(100/256, 100/256, 100/256, alpha = 0.5))
+```
+
+
+### Expression by Methylation Bin
+```{r prom_strip, fig.width = 7, fig.height = 5}
+rounded.prom.methyl <- bin.vector(mean.methyl.prom, methyl.bins)
+stripchart(round(mean.c.expr, 2)~rounded.prom.methyl, method = "stack", pch = 16, col = "gray", 
+vertical = TRUE, offset = 0.2, xlab = "Percent Methylation", ylab = "Expression",
+main = "Promoter")
+expr.meds <- sapply(methyl.bins, function(x) median(mean.c.expr[which(rounded.prom.methyl == x)], 
+na.rm = TRUE))
+points(x = 1:length(methyl.bins), y = expr.meds, pch = "*", cex = 2, col = "red")
+```
+
+### Percent Low Expressing by Methylation
+
+```{r prom_silenced, width = 7, height = 5}
+num.genes <- sapply(methyl.bins, function(x) length(mean.c.expr[which(rounded.prom.methyl == x)]))
+num.silenced <- sapply(methyl.bins, function(x) length(which(mean.c.expr[which(rounded.prom.methyl == x)] < low.exp)) )
+names(num.silenced) <- methyl.bins
+percent.silenced <- round((num.silenced/num.genes)*100)
+names(percent.silenced) <- methyl.bins
+layout(matrix(c(1,2), nrow = 1), widths = c(0.5, 1))
+barplot(matrix(num.genes, ncol = 1), col = bin.cols, main = "# Genes Per Bin")
+barplot(percent.silenced, main = "Promoter", ylim = c(0, 100), col = bin.cols)
+legend("topleft", fill = bin.cols, legend = methyl.bins)
+abline(h = 50)
+```
+
+
+## TES {.tabset .tabset-fade .tabset-pills}
+We looked at methylation around the transcription end site (TES). 
+For the TES, because there was hypermethylation specifically upstream 
+of the TES, we looked both up and downstream of the TES for correlations 
+between methylation and expression.
+
+
+```{r tes_calc}
+#center the methylation values on the TSS
+tes.file <- here("results", paste0("TES.Centered.", st[1], ".RDS"))
+
+if(!file.exists(tes.file)){
+  tes.centered.methyl <- vector(mode = "list", length = length(mean.methyl.pos))
+  names(tes.centered.methyl) <- names(mean.methyl.pos)
+  for(i in 1:length(mean.methyl.pos)){
+    tes.centered.methyl[[i]] <- center.on.feature(names(mean.methyl.pos)[i], gene.info,
+    mean.methyl.pos[[i]], feature = "tes")
+  }
+  saveRDS(tes.centered.methyl, tes.file)
+}else{
+  tes.centered.methyl <- readRDS(tes.file)
+}
+
+```
+
+### Average methylation across all genes
+
+```{r tes_avg, fig.height = 5, fig.width = 7}
+#get the average methylation in the window near the TES
+methyl.tes.vals <- lapply(tes.centered.methyl, 
+function(x) get.mean.near.center(x, upstream.buffer = plot.buffer, 
+downstream.buffer = plot.buffer, get.mean = FALSE))
+plot.centered.vals(val.list = methyl.tes.vals, plot.label = "TES", ylim = c(0, ymax))
+```
+
+### Expression/Methylation Correlation Upstream
+
+```{r tes_cor-up}
+mean.methyl.tes.up <- sapply(tes.centered.methyl, 
+function(x) get.mean.near.center(x, upstream.buffer = mean.buffer, 
+downstream.buffer = 0, get.mean = TRUE))
+plot.with.model(mean.methyl.tes.up, mean.c.expr, 
+xlab = "Average Methylation", main = " Upstream of TES", 
+ylab = "Average Expression", report = "cor.test",
+col = rgb(100/256, 100/256, 100/256, alpha = 0.5))
+```
+
+
+### Expression/Methylation Correlation Downstream
+
+```{r tes_cor_down}
+mean.methyl.tes.down <- sapply(tes.centered.methyl, 
+function(x) get.mean.near.center(x, upstream.buffer = 0, 
+downstream.buffer = mean.buffer, get.mean = TRUE))
+plot.with.model(mean.methyl.tes.down, mean.c.expr, 
+xlab = "Average Methylation", main = "Downstream of TES",
+ylab = "Average Expression", report = "cor.test",
+col = rgb(100/256, 100/256, 100/256, alpha = 0.5))
+```
+
+
+### Percent Low Expressing by Methylation Upstream
+
+```{r tes_silenced, width = 7, height = 5}
+rounded.tes.methyl.up <- bin.vector(mean.methyl.tes.up, methyl.bins)
+num.genes <- sapply(methyl.bins, 
+function(x) length(mean.c.expr[which(rounded.tes.methyl.up == x)]))
+num.silenced <- sapply(methyl.bins, 
+function(x) length(which(mean.c.expr[which(rounded.tes.methyl.up == x)] < low.exp)) )
+names(num.silenced) <- methyl.bins
+percent.silenced <- round((num.silenced/num.genes)*100)
+names(percent.silenced) <- methyl.bins
+layout(matrix(c(1,2), nrow = 1), widths = c(0.5, 1))
+barplot(matrix(num.genes, ncol = 1), col = bin.cols, main = "# Genes Per Bin")
+barplot(percent.silenced, main = "Upstream of TES", ylim = c(0, 100), col = bin.cols)
+legend("topleft", fill = bin.cols, legend = methyl.bins)
+abline(h = 50)
+```
+
+### Percent Low Expressing by Methylation Downstream
+
+```{r tes_low_down, width = 7, height = 5}
+rounded.tes.methyl.down <- bin.vector(mean.methyl.tes.down, methyl.bins)
+num.genes <- sapply(methyl.bins, 
+function(x) length(mean.c.expr[which(rounded.tes.methyl.down == x)]))
+num.low <- sapply(methyl.bins, 
+function(x) length(which(mean.c.expr[which(rounded.tes.methyl.down == x)] < low.exp)))
+names(num.low) <- methyl.bins
+percent.low <- round((num.low/num.genes)*100)
+names(percent.low) <- methyl.bins
+layout(matrix(c(1,2), nrow = 1), widths = c(0.5, 1))
+barplot(matrix(num.genes, ncol = 1), col = bin.cols, main = "# Genes Per Bin")
+barplot(percent.low, main = "Downstream of TES", ylim = c(0, 100), col = bin.cols)
+legend("topleft", fill = bin.cols, legend = methyl.bins)
+abline(h = 50)
+```
+
+## First Exon {.tabset .tabset-fade .tabset-pills}
+We also looked at methylation of the first exon.
+
+```{r exon_calc}
+
+exon.file <- here("results", paste0("Exon.Normalized.", st[1], ".RDS"))
+
+if(!file.exists(exon.file)){
+  exon.centered.methyl <- vector(mode = "list", length = length(mean.methyl.pos))
+  names(exon.centered.methyl) <- names(mean.methyl.pos)
+  for(i in 1:length(mean.methyl.pos)){
+    exon.centered.methyl[[i]] <- center.on.feature(names(mean.methyl.pos)[i], gene.info,
+    mean.methyl.pos[[i]], feature = "1stexon")
+  }
+  saveRDS(exon.centered.methyl, exon.file)
+}else{
+  exon.centered.methyl <- readRDS(exon.file)
+}
+```
+
+### Mean Methylation Relative to First Exon
+
+```{r methyl_exon_dist, fig.width = 7, fig.height = 5}
+#get the average methylation in the window near the TSS
+methyl.exon.vals <- t(sapply(exon.centered.methyl, 
+function(x) get.mean.near.center(x, is.region = TRUE)))
+methyl.exon.list <- lapply(1:ncol(methyl.exon.vals), function(x) round(methyl.exon.vals[,x]))
+stripchart(methyl.exon.list, method = "stack", vertical = TRUE, pch = 16, col = "gray",
+offset = 0.002, group.names = c("Upstream", "First Exon", "Downstream"))
+exon.med <- sapply(methyl.exon.list, function(x) median(x, na.rm = TRUE))
+points(x = 1:3, y = exon.med, pch = "*", col = "red", cex = 2)
+```
+
+### Expression/Methylation Correlation
+
+```{r exon_cor}
+mean.methyl.exon <- methyl.exon.vals[,2]
+plot.with.model(mean.methyl.exon, mean.c.expr, xlab = "Average Methylation in First Exon", 
+ylab = "Average Expression", report = "cor.test", 
+col = rgb(100/256, 100/256, 100/256, alpha = 0.5))
+```
+
+
+### Expression by Methylation Bin
+
+```{r exon_strip, fig.width = 9, fig.height = 5}
+rounded.exon.methyl <- bin.vector(mean.methyl.exon, methyl.bins)
+stripchart(round(mean.c.expr, 2)~rounded.exon.methyl, method = "stack", pch = 16, col = "gray", 
+vertical = TRUE, offset = 0.2, xlab = "Percent Methylation", ylab = "Expression",
+main = "First Exon")
+expr.meds <- sapply(methyl.bins, function(x) median(mean.c.expr[which(rounded.exon.methyl == x)], 
+na.rm = TRUE))
+points(x = 1:length(methyl.bins), y = expr.meds, pch = "*", cex = 2, col = "red")
+```
+
+### Percent Low Expressing by Methylation
+
+```{r exon_silenced, width = 7, height = 5}
+num.genes <- sapply(methyl.bins, function(x) length(mean.c.expr[which(rounded.exon.methyl == x)]))
+num.silenced <- sapply(methyl.bins, function(x) length(which(mean.c.expr[which(rounded.exon.methyl == x)] < low.exp)) )
+names(num.silenced) <- methyl.bins
+percent.silenced <- round((num.silenced/num.genes)*100)
+names(percent.silenced) <- methyl.bins
+layout(matrix(c(1,2), nrow = 1), widths = c(0.5, 1))
+barplot(matrix(num.genes, ncol = 1), col = bin.cols, main = "# Genes Per Bin")
+barplot(percent.silenced, main = "First Exon", ylim = c(0, 100), col = bin.cols)
+legend("topleft", fill = bin.cols, legend = methyl.bins)
+abline(h = 50)
+```
+
+## Gene Body {.tabset .tabset-fade .tabset-pills}
+
+We also looked at methylation across gene bodies normalized for gene length.
+There is very pronounced hypomethylation right at the transcription 
+start site of all the genes. The gene bodies are slightly hypermethylated,
+especially downstream of the TSS. Then there is an abrupt change from
+hypermethylated at the TES. This comports with what we saw when we 
+centered on the TES.
+
+```{r norm_calc}
+#center the methylation values on the TSS
+norm.file <- here("results", paste0("Norm.Centered.", st[1], ".RDS"))
+if(!file.exists(norm.file)){
+  norm.centered.methyl <- vector(mode = "list", length = length(mean.methyl.pos))
+  names(norm.centered.methyl) <- names(mean.methyl.pos)
+  for(i in 1:length(mean.methyl.pos)){
+    if(is.interactive){report.progress(i, length(mean.methyl.pos))}
+    norm.centered.methyl[[i]] <- center.on.feature(names(mean.methyl.pos)[i], gene.info, 
+    mean.methyl.pos[[i]], feature = "full")
+  }
+  saveRDS(norm.centered.methyl, norm.file)
+}else{
+  norm.centered.methyl <- readRDS(norm.file)
+}
+```
+
+### Mean Methylation Relative to Gene Body
+
+```{r methyl_body_dist, fig.width = 7, fig.height = 5}
+#get the average methylation in the window near the TSS
+methyl.gene.vals <- t(sapply(norm.centered.methyl, 
+function(x) get.mean.near.center(x, is.region = TRUE)))
+methyl.gene.list <- lapply(1:ncol(methyl.gene.vals), function(x) round(methyl.gene.vals[,x]))
+stripchart(methyl.gene.list, method = "stack", vertical = TRUE, pch = 16, col = "gray",
+offset = 0.01, group.names = c("Upstream", "Gene Body", "Downstream"))
+gene.med <- sapply(methyl.gene.list, function(x) median(x, na.rm = TRUE))
+points(x = 1:3, y = gene.med, pch = "*", col = "red", cex = 2)
+```
+
+### Methylation and Expression
+
+```{r gene_methyl_exp}
+gene.mean.methyl <- methyl.gene.vals[,2]
+plot.with.model(gene.mean.methyl, mean.c.expr, xlab = "Gene Body Methylation Percent", 
+ylab = "Expression", report = "cor.test", 
+col = rgb(100/256, 100/256, 100/256, alpha = 0.5))
+```
+
+
+### Expression by Methylation Bin
+
+```{r gene_strip, fig.width = 7, fig.height = 5}
+rounded.gene.methyl <- bin.vector(gene.mean.methyl, methyl.bins)
+stripchart(round(mean.c.expr, 2)~rounded.gene.methyl, method = "stack", pch = 16, col = "gray", 
+vertical = TRUE, offset = 0.2, xlab = "Percent Methylation", ylab = "Expression",
+main = "Gene Body")
+expr.meds <- sapply(methyl.bins, function(x) median(mean.c.expr[which(rounded.gene.methyl == x)], 
+na.rm = TRUE))
+points(x = 1:length(methyl.bins), y = expr.meds, pch = "*", cex = 2, col = "red")
+```
+
+### Percent Low Expression by Methylation
+
+```{r gene_silenced, width = 7, height = 5}
+num.genes <- sapply(methyl.bins, function(x) length(mean.c.expr[which(rounded.gene.methyl == x)]))
+num.silenced <- sapply(methyl.bins, function(x) length(which(mean.c.expr[which(rounded.gene.methyl == x)] < low.exp)) )
+names(num.silenced) <- methyl.bins
+percent.silenced <- round((num.silenced/num.genes)*100)
+names(percent.silenced) <- methyl.bins
+layout(matrix(c(1,2), nrow = 1), widths = c(0.5, 1))
+barplot(matrix(num.genes, ncol = 1), col = bin.cols, main = "# Genes Per Bin")
+barplot(percent.silenced, main = "Gene Body", ylim = c(0, 100), col = bin.cols)
+legend("topleft", fill = bin.cols, legend = methyl.bins)
+abline(h = 50)
+```
+
+```{r scale_norm}
+#The positions are scaled to be pretty small. Mutliply by a scalar
+#to get better resolution.
+scalar <- 2000
+scaled.center.methyl <- norm.centered.methyl
+for(i in 1:length(norm.centered.methyl)){
+  names(scaled.center.methyl[[i]]) <- as.numeric(names(norm.centered.methyl[[i]]))*scalar
+}
+```
+
+Upstream positions are negative, gene bodies are between 0 and 
+`r scalar` and downstream positions are greater than `r scalar`.
+
+```{r norm_plot_vals}
+methyl.norm.vals <- t(sapply(scaled.center.methyl, 
+function(x) get.mean.near.center(x, upstream.buffer = scalar*2, 
+downstream.buffer = scalar*2, get.mean = FALSE)))
+```
+
+### Average methylation across gene body
+```{r norm_avg, fig.height = 5, fig.width = 7}
+aligned.means <- plot.centered.vals(val.list = methyl.norm.vals, 
+plot.label = "Gene Body", ylim = c(0, 80))
+abline(v = c(0, scalar), lwd = 3, col = "gray")
+text(x = scalar/2, y = 10, labels = "gene body")
+arrows(x0 = 0, x1 = scalar, y0 = 5, y1 = 5)
+```
+
+### Quantified methylation by section
+
+```{r quant_methyl, fig.height = 5, fig.width = 9}
+aligned.pos <- as.numeric(names(aligned.means))
+upstream.locale <- which(aligned.pos < 0)
+upstream.methyl <- round(aligned.means[upstream.locale])
+
+body.locale <- intersect(which(aligned.pos >= 0), which(aligned.pos <= scalar))
+body.methyl <- round(aligned.means[body.locale])
+
+downstream.locale <- which(aligned.pos > scalar)
+downstream.methyl <- round(aligned.means[downstream.locale])
+
+methyl.list <- list(upstream.methyl, body.methyl, downstream.methyl)
+med.methyl <- sapply(methyl.list, function(x) median(x, na.rm = TRUE))
+stripchart(methyl.list, vertical = TRUE, method = "stack", col = "gray", 
+pch = 16, group.names = c("Upstream", "Body", "Downstream"), offset = 0.05)
+points(x = 1:3, y = med.methyl, pch = "*", col = "red", cex = 2)
+abline(h = 50, lty = 2, col = "gray")
+mtext("Average Methylation Relative to Gene Body", side = 3, line = 1)
+```
+
+
+## Tissue-specific genes {.tabset .tabset-fade .tabset-pills}
+We were curious whether the methylation profile across normalized gene bodies
+looked the same for liver-spefic genes and housekeeping genes.
+
+We downloaded lists of liver-specific genes and housekeeping genes from
+Li et al 2017.
+
+```{r read_lists}
+hk.genes <- read.table(here("data", "Tissue-specific-gene_set", "housekeeping_genes.txt"),
+sep = "\t", stringsAsFactors = FALSE, skip = 1, header = TRUE)
+
+t.genes <- read.table(here("data", "Tissue-specific-gene_set", "tissue-specific-gene-lists.txt"),
+sep = "\t", stringsAsFactors = FALSE, skip = 1, header = TRUE)
+li.locale <- which(t.genes[,"tissue"] == "Li")
+li.genes <- t.genes[li.locale,]
+
+common.hk <- intersect(hk.genes[,2], names(norm.centered.methyl))
+common.li <- intersect(li.genes[,3], names(norm.centered.methyl))
+
+hk.locale <- match(common.hk, names(norm.centered.methyl))
+li.locale <- match(common.li, names(norm.centered.methyl))
+```
+
+### Housekeeping genes
+
+```{r Housekeeping Genes}
+hk.aligned.means <- plot.centered.vals(val.list = methyl.norm.vals[hk.locale], 
+plot.label = "Housekeeping Genes", ylim = c(0, 100), min.representation = 5,
+plot.individual = TRUE)
+abline(v = c(0, scalar), lwd = 3, col = "gray")
+text(x = scalar/2, y = 10, labels = "gene body")
+arrows(x0 = 0, x1 = scalar, y0 = 5, y1 = 5)
+```
+
+### Liver-Specific Genes
+
+```{r liver_genes}
+li.aligned.means <- plot.centered.vals(val.list = methyl.norm.vals[li.locale], 
+plot.label = "Liver-Specific Genes", ylim = c(0, 100), min.representation = 5,
+plot.individual = TRUE)
+abline(v = c(0, scalar), lwd = 3, col = "gray")
+text(x = scalar/2, y = 10, labels = "gene body")
+arrows(x0 = 0, x1 = scalar, y0 = 5, y1 = 5)
+
+```
+
+### Mean Methylation Relative to Housekeeping Gene Body
+
+```{r methyl_hk_body_dist, fig.width = 7, fig.height = 5}
+#get the average methylation in the window near the TSS
+methyl.gene.vals <- t(sapply(norm.centered.methyl[hk.locale], 
+function(x) get.mean.near.center(x, is.region = TRUE)))
+methyl.gene.list <- lapply(1:ncol(methyl.gene.vals), function(x) round(methyl.gene.vals[,x]))
+stripchart(methyl.gene.list, method = "stack", vertical = TRUE, pch = 16, col = "gray",
+offset = 0.01, group.names = c("Upstream", "Gene Body", "Downstream"))
+gene.med <- sapply(methyl.gene.list, function(x) median(x, na.rm = TRUE))
+points(x = 1:3, y = gene.med, pch = "*", col = "red", cex = 2)
+```
+
+### Mean Methylation Relative to Liver-Specific Gene Body
+
+```{r methyl_li_body_dist, fig.width = 7, fig.height = 5}
+#get the average methylation in the window near the TSS
+methyl.gene.vals <- t(sapply(norm.centered.methyl[li.locale], 
+function(x) get.mean.near.center(x, is.region = TRUE)))
+methyl.gene.list <- lapply(1:ncol(methyl.gene.vals), function(x) round(methyl.gene.vals[,x]))
+stripchart(methyl.gene.list, method = "stack", vertical = TRUE, pch = 16, col = "gray",
+offset = 0.4, group.names = c("Upstream", "Gene Body", "Downstream"))
+gene.med <- sapply(methyl.gene.list, function(x) median(x, na.rm = TRUE))
+points(x = 1:3, y = gene.med, pch = "*", col = "red", cex = 2)
+```
+
+## High- and Low-Expressing Genes {.tabset .tabset-fade .tabset-pills}
+
+Low- and high-expressing genes do seem to have slightly different patterns
+in their methylation. The high-expressing genes have lower methylation going 
+into the first exon, and higher methylation toward the TES.
+
+Mid-expressing genes look very similar to the high expressing genes, but 
+maybe have slightly higher methylation near the TSS (not shown).
+
+### Full Curve
+
+```{r, low_high_exp, fig.width = 9, fig.height = 4}
+high.locale <- which(mean.c.expr >= high.exp)
+low.locale <- which(mean.c.expr <= low.exp)
+#mid.locale <- intersect(which(mean.c.expr >= low.exp), which(mean.c.expr <= high.exp))
+
+hi.aligned.means <- plot.centered.vals(val.list = methyl.norm.vals[high.locale], 
+plot.label = "High Expressing Genes", ylim = c(0, 100), min.representation = 5,
+plot.individual = FALSE, plot.summary = FALSE)
+
+#mid.aligned.means <- plot.centered.vals(val.list = methyl.norm.vals[mid.locale], 
+#plot.label = "High Expressing Genes", ylim = c(0, 100), min.representation = 5,
+#plot.individual = FALSE, plot.summary = FALSE)
+
+lo.aligned.means <- plot.centered.vals(val.list = methyl.norm.vals[low.locale], 
+plot.label = "Low Expressing Genes", ylim = c(0, 100), min.representation = 5,
+plot.individual = FALSE, plot.summary = FALSE)
+
+low.pos <- as.numeric(names(lo.aligned.means))
+#mid.pos <- as.numeric(names(mid.aligned.means))
+hi.pos <- as.numeric(names(hi.aligned.means))
+
+line.col <- c(rgb(216/256, 179/256, 101/256), rgb(1/256, 133/256, 113/256, alpha = 0.5))
+
+#quartz(width = 9, height = 5)
+plot.new()
+plot.window(ylim = c(0, 100), xlim = c(-2000, 4000))
+abline(v = c(0, scalar), lwd = 1, col = "black")
+text(x = scalar/2, y = 95, labels = "gene body")
+arrows(x0 = 0, x1 = scalar, y0 = 100)
+points(low.pos, lo.aligned.means, type = "l", col = line.col[1])
+points(hi.pos, hi.aligned.means, type = "l", col = line.col[2])
+#points(mid.pos, mid.aligned.means, type = "l", col = line.col[2])
+mtext("Relative Position", side = 1, line = 2)
+mtext("Percent Methylation", side = 2, line = 2)
+legend("topright", col = line.col, lty = 1, 
+legend = c("Low-Expressing Genes", "High-Expressing Genes"), lwd = 3)
+axis(1);axis(2)
+```
+
+### Smoothed Curves
+
+```{r smoothed_curves, fig.width = 9, fig.height = 4}
+#smoothed version
+span <- 1/10
+smooth.low <- loess.smooth(low.pos, lo.aligned.means, span = span)
+smooth.high <- loess.smooth(hi.pos, hi.aligned.means, span = span)
+#smooth.mid <- loess.smooth(mid.pos, mid.aligned.means, span = span)
+
+#quartz(width = 9, height = 5)
+plot.new()
+plot.window(ylim = c(0, 100), xlim = c(-2000, 4000))
+abline(v = c(0, scalar), lwd = 1, col = "black")
+text(x = scalar/2, y = 5, labels = "gene body")
+arrows(x0 = 0, x1 = scalar, y0 = 10)
+points(smooth.low$x, smooth.low$y, type = "l", col = line.col[1], lwd = 3)
+points(smooth.high$x, smooth.high$y, type = "l", col = line.col[2], lwd = 3)
+#points(smooth.mid$x, smooth.mid$y, type = "l", col = line.col[2], lwd = 3)
+mtext("Relative Position", side = 1, line = 2)
+mtext("Percent Methylation", side = 2, line = 2)
+legend("topright", col = line.col, lty = 1, 
+legend = c("Low-Expressing Genes", "High-Expressing Genes"), lwd = 3)
+axis(1);axis(2)
+```

@@ -3,12 +3,18 @@
 #I have added an optional argument for sequence information as well
 #if gene.vars is supplied, and a strain order other than the default
 #is provided, col.table must also be supplied.
+#if gene.expr is supplied, col.table must
 
-plot.chrom.rrbs <- function(methyl.mat, chrom.mat, gene.name, gene.info, 
-gene.frac.gap = 0.01, gene.vars = NULL, col.table = NULL){
+plot.chrom.rrbs <- function(methyl.mat, chrom.mat, gene.name, gene.expr = NULL,
+gene.info, gene.frac.gap = 0.01, gene.vars = NULL, col.table = NULL, 
+island.color = "gray"){
 
     gene.locale <- which(gene.info[,"external_gene_name"] == gene.name)
     if(length(gene.locale) == 0){stop("can't find ", gene.name)}
+
+    expr.order <- order(gene.expr)
+    methyl.order <- match.order(names(gene.expr)[expr.order], colnames(methyl.mat), col.table)
+    chrom.order <- match.order(names(gene.expr)[expr.order], colnames(chrom.mat), col.table)
 
     methyl.pos <- as.numeric(rownames(methyl.mat))
     chrom.pos <- as.numeric(rownames(chrom.mat))
@@ -26,13 +32,21 @@ gene.frac.gap = 0.01, gene.vars = NULL, col.table = NULL){
     "exon_start" = exon.start, "exon_end" = exon.end)
 
     if(is.null(gene.vars)){
-        layout(matrix(c(1:3), ncol = 1), heights = c(1, 0.2, 1))
+        if(is.null(gene.expr)){
+            layout(matrix(c(1:3), ncol = 1), heights = c(1, 0.2, 1))
+        }else{
+            layout(matrix(c(1:4), ncol = 1), heights = c(1, 0.2, 1, 1))
+        }
     }else{
-        layout(matrix(c(1:4), ncol = 1), heights = c(1, 0.2, 1, 1))
+        if(is.null(gene.expr)){
+            layout(matrix(c(1:4), ncol = 1), heights = c(1, 0.2, 1, 1))
+        }else{
+            layout(matrix(c(1:5), ncol = 1), heights = c(1, 0.2, 1, 1, 1))
+        }
     }
 
     par(mar = c(0,4,4,4))
-    plot.methyl.mat(t(methyl.mat), xlim = c(min(all.pos), max(all.pos)))
+    plot.methyl.mat(t(methyl.mat[,methyl.order]), xlim = c(min(all.pos), max(all.pos)))
 
      par(mar = c(2,4,0,4))
         plot.new()
@@ -59,17 +73,45 @@ gene.frac.gap = 0.01, gene.vars = NULL, col.table = NULL){
         island.pos <- cbind(islands$island.position, as.numeric(rownames(methyl.mat)))
 
         par(mar = c(0,4,0,4))
-        rev.mat <- chrom.mat[,ncol(chrom.mat):1]
+        rev.mat <- chrom.mat[,rev(chrom.order)]
         plot.chrom.mat(state.mat = t(rev.mat), num.states = 8, 
-        island.bins = island.pos, xlim = c(min(all.pos), max(all.pos)))
+        island.bins = island.pos, xlim = c(min(all.pos), max(all.pos)),
+        line.color = island.color)
 
-        if(!is.null(gene.var)){
+        if(!is.null(gene.vars)){
             par(mar = c(4,4,0,4))
             plot.variants(gene.vars, xlim = c(min(all.pos), max(all.pos)),
             strain.order = colnames(rev.mat), col.table = col.table)        
             plot.island.obj(islands, add = TRUE)
         }
 
+        if(!is.null(gene.expr)){
+            chrom.cor.fun <- function(chromV, ordered.expr){
+                states.present <- which(sapply(1:8, function(x) length(which(chromV == x))) != 0)
+                state.cor <- rep(NA, 8)
+                if(length(states.present) > 1){
+                    for(i in states.present){
+                        corV <- rep(0, length(chromV))
+                        corV[which(chromV == i)] <- 1
+                        state.cor[i] <- cor(corV, ordered.expr)
+                    }
+                }
+                return(state.cor)
+            }
+            #chrom.cor <- apply(chrom.mat[,chrom.order], 1, function(x) chrom.cor.fun(x, gene.expr[expr.order]))
+            methyl.cor <- apply(methyl.mat[,methyl.order], 1, function(x) cor(x, gene.expr[expr.order]))
+            chrom.col = "#5ab4ac"
+            methyl.col = "#d8b365"
+            plot.new()
+            plot.window(xlim = c(min(all.pos), max(all.pos)), ylim = c(-1, 1))
+            mtext(side = 3, "Correlation between Methylation and Expression", cex = 0.7,
+            line = -1)
+            #points(as.numeric(rownames(chrom.mat)), chrom.cor, col = chrom.col, type = "h", lwd = 2)
+            points(as.numeric(rownames(methyl.mat)), methyl.cor, col = methyl.col, type = "h", lwd = 2)
+            axis(1);axis(2)
+            abline(h = 0)
+
+        }
     #
 
 }

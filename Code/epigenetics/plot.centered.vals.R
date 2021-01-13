@@ -19,7 +19,9 @@ seq.by = 1, merge.by = 1, plot.line = TRUE, plot.hex = FALSE,
 min.upstream = -2, max.downstream = 2, return.means = TRUE, verbose = FALSE){
   
   not.null <- which(sapply(val.list, function(x) !all(is.na(x))))
-  if(length(not.null) == 0){stop("No values")}
+  if(length(not.null) == 0){
+    return("No values")
+    }
   sub.val.list <- val.list[not.null]
 
   all.pos <- unlist(sapply(sub.val.list, function(x) as.numeric(names(x))))
@@ -56,7 +58,11 @@ min.upstream = -2, max.downstream = 2, return.means = TRUE, verbose = FALSE){
 
   #also make a big matrix, so we can look at bulk methylation properties
   sig.fig <- length(strsplit(as.character(seq.by), "")[[1]])
-  if(sig.fig > 1){sig.fig = sig.fig - 2}
+  #if(sig.fig > 1){sig.fig = sig.fig - 2}
+  if(min.x > max.x){
+   temp.min <- min.x;temp.max <- max.x
+   min.x <- temp.max;max.x <- temp.min 
+  }
   pos.seq <- seq(min.x, max.x, seq.by)
   bulk.mat <- matrix(NA, ncol = length(pos.seq), nrow = length(sub.val.list))
   rownames(bulk.mat) <- names(sub.val.list)
@@ -72,7 +78,10 @@ min.upstream = -2, max.downstream = 2, return.means = TRUE, verbose = FALSE){
   }
 
   keep.rows <- which(apply(bulk.mat, 1, function(x) !all(is.na(x))))
-  bulk.mat <- bulk.mat[keep.rows,]
+  if(length(keep.rows) == 0){
+    return("No rows to keep.")
+  }
+  bulk.mat <- bulk.mat[keep.rows,,drop=FALSE]
   #pheatmap(bulk.mat, cluster_rows = FALSE, cluster_cols = FALSE, show_colnames = FALSE, show_rownames = FALSE)
 
   #smooth across columns to put more examples in each 
@@ -87,7 +96,9 @@ min.upstream = -2, max.downstream = 2, return.means = TRUE, verbose = FALSE){
 
   num.examples <- apply(merged.mat, 2, function(x) length(which(!is.na(x))))
   high.rep <- which(num.examples >= min.representation)
-  if(length(high.rep) == 0){stop("No genes with this high representation.")}
+  if(length(high.rep) == 0){
+    return("No positions with high enough representation.")
+    }
   sub.bulk.mat <- merged.mat[,high.rep,drop=FALSE]
 
   methyl.means <- colMeans(sub.bulk.mat, na.rm = TRUE)

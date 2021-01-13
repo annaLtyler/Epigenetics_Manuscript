@@ -22,6 +22,7 @@ feature = c("tss", "tes", "1stexon", "promoter", "full")){
   if(is.null(names(vals))){names(vals) <- vals}
 
   gene.locale <- which(gene.info[,"external_gene_name"] == gene.name)
+  if(length(gene.locale) == 0){return(NA)}
   gene_strand <- unique(gene.info[gene.locale,"strand"])
   pos <- as.numeric(names(vals))
 
