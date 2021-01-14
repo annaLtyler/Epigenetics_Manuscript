@@ -281,23 +281,23 @@ genetic effects we use the DO478. These data were collected from whole DO mouse 
 
 
 ```{r do_QTL}
+do.eqtl.info.file <- here("Data", "DOQTL", "mRNA_Info.csv")
+do.eqtl.info <- read.csv(do.eqtl.info.file, header = TRUE, stringsAsFactors = FALSE)
+
 #A file containing the cis eQTL coefficients for each haplotype and each transcript
-do.qtl.file <- here("Data", "DOQTL", "Svenson_DO850_for_eQTL_viewer_v9.RData")
+do.qtl.file <- here("Data", "DOQTL", "eQTL_statistics.RDS")
 do.eqtl.loaded <- as.logical(length(which(all.var == "do.eqtl")))
 if(!do.eqtl.loaded){
-    do.eqtl <- load(do.qtl.file)
-    qtl.ids <- lapply(do.eqtl, function(x) x[[1]][1,1])
-    is.missing <- unlist(lapply(qtl.ids, function(x) is.null(x)))
-    qtl.ids[is.missing] <- "NA"
-    qtl.id.v <- unlist(qtl.ids)
-    names(do.eqtl) <- qtl.id.v
+    do.eqtl <- readRDS(do.qtl.file)
+    names(do.eqtl) <- qtl.ids <- do.eqtl.info[,"gene.id"]
 }
 
 #the cis eQTL coefficients of each mapped gene
 cis.coef.file <- here("Data", "DOQTL", "cis.coef.RData")
 if(!file.exists(cis.coef.file)){
-    all.cis.coef <- lapply(1:length(do.eqtl), function(x) get.cis.coef(do.eqtl, x))
-    names(all.cis.coef) <- names(do.eqtl)
+    all.cis.coef <- t(sapply(1:length(do.eqtl), 
+    function(x) get.cis.coef(do.eqtl, do.eqtl.info, x)))
+    colnames(all.cis.coef) <- c("transcript.id", "nearest.marker", "LOD")
     saveRDS(all.cis.coef, cis.coef.file)
 }else{
     all.cis.coef <- readRDS(cis.coef.file)

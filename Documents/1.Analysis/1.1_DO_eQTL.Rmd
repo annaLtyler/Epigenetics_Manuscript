@@ -37,22 +37,31 @@ Do local scans only for each transcript.
 mrna <- dataset.mrna$data$rz
 mrna.info <- dataset.mrna$annot.mrna
 covar <- dataset.mrna$covar.matrix
-eqtl.results <- vector(mode = "list", length = nrow(mrna.info))
-names(eqtl.results) <- unlist(mrna.info[,1])
+
+write.csv(mrna.info, here("Data", "DOQTL", "mRNA_Info.csv"), 
+quote = FALSE, row.names = FALSE)
 
 scan.one.transcript <- function(idx){
-    transcript.result <- NA
+    transcript.result <- list("LOD" = NA, "coef" = NA)
     mrna.chr <- unlist(mrna.info[idx,"chr"])
     chr.locale <- which(names(genoprobs) == mrna.chr)
     if(length(chr.locale) > 0){
         transcript.vals <- mrna[,idx]
         if(mrna.chr != "X"){
-            transcript.result <- scan1(genoprobs[,chr.locale], transcript.vals, 
+            #get LOD scores for the chromosome
+            cis.lod <- scan1(genoprobs[,chr.locale], transcript.vals, 
             kinship = K[[chr.locale]], addcovar = covar)
+        
+            #and coefficients
+            cis.coef <- scan1coef(genoprobs[,chr.locale], transcript.vals, 
+            kinship = K[[chr.locale]], addcovar = covar)
+
+            transcript.result <- list("LOD" = cis.lod, "coef" = cis.coef)
         }
     }
 return(transcript.result)
 }
+
 
 eqtl.file <- here("Data", "DOQTL", "eQTL_statistics.RDS")
 save.periodically(scan.one.transcript, max.iter = nrow(mrna.info), 
