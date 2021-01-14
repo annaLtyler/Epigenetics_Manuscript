@@ -44,10 +44,12 @@ scan.one.transcript <- function(idx){
     transcript.result <- NA
     mrna.chr <- unlist(mrna.info[idx,"chr"])
     chr.locale <- which(names(genoprobs) == mrna.chr)
-    transcript.vals <- mrna[,idx]
-    if(mrna.chr != "X"){
-        transcript.result <- scan1(genoprobs[,chr.locale], transcript.vals, 
-        kinship = K[[chr.locale]], addcovar = covar)
+    if(length(chr.locale) > 0){
+        transcript.vals <- mrna[,idx]
+        if(mrna.chr != "X"){
+            transcript.result <- scan1(genoprobs[,chr.locale], transcript.vals, 
+            kinship = K[[chr.locale]], addcovar = covar)
+        }
     }
 return(transcript.result)
 }
