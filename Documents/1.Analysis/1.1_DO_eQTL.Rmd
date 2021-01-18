@@ -73,5 +73,5 @@ return(transcript.result)
 
 eqtl.file <- here("Data", "DOQTL", "eQTL_statistics.RDS")
 save.periodically(scan.one.transcript, max.iter = nrow(mrna.info), 
-filename = eqtl.file, save.every = 1000)
+filename = eqtl.file, save.every = 100)
 ```
