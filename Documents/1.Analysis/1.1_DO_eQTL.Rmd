@@ -41,9 +41,16 @@ covar <- dataset.mrna$covar.matrix
 write.csv(mrna.info, here("Data", "DOQTL", "mRNA_Info.csv"), 
 quote = FALSE, row.names = FALSE)
 
+#the following function runs qtl2 for the chromosome
+#on which the specified transcript is encoded, to 
+#get a LOD score and the haplotype coefficients.
+#It returns the LOD score and haplotype coefficients
+#for the marker nearest the transcript.
+
 scan.one.transcript <- function(idx){
     transcript.result <- list("LOD" = NA, "coef" = NA)
     mrna.chr <- unlist(mrna.info[idx,"chr"])
+    mrna.nearest <- mrna.info[idx,"nearest.marker.id"]
     chr.locale <- which(names(genoprobs) == mrna.chr)
     if(length(chr.locale) > 0){
         transcript.vals <- mrna[,idx]
@@ -56,12 +63,13 @@ scan.one.transcript <- function(idx){
             cis.coef <- scan1coef(genoprobs[,chr.locale], transcript.vals, 
             kinship = K[[chr.locale]], addcovar = covar)
 
-            transcript.result <- list("LOD" = cis.lod, "coef" = cis.coef)
+
+            transcript.result <- list("LOD" = cis.lod[mrna.nearest,1], 
+            "coef" = cis.coef[mrna.nearest,])
         }
     }
 return(transcript.result)
 }
-
 
 eqtl.file <- here("Data", "DOQTL", "eQTL_statistics.RDS")
 save.periodically(scan.one.transcript, max.iter = nrow(mrna.info), 
