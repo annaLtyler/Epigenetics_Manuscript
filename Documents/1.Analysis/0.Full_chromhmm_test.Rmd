@@ -61,7 +61,7 @@ analysis.
 It also runs either the control animals or treatment animals as specified below.
 
 ```{r select_mark}
-c.or.t <- "T" #C for control, T for treatment.
+c.or.t <- "C" #C for control, T for treatment.
 all.marks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K27ac")
 selected.mark <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K27ac")
 #selected.mark <- c("H3K4me1")

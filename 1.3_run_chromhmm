@@ -27,3 +27,11 @@ for x in $(find "$inputdir" -name '*.sorted.B6co.bam'); do
     mv ${x%bam}bed targetdir
 done
 echo "done"
+
+for x in $(find "$inputdir" -name '*.bt2.sorted.bam'); do
+    echo ": $x"
+    #echo "${x%bam}bed";
+    bedtools bamtobed -i "$x" > "${x%bam}bed";
+    mv ${x%bam}bed targetdir
+done
+echo "done"
