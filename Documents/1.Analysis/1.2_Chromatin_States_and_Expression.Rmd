@@ -64,16 +64,15 @@ performs the following specific tasks:
 ```{r set_args}
 args <- commandArgs(trailingOnly=T)
 num.states <- as.numeric(args[1])
-offline = as.logical(args[2]) #set to TRUE to avoid all functions that use the internet
-                #some files may need to be generated ahead of time to use 
-                #this setting
-is.interactive = as.logical(args[3]) #keep this as FALSE when running render()
-                    #use TRUE if running interactively. It plots
-                    #one gene data in multiple windows                    
 delete.previous = as.logical(args[4]) #whether to delete and regenerate files 
                     #from previous a run.
-num.states = 8; offline = FALSE; is.interactive = FALSE; delete.previous = FALSE
-#num.states = 8; offline = FALSE; is.interactive = TRUE; delete.previous = FALSE
+is.interactive = FALSE
+#is.interactive = TRUE
+
+if(is.na(num.states)){
+    num.states = 8; delete.previous = FALSE
+    #num.states = 8; delete.previous = FALSE
+}
 ```
 
 
@@ -121,8 +120,8 @@ T.or.C <- "C" #whether to analyze the control (C) or treatment (T) animals.
 #data and results are a little bit mixed up, since results from one
 #analysis can be data for another analysis. I try to keep processed
 #data in data directories and final results in results directories.
-form.states <- paste0(formatC(num.states, digits = 2, flag = 0), "_states", 
-selected.mark, "_", T.or.C)
+#form.states <- paste0(formatC(num.states, digits = 2, flag = 0), "_states", selected.mark, "_", T.or.C)
+form.states <- paste0(num.states, "_states", selected.mark, "_", T.or.C)
 data.dir <- here("Data", "ChromHMM", form.states)
 results.dir <- here("Results", "ChromHMM", form.states)
 if(!file.exists(results.dir)){dir.create(results.dir)}
@@ -192,7 +191,7 @@ all.var <- ls()
 if(!file.exists(gene.info.file)){
     lib.loaded <- as.logical(length(which(all.var == "mus")))
     if(!lib.loaded){
-        if(!offline){
+        if(!file.exists(gene.info.file)){
             mus <- useEnsembl(biomart="ensembl", dataset="mmusculus_gene_ensembl") #most current library
             #mus <- useMart("ENSEMBL_MART_ENSEMBL", dataset = "mmusculus_gene_ensembl", 
             #host = "may2017.archive.ensembl.org") #stable archived library
