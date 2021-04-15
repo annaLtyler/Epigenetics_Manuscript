@@ -21,7 +21,7 @@ singularity shell shub://jaxreg.jax.org/atac-seq/bedtools-bash:v2.9.2
 
 #soft link bam files to our project diretory
 bamdir=/projects/carter-lab/hepatocytes/chipseq-alignments/output/bamfiles_B6Co
-projectbam=/projects/carter-lab/hepatocytes/ChromHMM/data/bamfiles
+projectbam=/projects/carter-lab/hepatocytes/Epigenetics_Manuscript/data/bamfiles
 
 if [ ! -d "$projectbam" ]
 then

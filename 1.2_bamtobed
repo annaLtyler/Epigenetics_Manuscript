@@ -21,10 +21,10 @@ singularity shell shub://jaxreg.jax.org/atac-seq/bedtools-bash:v2.9.2
 
 #soft link bam files to our project diretory
 bamdir=/projects/carter-lab/hepatocytes/chipseq-alignments/output/bamfiles_B6Co
-projectbam=/projects/carter-lab/hepatocytes/ChromHMM/data/bamfiles
+projectbam=/projects/carter-lab/hepatocytes/Epigenetics_Manuscript/Data/bamfiles
 
 inputdir=$projectbam
-targetdir=/projects/carter-lab/hepatocytes/ChromHMM/data/bedfiles
+targetdir=/projects/carter-lab/hepatocytes/Epigenetics_Manuscript/Data/bedfiles
 
 #run bamtobed on B6 coordinate bam files
 for x in $(find "$inputdir" -name '*.sorted.B6co.bam'); do

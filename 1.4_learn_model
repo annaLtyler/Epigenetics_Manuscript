@@ -20,8 +20,8 @@ module load singularity
 
 #create index files for ChromHMM
 
-indir=/projects/carter-lab/hepatocytes/ChromHMM/data/binarized_bed/
-resultdir=/projects/carter-lab/hepatocytes/ChromHMM/results/
+indir=/projects/carter-lab/hepatocytes/Epigenetics_Manuscript/Data/binarized_bed/
+resultdir=/projects/carter-lab/hepatocytes/Epigenetics_Manuscript/Results/
 resultname="_states_C"
 jobid=$SLURM_ARRAY_TASK_ID
 thisresultdir=$resultdir$jobid$resultname
