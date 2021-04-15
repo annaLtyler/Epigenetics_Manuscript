@@ -1,0 +1,32 @@
+#!/bin/bash
+#SBATCH -J binarize_bed
+#SBATCH -N 1 # number of nodes
+#SBATCH -n 1 # number of cores
+#SBATCH --mem=2G # memory pool for all cores
+#SBATCH -t 0-24:00 # time (D-HH:MM)
+#SBATCH -o slurm.%N.%j.out # STDOUT
+#SBATCH -e slurm.%N.%j.err # STDERR
+#SBATCH --mail-user=anna.tyler@jax.org
+#SBATCH --mail-type=END
+# example use: sbatch 1.2_binarizebed
+
+cd $SLURM_SUBMIT_DIR
+
+echo $SLURM_SUBMIT_DIR
+
+module load singularity
+
+#create index files for ChromHMM
+
+targetdir=/projects/carter-lab/hepatocytes/ChromHMM/data/bedfiles
+
+singularity exec /projects/carter-lab/atyler/Containers/epigenetics_analysis_latest.sif R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '0.Full_chromhmm_test.Rmd'))" --args "$targetdir"
+
+#binarize bed files using ChromHMM
+
+bindir="${targetdir%bedfiles}binarized_bed";
+chromfile=$(find "$targetdir" -name '*.txt');
+singularity exec /projects/carter-lab/atyler/Containers/chromhmm_v1.17.sif java -jar /chromhmm/ChromHMM.jar BinarizeBed -b 200 /chromhmm/CHROMSIZES/mm10.txt "$targetdir" "$chromfile" "$bindir"
+
+
+

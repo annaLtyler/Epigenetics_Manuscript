@@ -159,7 +159,7 @@ The code below generates the file list.
 ```{r generate_file_list, eval = TRUE}
 bed.dir <- args[1]
 all.bed <- get.files(path = bed.dir, want = ".bed", 
-dont.want = c(".txt", "extracted", excluded, ".bai", "unmapped")) 
+dont.want = c(".txt", "extracted", excluded, ".bai", "unmapped", "Igf1")) 
 						#we don't need the full path names, 
                   #since paths are specified spearately in ChromHMM
 base.bed <- gsub(".bt2.sorted.B6co.bed", "", all.bed)
@@ -186,7 +186,7 @@ input.file <- sapply(strain[data.idx], function(x) input.table[which(input.table
 final.table <- cbind(strain[data.idx], mark[data.idx], all.bed[data.idx], input.file)
 
 final.table <- final.table[ind.which,]
-bed.table.file <- file.path(bed.dir, "bed.table.txt")
+bed.table.file <- file.path(bed.dir, "bed_table.txt")
 write.table(final.table, bed.table.file, sep = "\t", quote = FALSE, row.names = FALSE, 
 col.names = FALSE)
 ```

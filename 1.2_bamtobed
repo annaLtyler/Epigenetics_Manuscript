@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J setup_data
+#SBATCH -J bamtobed
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 1 # number of cores
 #SBATCH --mem=2G # memory pool for all cores
@@ -23,36 +23,32 @@ singularity shell shub://jaxreg.jax.org/atac-seq/bedtools-bash:v2.9.2
 bamdir=/projects/carter-lab/hepatocytes/chipseq-alignments/output/bamfiles_B6Co
 projectbam=/projects/carter-lab/hepatocytes/ChromHMM/data/bamfiles
 
-if [ ! -d "$projectbam" ]
-then
-    mkdir $projectbam
-else
-    echo "Directory exists"
-fi
-
-#link all the bam files
-for x in $(find "$bamdir" -name '*.sorted.B6co.bam'); do
-    #echo ": $x"
-    ln -s $x projectbam
-done
-
-
-#link all the bam.bai files
-for x in $(find "$bamdir" -name '*.sorted.B6co.bam.bai'); do
-    #echo ": $x"
-    ln -s $x projectbam
-done
-
-
 inputdir=$projectbam
 targetdir=/projects/carter-lab/hepatocytes/ChromHMM/data/bedfiles
 
+#run bamtobed on B6 coordinate bam files
 for x in $(find "$inputdir" -name '*.sorted.B6co.bam'); do
     echo ": $x"
     targetfile="${x%bam}bed";
     tempfile="${x%bam}temp"
     echo "$targetfile";
-    singularity exec bedtools-bash_v2.9.2.sif bedtools bamtobed -i "$x" > "$targetfile";     #convert bam file to bed file
+     singularity exec /projects/carter-lab/atyler/Containers/bedtools_v2.27.1dfsg-4-deb_cv1.sif bedtools bamtobed -i "$x" > "$targetfile";     #convert bam file to bed file
+    cat $targetfile | awk -F '\t' 'BEGIN {OFS="\t"} {print "chr"$0}' > $tempfile #add the chr we need for chromhmm
+    mv $tempfile $targetfile #rename the edited file
+    mv $targetfile $targetdir    #move bed file to bed directory
+done
+echo "done"
+
+#rm $targetdir/*unmapped #delete unmapped files
+
+
+#do the same on the B6 individuals
+for x in $(find "$inputdir" -name '*.bt2.sorted.bam'); do
+    echo ": $x"
+    targetfile="${x%bam}bed";
+    tempfile="${x%bam}temp"
+    echo "$targetfile";
+    singularity exec /projects/carter-lab/atyler/Containers/bedtools_v2.27.1dfsg-4-deb_cv1.sif bedtools bamtobed -i "$x" > "$targetfile";     #convert bam file to bed file
     cat $targetfile | awk -F '\t' 'BEGIN {OFS="\t"} {print "chr"$0}' > $tempfile #add the chr we need for chromhmm
     mv $tempfile $targetfile #rename the edited file
     mv $targetfile $targetdir    #move bed file to bed directory
@@ -60,16 +56,4 @@ done
 echo "done"
 
 rm $targetdir/*unmapped #delete unmapped files
-
-#create index files for ChromHMM
-
-singularity exec ../../Containers/epigenetics_analysis_latest.sif R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '0.Full_chromhmm_test.Rmd'))" --args "$targetdir"
-
-#binarize bed files using ChromHMM
-
-bindir="${targetdir%bedfiles}binarized_bed";
-chromfile=$(find "$targetdir" -name '*.txt');
-singularity exec chromhmm_v1.17.sif java -jar /chromhmm/ChromHMM.jar BinarizeBed -b 200 /chromhmm/CHROMSIZES/mm10.txt "$targetdir" "$chromfile" "$bindir"
-
-
 

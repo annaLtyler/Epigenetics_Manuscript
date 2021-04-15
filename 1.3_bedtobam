@@ -30,8 +30,9 @@ targetdir=/projects/carter-lab/hepatocytes/ChromHMM/data/bedfiles
 
 for x in $(find "$inputdir" -name '*.bt2.sorted.bam'); do
     echo ": $x"
-    #echo "${x%bam}bed";
-    bedtools bamtobed -i "$x" > "${x%bam}bed";
-    mv ${x%bam}bed targetdir
+    echo "${x%bam}bed";
+    singularity exec /projects/carter-lab/atyler/Containers/bedtools_v2.27.1dfsg-4-deb_cv1.sif bedtools bamtobed -i "$x" > "${x%bam}bed";     #convert bam file to bed file
+	#bedtools bamtobed -i "$x" > "${x%bam}bed";
+    mv ${x%bam}bed $targetdir
 done
 echo "done"
