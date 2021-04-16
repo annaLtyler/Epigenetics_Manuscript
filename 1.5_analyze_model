@@ -10,7 +10,7 @@
 #SBATCH --mail-type=END
 # example use: sbatch --export=delete_previous="FALSE" 1.5_analyze_model
 
-#example use: sbatch --array=4-6 -N1 --export=delete_previous="FALSE" 1.5_analyze_model
+#example use: sbatch --array=4-16 -N1 --export=delete_previous="FALSE" 1.5_analyze_model
 
 
 
