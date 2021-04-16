@@ -64,7 +64,7 @@ performs the following specific tasks:
 ```{r set_args}
 args <- commandArgs(trailingOnly=T)
 num.states <- as.numeric(args[1])
-delete.previous = as.logical(args[4]) #whether to delete and regenerate files 
+delete.previous = as.logical(args[2]) #whether to delete and regenerate files 
                     #from previous a run.
 is.interactive = FALSE
 #is.interactive = TRUE
