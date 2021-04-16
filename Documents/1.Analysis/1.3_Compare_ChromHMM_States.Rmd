@@ -40,10 +40,11 @@ between the proportion of each state and expression level in inbred mice.
 state.num <- list.files(here("Results", "ChromHMM"), full.names = TRUE)
 state.names <- basename(state.num)
 state.as.num <- as.numeric(sapply(strsplit(state.names, "_"), function(x) x[1]))
+state_order <- order(state.as.num)
 all.prop <- vector(mode = "list", length = length(state.num))
-names(all.prop) <- basename(state.num)
+names(all.prop) <- basename(state.num)[state_order]
 for(i in 1:length(state.num)){
-	prop.file <- list.files(path = state.num[i], pattern = "Prop_Expression_Cor", full.names = TRUE)
+	prop.file <- list.files(path = state.num[state_order[i]], pattern = "Prop_Expression_Cor", full.names = TRUE)
 	if(length(prop.file) > 0){all.prop[[i]] <- readRDS(prop.file)}
 }
 ```
@@ -75,7 +76,7 @@ six-state model is almost as good and has a much better negative correlation.
 
 ```{r compare_further}
 boxplot.r <- function(r.mats, p.mats, state.num){
-    form.states <- paste0(formatC(state.num, digits = 2, flag = 0), "_states_C")
+    form.states <- paste0(state.num, "_states_C")
     state.locale <- which(names(r.mats) == form.states)
     
     r.mat <- r.mats[[state.locale]]
@@ -100,7 +101,7 @@ boxplot.r <- function(r.mats, p.mats, state.num){
 }
 
 show.emissions <- function(state.num){
-    form.states <- paste0(formatC(state.num, digits = 2, flag = 0), "_states_C")
+    form.states <- paste0(state.num, "_states_C")
     emissions.file <- here("Data", "ChromHMM", form.states, paste0("emissions_", state.num, ".png"))
     cat("![](",emissions.file,")\n")
 }
