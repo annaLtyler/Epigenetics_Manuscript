@@ -74,6 +74,34 @@ plot.type = c("b", "b"), pch = c(16, 16))
 ```{r test, eval = FALSE}
 best.pair <- apply(min.max.table, 2, function(x) sum(abs(x)))
 barplot(best.pair, las = 2)
+
+
+#get the number of states with correlations to each gene.
+num.state.cor <- t(sapply(1:nrow(all.prop.r[[1]]), function(y) sapply(all.prop.r, function(x) length(which(!is.na(x[y,])))))))
+n.genes.with.state.cor <- sapply(4:16, function(x) length(unique(which(num.state.cor == x, arr.ind = TRUE)[,1])))
+names(n.genes.with.state.cor) <- 4:16
+barplot(n.genes.with.state.cor)
+
+#get the best correlation between state and gene across all states and genes
+min.state.cor <- t(sapply(1:nrow(all.prop.r[[1]]), function(y) sapply(all.prop.r, function(x) min(x[y,], na.rm = TRUE))))
+max.state.cor <- t(sapply(1:nrow(all.prop.r[[1]]), function(y) sapply(all.prop.r, function(x) max(x[y,], na.rm = TRUE))))
+min.state.cor[which(!is.finite(min.state.cor))] <- NA
+max.state.cor[which(!is.finite(max.state.cor))] <- NA
+
+boxplot(max.state.cor, las = 2)
+boxplot(min.state.cor, las = 2)
+
+plot(rowMeans(max.state.cor, na.rm = TRUE), rowMeans(min.state.cor, na.rm = TRUE))
+abline(h = 0, v = 0)
+plot(colMeans(max.state.cor, na.rm = TRUE), colMeans(min.state.cor, na.rm = TRUE))
+
+
+what <- which(max.state.cor < -0.9, arr.ind = TRUE)
+
+idx = 1
+barplot(rbind(abs(min.state.cor[idx,]), max.state.cor[idx,]), beside =TRUE, las = 2)
+
+best.state.by.gene <- unlist(sapply(1:nrow(all.prop.r[[1]]), function(x) which.max(abs(min.state.cor[x,])+max.state.cor[x,])))
 ```
 
 Although the seven-state model has the best positive correlation with a state, the

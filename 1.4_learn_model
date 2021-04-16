@@ -28,7 +28,7 @@ thisresultdir=$resultdir$jobid$resultname
 
 #learn model with states specified by the job id
 
-singularity exec /projects/carter-lab/atyler/Containers/chromhmm_v1.17.sif java -mx8g -jar /chromhmm/ChromHMM.jar LearnModel $indir $thisresultdir $SLURM_ARRAY_TASK_ID /chromhmm/CHROMSIZES/mm10.txt
+singularity exec /projects/carter-lab/atyler/Containers/chromhmm_v1.17.sif java -mx8g -jar /chromhmm/ChromHMM.jar LearnModel -printposterior $indir $thisresultdir $SLURM_ARRAY_TASK_ID /chromhmm/CHROMSIZES/mm10.txt
 
 
 
