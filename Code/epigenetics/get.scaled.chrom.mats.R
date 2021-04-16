@@ -4,7 +4,7 @@
 
 get.scaled.chrom.mats <- function(chrom.state.mats, d = 1){
 	
-	all.hamming <- lapply_pb(chrom.state.mats, function(x) if(!is.na(x)){get.hamming.mat(x)}else{NA})	
+	all.hamming <- lapply_pb(chrom.state.mats, function(x) if(length(x) > 1){get.hamming.mat(x)}else{NA})	
 	names(all.hamming) <- names(chrom.state.mats)		
 
 
