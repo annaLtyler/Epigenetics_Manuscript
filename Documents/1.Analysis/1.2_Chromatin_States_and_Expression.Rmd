@@ -546,7 +546,7 @@ We looked at examples of groups of genes annotated to specific terms
 to see if they had similar chromatin patterns. I haven't had much luck
 with this line of inquiry, but I'm keeping this code here just in case.
 
-```{r gene_group_examples, results = "asis", fig.width = 7, fig.height = 8}
+```{r gene_group_examples, results = "asis", fig.width = 7, fig.height = 8, eval = FALSE}
 #ex.genes <- enrichment.genes(state.enrich, "extracellular matrix")
 #ex.genes <- enrichment.genes(state.enrich, "ion binding")
 ex.genes <- enrichment.genes(state.enrich, "kidney development")

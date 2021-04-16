@@ -71,6 +71,11 @@ xlab = "N States", ylab1 = "Maximum Median Correlation", ylab2 = "Minimum Median
 plot.type = c("b", "b"), pch = c(16, 16))
 ```
 
+```{r test, eval = FALSE}
+best.pair <- apply(min.max.table, 2, function(x) sum(abs(x)))
+barplot(best.pair, las = 2)
+```
+
 Although the seven-state model has the best positive correlation with a state, the
 six-state model is almost as good and has a much better negative correlation.
 
