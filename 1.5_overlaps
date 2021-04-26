@@ -1,0 +1,30 @@
+#!/bin/bash
+#SBATCH -J learn_model
+#SBATCH -N 1 # number of nodes
+#SBATCH -n 1 # number of cores
+#SBATCH --mem=10G # memory pool for all cores
+#SBATCH -t 0-24:00 # time (D-HH:MM)
+#SBATCH -o slurm.%N.%j.out # STDOUT
+#SBATCH -e slurm.%N.%j.err # STDERR
+#SBATCH --mail-user=anna.tyler@jax.org
+#SBATCH --mail-type=END
+# example use: sbatch --array=4-16 -N1 1.4_learn_model
+
+cd $SLURM_SUBMIT_DIR
+
+echo $SLURM_SUBMIT_DIR
+
+echo $SLURM_ARRAY_TASK_ID
+
+module load singularity
+
+#create index files for ChromHMM
+
+resultdir=/projects/carter-lab/hepatocytes/Epigenetics_Manuscript/Results/
+resultname="_states_C"
+jobid=$SLURM_ARRAY_TASK_ID
+thisresultdir=$resultdir$jobid$resultname
+
+#learn model with states specified by the job id
+
+singularity exec /projects/carter-lab/atyler/Containers/chromhmm_v1.17.sif java -mx8g -jar /Applications/ChromHMM/ChromHMM.jar OverlapEnrichment $thisresultdir /Applications/ChromHMM/COORDS/mm10 test
