@@ -24,7 +24,8 @@ resultdir=/projects/carter-lab/hepatocytes/Epigenetics_Manuscript/Results/
 resultname="_states_C"
 jobid=$SLURM_ARRAY_TASK_ID
 thisresultdir=$resultdir$jobid$resultname"/POSTERIOR"
-outfile=$resultdir$jobid$resultname"/enrichments"
+#outfile=$resultdir$jobid$resultname"/enrichments"
+outfile=$jobid$resultname"_enrichments"
 
 #learn model with states specified by the job id
 
