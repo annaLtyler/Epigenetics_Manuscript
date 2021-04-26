@@ -23,8 +23,8 @@ module load singularity
 resultdir=/projects/carter-lab/hepatocytes/Epigenetics_Manuscript/Results/
 resultname="_states_C"
 jobid=$SLURM_ARRAY_TASK_ID
-thisresultdir=$resultdir$jobid$resultname
+thisresultdir=$resultdir$jobid$resultname"/POSTERIOR"
 
 #learn model with states specified by the job id
 
-singularity exec /projects/carter-lab/atyler/Containers/chromhmm_v1.17.sif java -mx8g -jar /chromhmm/ChromHMM.jar OverlapEnrichment $thisresultdir /projects/carter-lab/hepatocytes/Epigenetics_Manuscript/Data/mm10 test
+singularity exec /projects/carter-lab/atyler/Containers/chromhmm_v1.17.sif java -mx8g -jar /chromhmm/ChromHMM.jar OverlapEnrichment -posterior $thisresultdir /projects/carter-lab/hepatocytes/Epigenetics_Manuscript/Data/mm10 test
