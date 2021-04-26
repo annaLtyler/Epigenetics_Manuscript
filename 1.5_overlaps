@@ -29,4 +29,4 @@ outfile=$jobid$resultname"_enrichments"
 
 #learn model with states specified by the job id
 
-singularity exec /projects/carter-lab/atyler/Containers/chromhmm_v1.17.sif java -mx8g -jar /chromhmm/ChromHMM.jar OverlapEnrichment -posterior $thisresultdir /projects/carter-lab/hepatocytes/Epigenetics_Manuscript/Data/mm10 outfile
+singularity exec /projects/carter-lab/atyler/Containers/chromhmm_v1.17.sif java -mx8g -jar /chromhmm/ChromHMM.jar OverlapEnrichment -posterior $thisresultdir /projects/carter-lab/hepatocytes/Epigenetics_Manuscript/Data/mm10 $outfile
