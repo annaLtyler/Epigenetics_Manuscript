@@ -9,11 +9,11 @@
 #SBATCH --mail-user=anna.tyler@jax.org
 #SBATCH --mail-type=END
 # example use: sbatch 1_run_chromHMM
-# example use: sbatch --export=num_states="8" 2.0_setup_chromaprobs
+# example use: sbatch --export=num_states="16" 2.0_setup_chromaprobs
 
 cd $SLURM_SUBMIT_DIR
 
 module load singularity
 
-singularity exec ../../Containers/epigenetics_analysis_latest.sif R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '2.0_chromaprobs_setup.Rmd'))" --args "$num_states"
+singularity exec /projects/carter-lab/atyler/Containers/epigenetics_analysis_latest.sif R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '2.0_chromaprobs_setup.Rmd'))" --args "$num_states"
 
