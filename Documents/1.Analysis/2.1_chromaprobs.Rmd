@@ -223,7 +223,7 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
     addcovar = covar)
     geno.coef.int <- scan1coef(genoprobs = geno.geno, pheno = expr[,expr.locale], 
     addcovar = covar, intcovar = int.covar)
-    #barplot(geno.coef.full[,LETTERS[1:8]])
+    #barplot(geno.coef.add[,LETTERS[1:8]])
     geno.coef.chow <- scan1coef(genoprobs = geno.geno, pheno = expr[,expr.locale], 
     addcovar = covar[chow.locale,])
     geno.coef.hf <- scan1coef(genoprobs = geno.geno, pheno = expr[,expr.locale], 

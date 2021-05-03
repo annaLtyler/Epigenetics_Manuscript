@@ -12,7 +12,8 @@ chrom.states, strain.key, geno_type = c("chromatin", "genotype")){
   gene.start <- transcript.info[info.locale,"start_position"]
 
   if(geno_type == "chromatin"){
-    one.geno <- list(calc.chrom(gene.name, transcript.info, transcript.haplotypes, chrom.states, strain.key = strain.key))
+    one.geno <- list(calc.chrom(gene.name, transcript.info, transcript.haplotypes, 
+    chrom.states, strain.key = strain.key))
   }else{
     gene.locale <- which(names(transcript.haplotypes) == gene.id)
     one.geno <- list(transcript.haplotypes[[gene.locale]])

@@ -1,9 +1,11 @@
 plot.chrom.effects <- function(gene.name, expr, covar, chrom.mats, transcript.info, 
 transcript.haplotypes, chrom.states, strain.key){
     
-    num.states = 8
+    #use the chromatin state object to determine the number of states
+    num.states = max(sapply(chrom.mats, 
+    function(x) if(length(x) > 1){max(x, na.rm = TRUE)}else{NA}), na.rm = TRUE)
     data(CCcolors)
-    chrom.colors <- colors.from.values(1:8, use.pheatmap.colors = TRUE)
+    chrom.colors <- colors.from.values(1:num.states, use.pheatmap.colors = TRUE)
 
     gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == gene.name),"ensembl_gene_id"][1]
     expr.locale <- which(colnames(expr) == gene.id)
@@ -103,7 +105,7 @@ transcript.haplotypes, chrom.states, strain.key){
     state.order <- match.order(rev(names(ordered.coef)), 
     colnames(chrom.mats[[chrom.locale]]), strain.key)
     #names(ordered.coef); colnames(chrom.mats[[chrom.locale]])[state.order]
-    plot.chrom.mat(t(chrom.mats[[chrom.locale]][,state.order]))
+    plot.chrom.mat(t(chrom.mats[[chrom.locale]][,state.order]), num.states = num.states)
     
     #plot legend for genetic eQTL LOD score in LOD score plot, plot 7
     plot.new()
