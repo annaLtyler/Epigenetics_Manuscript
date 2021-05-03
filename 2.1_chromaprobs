@@ -15,5 +15,5 @@ cd $SLURM_SUBMIT_DIR
 
 module load singularity
 
-singularity exec ../../Containers/epigenetics_analysis_latest.sif R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '2.1_chromaprobs.Rmd'))" --args "$num_states" "$delete_previous"
+singularity exec /projects/carter-lab/atyler/Containers/epigenetics_analysis_latest.sif R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '2.1_chromaprobs.Rmd'))" --args "$num_states" "$delete_previous"
 
