@@ -23,7 +23,9 @@ We prepare the following files:
     * transcript.haplotypes.RDS
   
 ```{r load_libraries, message = FALSE, warning = FALSE, error = FALSE}
-num.states = 8
+args <- commandArgs(trailingOnly=T)
+num.states <- as.numeric(args[1])
+
 needed.packages <- c("here")
 for(i in 1:length(needed.packages)){library(needed.packages[i], character.only = TRUE)}
 is.interactive = FALSE
@@ -41,9 +43,9 @@ for(i in 1:length(all.code.dir)){
 Load chromatin data.
 
 ```{r chrom_data}
-chrom.states <- readRDS(here("Results", "ChromHMM", "008_states_C", 
-"Chromatin_States_8_full_gene_1000.RData"))
-
+chrom.dir <- paste0(num.states, "_states_C")
+chrom.file <- paste0("Chromatin_States_", num.states, "_full_gene_1000.RData")
+chrom.states <- readRDS(here("Results", "ChromHMM", chrom.dir, chrom.file))
 ```
 
 Load the DO data. We will be using the genoprobs object for our mapping.
@@ -98,7 +100,7 @@ is listed as present/absent.
 
 ```{r expand_chrom}
 
-expand_chrom <- function(chrom.mat, num.states = 8){
+expand_chrom <- function(chrom.mat, num.states){
   if(length(chrom.mat) == 1){return(NA)}
 
   chrom.array <- array(0, dim = c(ncol(chrom.mat), num.states, nrow(chrom.mat)))
@@ -117,6 +119,6 @@ expand_chrom <- function(chrom.mat, num.states = 8){
 }
 
 expanded.chrom.file <- here("Data", "chQTL", "Expanded_Chromatin.RDS")
-exp.chrom <- lapply_pb(chrom.states, expand_chrom)
+exp.chrom <- lapply_pb(chrom.states, function(x) expand_chrom(x, num.states))
 saveRDS(exp.chrom, expanded.chrom.file)
 ```

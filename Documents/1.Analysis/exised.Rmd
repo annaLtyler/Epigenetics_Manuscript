@@ -1,0 +1,40 @@
+
+## Correlation with MDS
+Also calculate the correlation between the multi-dimensionally scaled
+state matrix and gene expression. This won't tell us which states
+have good correlations with expression, but will tell us overall
+how well the states capture expression.
+
+The barplot below shows the median aboslute value of the correlation 
+between the MDS matrix and expression. All numbers of states are very
+similar, but the five-state model has a slight edge. 
+
+```{r mds}
+all.mds <- vector(mode = "list", length = length(state.num))
+names(all.mds) <- basename(state.num)[state_order]
+for(i in 1:length(state.num)){
+	mds.file <- list.files(path = state.num[state_order[i]], pattern = "MDS_Expression_Cor", full.names = TRUE)
+	if(length(mds.file) > 0){all.mds[[i]] <- readRDS(mds.file)}
+}
+
+all.mds.r <- lapply(all.mds, function(x) signif(unlist(x$all.r), 2))
+all.mds.p <- lapply(all.mds, function(x) x$all.p)
+
+mds.mat <- Reduce("cbind", all.mds.r)
+mds.mat <- apply(mds.mat, 2, abs)
+colnames(mds.mat) <- names(all.mds)
+barplot(apply(mds.mat, 2, function(x) median(x, na.rm = TRUE)), las = 2)
+```
+
+We also looked gene by gene for which model had the best correlation.
+The following barplot shows the number of times each model had the 
+best correlation for the genes. The lowest number of states is clearly
+the best most of the time.
+
+```{r best_state}
+best.state <- unlist(apply(mds.mat, 1, function(x) if(all(is.na(x))){NA}else{which.max(x)}))
+best.table <- table(best.state)
+names(best.table) <- names(all.mds)
+par(mar = c(10, 4, 4, 4))
+barplot(best.table, las = 2)
+```

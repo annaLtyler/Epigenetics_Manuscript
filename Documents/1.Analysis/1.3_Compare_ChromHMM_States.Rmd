@@ -12,7 +12,10 @@ output:
 
 
 The purpose of this workflow is to compare different numbers of states specified 
-for ChromHMM. We want to select the model that is best correlated with expression.
+for ChromHMM. We do this in several ways. First, we look for the maximum correlation
+between chromatin state and gene expression. Second, we look for state overlaps 
+with genomic features.
+
 This workflow can be run after 2.Chromatin_and_Expression.Rmd has been run for multiple 
 state numbers. It uses the "Prop\_Expression\_Cor" files to find the maximum and minimum 
 associations between proportion of each state and the expression of each transcript. 
@@ -27,6 +30,8 @@ for(i in 1:length(all.code.dir)){
 	all.fun <- list.files(all.code.dir[i], full.names = TRUE, pattern = ".R")
 	for(j in 1:length(all.fun)){source(all.fun[j])}
 }
+is.interactive = FALSE
+#is.interactive = TRUE
 ```
 
 
@@ -49,16 +54,45 @@ for(i in 1:length(state.num)){
 }
 ```
 
-## Compare results
-Calculate the median correlations across all states for all models. Plot the maximum
-and minimum for each model. 
+## Correlations with State Proportion
+Calculate the median correlation between the proportion of each
+state and gene expression. Plot the maximum and minimum for each model. 
 
 ```{r process, fig.width = 10, fig.height = 4}
 all.prop.r <- lapply(all.prop, function(x) x$all.r)
 all.prop.p <- lapply(all.prop, function(x) x$all.p)
-med.prop.r <- lapply(all.prop.r, function(x) if(length(x) > 0){apply(x, 2, function(y) median(y, na.rm = TRUE))})
+med.prop.r <- lapply(all.prop.r, 
+function(x) if(length(x) > 0){apply(x, 2, function(y) median(y, na.rm = TRUE))})
+```
 
-max.med.prop <- lapply(med.prop.r, function(x) if(length(x) > 0){c(min(x), max(x))})
+The plot below shows the correlation distributions for each model 
+across all states. Each point shows the median correlation between 
+a state and inbred expression across all genes. The maximum and 
+minimum are fairly consistent across all models. The nine-state 
+model has the highest maximum. As we get more states the number 
+of states with poor correlation increases, but so does the number
+of states with higher correlations. They all so similar that it's 
+difficult to pick one as the best. 
+
+```{r state.cor}
+prop.col <- lapply(med.prop.r, function(x) colors.from.values(x, use.pheatmap.colors = TRUE))
+plot.new()
+plot.window(xlim = c(1, length(med.prop.r)), ylim = c(-0.25, 0.3))
+for(i in 1:length(med.prop.r)){
+    points(x = jitter(rep(i, length(med.prop.r[[i]]))), y = med.prop.r[[i]], pch = 16,
+    col = prop.col[[i]])
+}
+axis(2)
+par(xpd = TRUE)
+text(y = rep(-0.3, length(med.prop.r)), x = 1:length(med.prop.r), 
+labels = names(med.prop.r), srt = 90)
+par(xpd = FALSE)
+abline(h = 0, col = "gray")
+```
+
+
+```{r, eval = FALSE}
+max.med.prop <- lapply(med.prop.r, function(x) if(length(x) > 0){c(min(x, na.rm = TRUE), max(x, na.rm = TRUE))})
 min.prop <- unlist(lapply(max.med.prop, function(x) x[1]))
 max.prop <- unlist(lapply(max.med.prop, function(x) x[2]))
 
@@ -66,10 +100,47 @@ min.max.table <- rbind(min.prop, max.prop)
 
 xvals <- as.numeric(sapply(strsplit(names(min.prop), "_"), function(x) x[1]))
 
-plot.two.y.axes(xvals, min.max.table[2,], xvals, min.max.table[1,], lwd = c(3,3), legend.pos = "topright",
-xlab = "N States", ylab1 = "Maximum Median Correlation", ylab2 = "Minimum Median Correlation", 
-plot.type = c("b", "b"), pch = c(16, 16))
+#make the yaxes span the same scale
+ylim1 <- c(min(min.max.table[2,]), max(min.max.table[2,]))
+axis1.size <- ylim1[2] - ylim1[1]
+ylim2 <- c((median(min.max.table[1,]) - axis1.size/2), (median(min.max.table[1,]) + axis1.size/2))
+axis2.size <- ylim2[2] - ylim2[1]
+
+plot.two.y.axes(xvals, min.max.table[2,], xvals, min.max.table[1,], lwd = c(3,3), 
+legend.pos = "topright", xlab = "N States", ylab1 = "Maximum Median Correlation", 
+ylab2 = "Minimum Median Correlation", plot.type = c("b", "b"), pch = c(16, 16), 
+ylim1 = ylim1, ylim2 = ylim2)
 ```
+
+The plot below is an attempt to figure out which set of states is the least
+redundant. The idea is that if two states are redundant, they're correlation
+with expression will highly correlated. 
+
+The plot shows absolute value of the correlations, since highly 
+negatively correlated states have redundant information just as 
+highly positively correlated states.
+
+I'm confused about the results, though. The 4-state model has the lowest
+correlations, but this should be the least redundant model. So I think
+my measure of redundancy is not right...
+
+
+```{r state_cor}
+state_redundancy <- vector(mode = "list", length = length(all.prop.r))
+names(state_redundancy) <- names(all.prop.r)
+for(i in 1:length(all.prop.r)){
+    cor.mat <- cor(all.prop.r[[i]], use = "pairwise.complete.obs")
+    cor.mat[upper.tri(cor.mat, diag = TRUE)] <- NA
+    state_redundancy[[i]] <- cor.mat
+}
+par(mar = c(8, 4, 2, 2))
+boxplot(state_redundancy, las = 2, ylab = "State Pairwise Correlation")
+stripchart(state_redundancy, vertical = TRUE, pch = 16, col = "lightpink", 
+method = "jitter", las = 2, add = TRUE)
+abline(h = 0)
+
+```
+
 
 ```{r test, eval = FALSE}
 best.pair <- apply(min.max.table, 2, function(x) sum(abs(x)))
@@ -104,8 +175,6 @@ barplot(rbind(abs(min.state.cor[idx,]), max.state.cor[idx,]), beside =TRUE, las 
 best.state.by.gene <- unlist(sapply(1:nrow(all.prop.r[[1]]), function(x) which.max(abs(min.state.cor[x,])+max.state.cor[x,])))
 ```
 
-Although the seven-state model has the best positive correlation with a state, the
-six-state model is almost as good and has a much better negative correlation.
 
 ```{r compare_further}
 boxplot.r <- function(r.mats, p.mats, state.num){
@@ -149,8 +218,38 @@ gene expression for the states tested.
 ```{r cor_plots, results = "asis"}
 for(i in 1:length(state.as.num)){
     cat("###", state.names[i], "\n")
+    if(is.interactive){quartz()}
     boxplot.r(all.prop.r, all.prop.p,  state.as.num[i])
     show.emissions(state.as.num[i])
     cat("\n\n")
+}
+```
+
+## Genomic Overlaps
+
+We next look at each set of states and how the state positions in the B6 animals
+overlap with B6 genomic coordinates. We used the genomic coordinate files 
+included in ChromHMM, which includes coordinates for exons, TSS, TES, genes,
+and CpG islands. We downloaded additional files from the UCSC genome
+browser. To do that we went to [http://genome.ucsc.edu/cgi-bin/hgTables]
+and downloaded a few bed files by hand for different tracks. 
+
+```{r enrich}
+test.files <- list.files(here("Results", "Enrichments"), pattern = ".txt", full.names = TRUE)[state_order]
+
+for(i in 1:length(test.files)){
+    if(is.interactive){quartz(width = 8, height = 4)}
+    test <- as.matrix(read.delim(test.files[i], row.names = 1))
+    pheatmap(test)
+    pheatmap(test, scale = "column")
+    #pheatmap(test, scale = "row")
+
+    pheatmap(cor(t(test)))
+    par(mfrow = c(1,2))
+    par(mar = c(10, 4, 2, 2))
+    pheatmap(test, scale = "column")
+    #boxplot(test, las = 2)
+    #boxplot(t(test))
+    pheatmap(cor(t(test)))
 }
 ```
