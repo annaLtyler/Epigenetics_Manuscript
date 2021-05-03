@@ -28,6 +28,7 @@ The basic pipeline for mapping chromatin to genotype is as follows:
 ```{r load_libraries, message = FALSE, warning = FALSE, error = FALSE}
 args <- commandArgs(trailingOnly=T)
 num.states <- as.numeric(args[1])
+delete.previous <- as.logical(args[2])
 
 needed.packages <- c("here", "qtl2")
 for(i in 1:length(needed.packages)){library(needed.packages[i], character.only = TRUE)}
@@ -103,6 +104,15 @@ chrom.r2.file <- here("Results", "chQTL", "chQTL.R2.RDS")
 geno.lod.file <- here("Results", "eQTL", "eQTL.lod.RDS")
 geno.coef.file <- here("Results", "eQTL", "eQTL.coef.RDS")
 geno.r2.file <- here("Results", "eQTL", "eQTL.R2.RDS")
+
+if(delete.previous){
+  unlink(chrom.lod.file)
+  unlink(chrom.coef.file)
+  unlink(chrom.r2.file)
+  unlink(geno.lod.file)
+  unlink(geno.coef.file)
+  unlink(geno.r2.file)
+}
 
 save.every = 100
 
