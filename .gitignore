@@ -2,4 +2,6 @@ Data/
 Results/
 *.DS_Store
 *.sif
+*.html
+*.png
 
