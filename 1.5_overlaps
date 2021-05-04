@@ -25,7 +25,7 @@ resultname="_states_C"
 jobid=$SLURM_ARRAY_TASK_ID
 postfile=$resultdir$jobid$resultname"/B6_"$jobid"_segments.bed"
 #outfile=$resultdir$jobid$resultname"/enrichments"
-outfile=$jobid$resultname"_enrichments"
+outfile=/projects/carter-lab/hepatocytes/Epigenetics_Manuscript/Results/Enrichments/$jobid$resultname"_enrichments"
 
 #learn model with states specified by the job id
 
