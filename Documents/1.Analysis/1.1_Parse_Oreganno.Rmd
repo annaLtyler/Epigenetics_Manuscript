@@ -1,0 +1,49 @@
+---
+title: "Compare ChromHMM Models"
+author: Anna L Tyler
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  html_document:
+    code_folding: hide
+    collapsed: no
+    toc: yes
+    toc_float: yes
+---
+
+The purpose of this workflow is to parse the oreganno bed file and attribute file
+to create separate bed files for enrichment analysis of ChromHMM states.
+
+We started by downloading the Oreganno files from [UCSC](http://genome.ucsc.edu/cgi-bin/hgTables)
+Select Mouse assembly mm10
+Select Expression and regulation
+Select ORegAnno
+Download each of the three files associated with this track into Data/regulatory_annot.
+
+
+```{r download_files}
+oreganno.dir <- here("Data", "regulatory_annot")
+reg.bed <- read.table(file.path(oreganno.dir, "oreganno.bed"), header = FALSE,
+stringsAsFactors = FALSE)
+
+reg.attr <- read.table(file.path(oreganno.dir, "oreganno_attr.bed"), header = FALSE,
+stringsAsFactors = FALSE, sep = "\t")
+
+u_factors <- unique(reg.attr[,2])
+
+tfbs.locale <- which(reg.attr[,2] == "TFbs")
+tfbs.id <- reg.attr[tfbs.locale,1]
+
+#find tfbs in the bed file
+tfbs.idx <- which(reg.bed[,5] %in% tfbs.id)
+tfbs.bed <- reg.bed[tfbs.idx,2:ncol(reg.bed)]
+write.table(tfbs.bed, file.path(oreganno.dir, "TFbs.bed"), quote = FALSE, sep = "\t",
+row.names = FALSE, col.names = FALSE)
+
+compress.line <- paste("gzip", file.path(oreganno.dir, "TFbs.bed"))
+system(compress.line)
+
+move.line <- paste("mv", file.path(oreganno.dir, "TFbs.bed.gz"), here("Data", "mm10"))
+system(move.line)
+```
+
+

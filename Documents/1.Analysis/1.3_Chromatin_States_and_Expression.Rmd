@@ -70,8 +70,8 @@ is.interactive = FALSE
 #is.interactive = TRUE
 
 if(is.na(num.states)){
-    num.states = 8; delete.previous = FALSE
-    #num.states = 8; delete.previous = FALSE
+    num.states = 9; delete.previous = FALSE
+    #num.states = 9; delete.previous = FALSE
 }
 ```
 

@@ -25,6 +25,7 @@ It plots these maxima and minima across the states analyzed.
 
 ```{r source_code}
 library("here")
+library("pheatmap")
 all.code.dir <- list.files(here("Code"), full.names = TRUE)
 for(i in 1:length(all.code.dir)){
 	all.fun <- list.files(all.code.dir[i], full.names = TRUE, pattern = ".R")
@@ -219,7 +220,7 @@ We can use these enrichments to annotate the states we identified in ChromHMM.
 enrichment.files <- list.files(here("Results", "Enrichments"), 
 pattern = ".txt", full.names = TRUE)[state_order]
 
-for(i in 1:length(test.files)){
+for(i in 1:length(enrichment.files)){
     cat("###", state.names[state_order[i]], "\n")
     if(is.interactive){quartz(width = 8, height = 4)}
     enrichment.map <- as.matrix(read.delim(enrichment.files[i], row.names = 1))
@@ -237,8 +238,9 @@ primarily to promoters, and transcription start sites (TSS), as well as to exons
 State 5, which is also positively correlated with expression localizes to
 enhancers.
 
-State 3, which is negatively correlated with expression has a very similar
-localization to state 7. It is primarily at promoters and TSS.
+State 3, which is negatively correlated with expression has similar
+localization to state 7, but is primarily enriched at transcription 
+factor binding sites. It is also enriched at promoters.
 
 State 1 is the absence of all measured marks, and is negatively correlated
 with expression. It is primarily associated with intergenic regions. 
