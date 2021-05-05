@@ -2,8 +2,8 @@
 #cent.chrom is the chromatin matrix with coordinates centered on the 
 #TSS and TES, gene.expr is the scaled expression of the gene.
 
-binned.state.expr.cor <- function(cent.chrom, gene.expr, col.table, bin.min = 0, bin.max = 1,
-num.states = 8){
+binned.state.expr.cor <- function(cent.chrom, gene.expr, col.table, bin.min = 0, 
+bin.max = 1, num.states = 9){
 
     results <- list("r" = rep(NA, num.states), "p" = rep(NA, num.states))
     

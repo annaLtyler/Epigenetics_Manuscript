@@ -7,7 +7,12 @@ plot.eqtl <- function(coef.list, lod.score, label, gene.coord = NULL, max.lod = 
 	layout.mat <- matrix(c(1,2,0), ncol = 1, byrow = TRUE)
 	layout(layout.mat, heights = c(0.5, 1, 0.3))
 	
-	coords <- as.numeric(unlist(lapply(strsplit(rownames(coef.list), "_"), function(x) x[2])))
+	if(class(coords) == "list"){
+		coords <- as.numeric(unlist(lapply(strsplit(rownames(coef.list), "_"), function(x) x[2])))
+	}
+	if(class(coords) == "numeric"){
+		coords <- coef.list
+	}
 	
 	par(mar = c(0,4,4,4))
 	

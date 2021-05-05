@@ -5,7 +5,7 @@
 #This function calculates the amount of the given state across
 #all genes as a function of the binned chromatin positions. 
 
-state.by.position <- function(gene.ids, state.id, binned.chrom){
+state.by.position <- function(gene.ids, group.gene.expr, state.id, binned.chrom){
 
     #get the binned chromatin matrices for these genes as well.
     gene.locale <- match(gene.ids, names(binned.chrom))
