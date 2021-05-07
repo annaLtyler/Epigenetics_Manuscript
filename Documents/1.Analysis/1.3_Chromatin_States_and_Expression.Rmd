@@ -86,7 +86,7 @@ for(i in 1:length(all.code.dir)){
 ```
 
 ```{r load_libraries, message = FALSE, warning = FALSE, error = FALSE}
-needed.packages <- c("biomaRt", "VennDiagram", "ape", "gprofiler2", 
+needed.packages <- c("VennDiagram", "ape", "gprofiler2", 
 "e1071", "DESeq2", "knitr", "pheatmap", "hexbin", "RColorBrewer", "MASS", 
 "gridExtra", "grid", "ggplotify", "qtl2")
 load_libraries(needed.packages)
@@ -189,6 +189,7 @@ expr.decomp <- plot.decomp(t(rna.seq), cols = col.table[col.order,3], pc = 5)
 gene.info.file <- here("Data", "RNASeq", "RNASeq_gene_info.RData")
 all.var <- ls()
 if(!file.exists(gene.info.file)){
+    library(biomaRt) #only load this if we need to query it
     lib.loaded <- as.logical(length(which(all.var == "mus")))
     if(!lib.loaded){
         if(!file.exists(gene.info.file)){
