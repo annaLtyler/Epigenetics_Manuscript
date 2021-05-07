@@ -67,6 +67,7 @@ chrom.state.file <- here("Data", "chQTL", "Expanded_Chromatin.RDS") #generated b
 chrom.states <- readRDS(chrom.state.file)
 chrom.mats <- readRDS(here("Results", "ChromHMM", paste0(num.states, "_states_C"), 
 paste0("Chromatin_States_", num.states, "_full_gene_1000.RData")))
+
 #not all of the transcripts are in the chromatin state
 #object. We should go back to the beginning and re-run
 #everything with the new expression object as a reference

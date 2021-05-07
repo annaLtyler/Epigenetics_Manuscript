@@ -15,6 +15,8 @@ chrom.states, strain.key){
   gene.idx <- which(names(transcript.haplotypes) == gene.id)
   haps <- transcript.haplotypes[[gene.idx]]
   if(length(haps) == 1){return(NA)}
+  if(length(chrom.states[[gene.idx]] == 1)){return(NA)}
+  
   ref.chroms <- chrom.states[[gene.idx]][chrom.order,,]
 
   chrom.array <- array(NA, dim = c(nrow(haps), ncol(ref.chroms), dim(ref.chroms)[3]))
