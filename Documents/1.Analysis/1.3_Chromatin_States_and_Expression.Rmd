@@ -78,7 +78,6 @@ if(is.na(num.states)){
 
 ```{r source_code}
 library("here")
-library(qtl2)
 all.code.dir <- list.files(here("Code"), full.names = TRUE)
 for(i in 1:length(all.code.dir)){
 	all.fun <- list.files(all.code.dir[i], full.names = TRUE, pattern = ".R")
@@ -89,7 +88,7 @@ for(i in 1:length(all.code.dir)){
 ```{r load_libraries, message = FALSE, warning = FALSE, error = FALSE}
 needed.packages <- c("biomaRt", "VennDiagram", "ape", "gprofiler2", 
 "e1071", "DESeq2", "knitr", "pheatmap", "hexbin", "RColorBrewer", "MASS", 
-"gridExtra", "grid", "ggplotify")
+"gridExtra", "grid", "ggplotify", "qtl2")
 load_libraries(needed.packages)
 ```
 
