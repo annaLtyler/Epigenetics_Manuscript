@@ -142,7 +142,7 @@ buffer.text <- paste(unique(c(upstream.buffer, downstream.buffer)), collapse = "
 #If evaluated, this chunk will clear out all results generated
 #by this script to trigger recalculation of all results
 if(delete.previous){
-    delete.files <- list.files(here("Results", form.states, "ChromHMM", form.states), full.names = TRUE)
+    delete.files <- list.files(here("Results", "ChromHMM", form.states), full.names = TRUE)
     if(length(delete.files) > 0){
         for(i in 1:length(delete.files)){
             unlink(delete.files[i])
