@@ -62,7 +62,8 @@ e.coef <- readRDS(here("Results", "eQTL", "eQTL.coef.RDS"))
 e.lod <- readRDS(here("Results", "eQTL", "eQTL.lod.RDS"))
 e.r2 <- readRDS(here("Results", "eQTL", "eQTL.R2.RDS"))
 
-chrom.mats <- readRDS(here("Results", "ChromHMM", "008_states_C", "Chromatin_States_8_full_gene_1000.RData"))
+chrom.mats <- readRDS(here("Results", "ChromHMM", paste0(num.states, "_states_C"), 
+paste0("Chromatin_States_", num.states, "_full_gene_1000.RData")))
 chrom.states <- readRDS(here("Data", "chQTL", "Expanded_Chromatin.RDS"))
 
 do.data <- load(here("Data", "DOQTL", "Svenson_DO850_for_eQTL_viewer_v9.RData"))

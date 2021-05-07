@@ -26,6 +26,8 @@ We prepare the following files:
 args <- commandArgs(trailingOnly=T)
 num.states <- as.numeric(args[1])
 
+if(is.na(num.states)){num.states = 9}
+
 needed.packages <- c("here")
 for(i in 1:length(needed.packages)){library(needed.packages[i], character.only = TRUE)}
 is.interactive = FALSE

@@ -30,6 +30,8 @@ args <- commandArgs(trailingOnly=T)
 num.states <- as.numeric(args[1])
 delete.previous <- as.logical(args[2])
 
+if(is.na(num.states)){num.states = 9;delete.previous = FALSE}
+
 needed.packages <- c("here", "qtl2")
 for(i in 1:length(needed.packages)){library(needed.packages[i], character.only = TRUE)}
 #barplot(1:length(chrom.colors), col = chrom.colors)

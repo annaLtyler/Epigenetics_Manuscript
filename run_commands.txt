@@ -1,6 +1,6 @@
 
 
-R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '1.2_Chromatin_States_and_Expression.Rmd'))" --args "8" "FALSE"
+R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '1.3_Chromatin_States_and_Expression.Rmd'))" --args "9" "FALSE"
 
 
 R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '1.3_Compare_ChromHMM_States.Rmd'))"
