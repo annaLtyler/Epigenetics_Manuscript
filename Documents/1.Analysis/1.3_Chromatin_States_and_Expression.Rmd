@@ -775,7 +775,7 @@ CAST and PWK have very low expression and both have state 3 at the TSS.
 The other strains have much higher expression and all have state 7 at the 
 TSS. State 7 elsewhere in the gene is also correlated with expression. 
 
-```{r examples, fig.width = 7, fig.height = 8}
+```{r examples, fig.width = 7, fig.height = 8, eval = FALSE}
 #find example genes with significant correlations at specified
 #positions
 find_example_cor <- function(window.p, sig.val, state, pos){
