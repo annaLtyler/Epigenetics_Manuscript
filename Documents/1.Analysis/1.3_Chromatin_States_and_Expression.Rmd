@@ -241,7 +241,7 @@ if(!file.exists(strain.scaled.expr.file)){
 Because we are specifically interested in variance in expression across 
 strains, we filtered the transcripts to include those that had a large amount
 of variation across strains. We chose only those transcripts that had at least 
-a difference of `r var.lim` between the highest-expressing strain, and the 
+a minimum difference between the highest-expressing strain, and the 
 lowest-expressing strain.
 
 The plot below shows the distribution of the variance across strains 

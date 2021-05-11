@@ -9,7 +9,7 @@
 #SBATCH --mail-user=anna.tyler@jax.org
 #SBATCH --mail-type=END
 # example use: sbatch --export=delete_previous="FALSE" 1.5_analyze_model
-#example use: sbatch --array=4-8 -N1 --export=delete_previous="FALSE" 1.5_analyze_model
+#example use: sbatch --array=4-8 -N1 --export=delete_previous="TRUE" 1.5_analyze_model
 
 
 
