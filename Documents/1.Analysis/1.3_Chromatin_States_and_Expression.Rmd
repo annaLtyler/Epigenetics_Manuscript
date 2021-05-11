@@ -327,11 +327,11 @@ for(i in 1:nrow(strain.key)){
 ```
 
 ## Chromatin states by gene
-The first step in this analysis is to create matrices of chromatin states for each transcript.
-In this step, we go through all transcripts in the RNA Seq data set. For each transcript, we
-get the ChromHMM states around the gene body or transcription start site as defined by the 
-parameters at the top of this file. The states across all strains are combined into a single 
-matrix.
+The first step in this analysis is to create matrices of chromatin states for each 
+transcript. In this step, we go through all transcripts in the RNA Seq data set. 
+For each transcript, we get the ChromHMM states around the gene body or transcription 
+start site as defined by the parameters at the top of this file. The states across 
+all strains are combined into a single matrix.
 
 ```{r get_chrom_states, warning = FALSE}
 #This chunk takes about 3 hours to run depending 
@@ -629,7 +629,8 @@ for(s in 1:length(state.position)){
 if(is.interactive){quartz(width = 8.5, height = 5)}
 plot.new()
 plot.window(xlim = c(-0.5, 1.5), ylim = c(0,1))
-for(s in c(4,5,6,1,7,8,3,9)){ #ordered for ease of visualization
+if(num.states == 9){state.order = c(4,5,6,1,7,8,3,9)}else{state.order = 1:num.states}
+for(s in state.order){ #ordered for ease of visualization
     plot.state.by.position(state.position[[s]], error.type = "se", 
     plot.label = "", col = state.col[s], add = TRUE, lwd = 3)
 }
