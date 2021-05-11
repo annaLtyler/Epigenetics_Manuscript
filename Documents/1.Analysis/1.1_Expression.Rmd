@@ -18,14 +18,8 @@ The covariate in this data set is treatment: five of the strains were treated wi
 dexamethasone. We therefore include treatment in the vst model. 
 
 
-```{r load_libraries,  warning = FALSE, message = FALSE, error = FALSE}
-needed.packages <- c("here", "pheatmap", "DESeq2", "sva", "knitr", "pdist", "dendextend",
-"biomaRt", "gProfileR")
-load_libraries(needed.packages)
-is.interactive = FALSE #set to FALSE when running from the command
-```
-
 ```{r source_code}
+library(here)
 all.code.dir <- list.files(here("code"), full.names = TRUE)
 for(i in 1:length(all.code.dir)){
 	all.fun <- list.files(all.code.dir[i], pattern = ".R", full.names = TRUE)
@@ -34,6 +28,14 @@ for(i in 1:length(all.code.dir)){
 ```
 
 
+```{r load_libraries,  warning = FALSE, message = FALSE, error = FALSE}
+needed.packages <- c("here", "pheatmap", "DESeq2", "sva", "knitr", "pdist", "dendextend",
+"biomaRt", "gProfileR")
+load_libraries(needed.packages)
+is.interactive = FALSE #set to FALSE when running from the command
+#is.interactive = TRUE
+```
+
 ```{r read_expr}
 all.var <- ls()
 rna.seq.file <- here("Data", "RNASeq", "StrainsEffCts9.txt")
@@ -41,11 +43,12 @@ rna.seq.loaded <- as.logical(length(which(all.var == "rna.seq")))
 
 if(!rna.seq.loaded){
     rna.seq <- as.matrix(read.table(rna.seq.file, header = TRUE, stringsAsFactors = FALSE, sep = "\t"))
-    #filter to transcript that have at least 1 reads in at least 50% of individuals
-    min.reads = 1
-    min.prop = 0.5
-    pass.filter <- apply(rna.seq, 1, function(x) length(which(x >= min.reads))/length(x) > min.prop)
-    rna.seq <- rna.seq[which(pass.filter),]
+    min.mean = 5
+    #filter to transcripts with at least a mean count of 5
+
+    mean.counts <- apply(rna.seq, 1, mean)
+    pass.filter <- which(mean.counts >= min.mean)
+    rna.seq <- rna.seq[pass.filter,]
 }
 strains <- substr(colnames(rna.seq), 1, 2)
 ```
