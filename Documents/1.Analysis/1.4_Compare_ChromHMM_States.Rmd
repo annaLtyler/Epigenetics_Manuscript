@@ -16,10 +16,10 @@ for ChromHMM. We do this in several ways. First, we look for the maximum correla
 between chromatin state and gene expression. Second, we look for state overlaps 
 with genomic features.
 
-This workflow can be run after 2.Chromatin_and_Expression.Rmd has been run for multiple 
-state numbers. It uses the "Prop\_Expression\_Cor" files to find the maximum and minimum 
-associations between proportion of each state and the expression of each transcript. 
-It plots these maxima and minima across the states analyzed.
+This workflow can be run after 1.3_Chromatin_States_and_Expression.Rmd has been run for 
+multiple state numbers. It uses the "Prop\_Expression\_Cor" files to find the maximum 
+and minimum associations between proportion of each state and the expression of each 
+transcript. It plots these maxima and minima across the states analyzed.
 
 ## Source code
 
