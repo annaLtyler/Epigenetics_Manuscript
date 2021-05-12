@@ -179,7 +179,8 @@ boxplot(rna.seq, las = 2)
 col.order <- match.order(substr(colnames(rna.seq), 1, 2), col.table[,1], col.table)
 expr.decomp <- plot.decomp(t(rna.seq), cols = col.table[col.order,3], pc = 5)
 
-#pc = 5
+#This plot shows how the strains separate along a given pc
+#pc = 3
 #boxplot(expr.decomp$u[,pc]~as.factor(col.table[col.order,1]), col = col.table[,3])
 
 ```
@@ -193,12 +194,13 @@ if(!file.exists(gene.info.file)){
     lib.loaded <- as.logical(length(which(all.var == "mus")))
     if(!lib.loaded){
         if(!file.exists(gene.info.file)){
-            mus <- useEnsembl(biomart="ensembl", dataset="mmusculus_gene_ensembl") #most current library
-            #mus <- useMart("ENSEMBL_MART_ENSEMBL", dataset = "mmusculus_gene_ensembl", 
-            #host = "may2017.archive.ensembl.org") #stable archived library
+            #mus <- useEnsembl(biomart="ensembl", dataset="mmusculus_gene_ensembl") #most current library
+            #use this stable version because we need locations to be in mm10
+            mus <- useEnsembl("ENSEMBL_MART_ENSEMBL", dataset = "mmusculus_gene_ensembl", 
+            host = "may2017.archive.ensembl.org") #stable archived library
             }
         } 
-    rnaseq.gene.info <- getBM(attributes = c("ensembl_gene_id", "external_gene_name", 
+    rnaseq.gene.info.comp <- getBM(attributes = c("ensembl_gene_id", "external_gene_name", 
     "chromosome_name", "start_position", "end_position", "transcription_start_site", 
     "exon_chrom_start", "exon_chrom_end", "5_utr_start","5_utr_end","3_utr_start", 
     "3_utr_end", "strand"), 
