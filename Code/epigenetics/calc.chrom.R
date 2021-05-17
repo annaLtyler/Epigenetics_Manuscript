@@ -13,13 +13,15 @@ chrom.states, strain.key){
   rownames(chrom.states[[1]]), strain.key)
 
   gene.idx <- which(names(transcript.haplotypes) == gene.id)
+  chrom.idx <- which(names(chrom.states) == gene.id)
+  
   if(length(gene.idx) == 0){return(NA)} #no expression data
 
   haps <- transcript.haplotypes[[gene.idx]]
   if(length(haps) == 1){return(NA)}
-  if(length(chrom.states[[gene.idx]]) == 1){return(NA)}
+  if(length(chrom.states[[chrom.idx]]) == 1){return(NA)}
 
-  ref.chroms <- chrom.states[[gene.idx]][chrom.order,,]
+  ref.chroms <- chrom.states[[chrom.idx]][chrom.order,,]
 
   chrom.array <- array(NA, dim = c(nrow(haps), ncol(ref.chroms), dim(ref.chroms)[3]))
   rownames(chrom.array) <- rownames(haps)
