@@ -22,6 +22,7 @@ This workflow compares the eQTL mapped to chromatin and to haplotypes.
 library(here);library(qtl2);library(gprofiler2);library(stringr)
 library(msigdbr);library(fgsea);library(pheatmap);library(biomaRt)
 library(knitr)
+num.states = 9
 ```
 
 ```{r load_biomart}
@@ -48,7 +49,7 @@ for(i in 1:length(all.code.dir)){
 	for(j in 1:length(all.fun)){source(all.fun[j])}
 }
 data(CCcolors)
-chrom.colors <- colors.from.values(1:8, use.pheatmap.colors = TRUE)
+chrom.colors <- colors.from.values(1:num.states, use.pheatmap.colors = TRUE)
 ```
 
 
@@ -232,7 +233,7 @@ these clusters to see if there is a more general cell-type signature.s
 
 There is no longer an enrichment if I merge the cell type clusters.
 
-```{r merge_aizarani}
+```{r merge_aizarani, fig.width = 5, fig.height = 7}
 cell.types <- sapply(strsplit(path.names, "_"), function(x) paste(x[1:(length(x)-1)], collapse = "_"))
 u_cell.types <- unique(cell.types)
 merged.cell.genes <- vector(mode = "list", length = length(u_cell.types))
@@ -390,8 +391,8 @@ function(x) if(length(chrom.mats[[x]]) > 1){center.on.feature(chrom.gene.names[x
 transcript.info, chrom.mats[[x]][,1], feature = "full")}else{NA})
 tss.locale <- lapply(norm.states, function(x) get.nearest.pt(0, as.numeric(names(x))))
 tss.states <- lapply(1:length(tss.locale), function(x) if(length(chrom.mats[[x]]) > 1){chrom.mats[[x]][tss.locale[[x]],]}else{NA})
-num.states <- sapply(tss.states, function(x) if(length(x) > 1){length(unique(x))}else{NA})
-var.locale <- which(num.states > 1)
+numeric.states <- sapply(tss.states, function(x) if(length(x) > 1){length(unique(x))}else{NA})
+var.locale <- which(numeric.states > 1)
 var.genes <- names(chrom.mats)[var.locale]
 
 var.gene.locale <- match(var.genes, names(norm.ch))
@@ -429,7 +430,7 @@ sources = c("GO", "KEGG", "REACTOME"))
 plot.enrichment(var.enrich, num.terms = 30,
 plot.label = "Genes with Chromatin State Variation at TSS")
 
-invar.locale <- which(num.states == 1)
+invar.locale <- which(numeric.states == 1)
 invar.genes <- names(chrom.mats)[invar.locale]
 invar.enrich <- gost(invar.genes, organism = "mmusculus", 
 sources = c("GO", "KEGG", "REACTOME"))
@@ -486,9 +487,9 @@ for(x in 1:length(ch.coef)){
   }
 }
 
-all.state.coef <- vector(mode = "list", length = 8)
-names(all.state.coef) <- 1:8
-for(s in 1:8){
+all.state.coef <- vector(mode = "list", length = num.states)
+names(all.state.coef) <- 1:num.states
+for(s in 1:num.states){
   if(is.interactive){quartz(width = 10, height = 4)}
   cat("### State", s, "\n")
   norm.state <- lapply(norm.ch.coef, function(x) x[,s])
@@ -522,9 +523,9 @@ States 2, 3, 5, and 8 are all fairly level across the gene.
 
 
 ```{r coef_magnitude, results = "asis", fig.width = 10, fig.height = 4}
-all.state.mag <- vector(mode = "list", length = 8)
-names(all.state.mag) <- 1:8
-for(s in 1:8){
+all.state.mag <- vector(mode = "list", length = num.states)
+names(all.state.mag) <- 1:num.states
+for(s in 1:num.states){
   if(is.interactive){quartz(width = 10, height = 4)}
   cat("### State", s, "\n")
   norm.state <- lapply(norm.ch.coef, function(x) x[,s])
@@ -575,9 +576,9 @@ with variation in that state across strains decreases as you move toward
 the TSS.
 
 ```{r state_variance, results = "asis", fig.width = 10, fig.height = 4}
-all.state.var <- vector(mode = "list", length = 8)
-names(all.state.var) <- 1:8
-for(s in 1:8){
+all.state.var <- vector(mode = "list", length = num.states)
+names(all.state.var) <- 1:num.states
+for(s in 1:num.states){
   if(is.interactive){quartz(width = 10, height = 4)}
   cat("### State", s, "\n")
   norm.state <- lapply(norm.ch.coef, function(x) x[,s])

@@ -46,7 +46,7 @@ for(i in 1:length(all.code.dir)){
 	for(j in 1:length(all.fun)){source(all.fun[j])}
 }
 data(CCcolors)
-chrom.colors <- colors.from.values(1:8, use.pheatmap.colors = TRUE)
+chrom.colors <- colors.from.values(1:num.states, use.pheatmap.colors = TRUE)
 ```
 
 
@@ -200,7 +200,7 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
     addcovar = covar[chow.locale,])
     chrom.hf.coef <- scan1coef(genoprobs = chrom.geno, pheno = expr[,expr.locale], 
     addcovar = covar[hf.locale,])
-    chrom.coef.list <- list(chrom.add.coef[,1:8], chrom.int.coef[,1:8], chrom.chow.coef[,1:8], chrom.hf.coef[,1:8])
+    chrom.coef.list <- list(chrom.add.coef[,1:num.states], chrom.int.coef[,1:num.states], chrom.chow.coef[,1:8], chrom.hf.coef[,1:num.states])
     names(chrom.coef.list) <- model.names
     chrom.coef[[i]] <- chrom.coef.list
 
