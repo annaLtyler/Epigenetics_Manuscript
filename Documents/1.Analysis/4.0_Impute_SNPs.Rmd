@@ -135,12 +135,10 @@ nearest the TSS.
 gene.marker <- vector(mode = "list", length = length(common.transcripts))
 names(gene.marker) <- common.transcripts
 for(i in 1:nrow(transcript.info.table)){
-        gene.marker[[i]] <- get_nearest_marker(transcript.info.table[i,"chromosome_name"], 
-        transcript.info.table[i, "start_position"])
-    }
+    gene.marker[[i]] <- get_nearest_marker(transcript.info.table[i,"chromosome_name"], 
+    transcript.info.table[i, "start_position"])
 }
 ```
-
 
 ## Download Sanger SNPs
 
