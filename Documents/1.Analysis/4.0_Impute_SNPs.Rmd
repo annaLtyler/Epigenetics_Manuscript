@@ -204,7 +204,7 @@ if(!file.exists(imputed.snp.file)){
 
 ```{r scan_chQTL_and_eQTL}
 snp.lod.file <- here("Results", "SNPs", "SNP.QTL.lod.RDS")
-if(!file.exists(snp.mat.file)){
+if(!file.exists(snp.lod.file)){
   snp.lod <- vector(mode = "list", length = length(common.transcripts))
   names(snp.lod) <- common.transcripts
 }
@@ -218,6 +218,7 @@ if(!file.exists(all.snp.lod.file)){
     all.snp.scans <- lapply(1:length(all.snp.mats), 
         function(x) if(length(all.snp.mats[[x]][[1]]) > 1){
             scan1(all.snp.mats[[x]], ordered.expr[,x], addcovar = covar)}else{NA})
+    names(all.snp.scans) <- common.transcripts
     saveRDS(all.snp.scans, all.snp.lod.file)
 }else{
     all.snp.scans <- readRDS(all.snp.lod.file)
