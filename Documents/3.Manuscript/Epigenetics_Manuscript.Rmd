@@ -45,96 +45,182 @@ library(here)
 ## Data Processing
 
 ## Identifying chromatin states
+We used ChromHMM to identify chromatin states corresponding to the 
+presence and absence of the four chromatin modifications. We calculated
+states for all numbers of states between four and 16, which is the maximum
+number of states possible with four binary chromatin modifications. 
+
+## Correlating chromatin state with gene expression
+To correlate chromatin state with gene expression, we calculated the
+proportion of the gene body that was assigned to each chromatin state
+across the nine inbred founders. We then correlated the proportion of
+each state with the mean gene expression across the founders. We 
+calculated these correlations across all states and all state models.
+
+## Assessing abundance of chromatin states across gene bodies
+We calculated the relative abundance of each chromatin state
+across all gene bodies. We normalized all gene coordinates to
+run from 0 at the transcription start site to 1 at the transcription
+end site. Upstream regulatory regions were assigned negative coordinates
+and downstream regulatory regions were assigned coordinates greater
+than 1. We then aligned all genes and grouped the normalized coordinates
+into 500 bins. To avoid potential contamination from regulatory
+regions of nearby genes, we only included genes that were at least 2kb 
+from their nearest neighbor. This included 14048 genes. 
+At each position, we then calculated the proportion of genes with the
+state present.
+
+## Assessing correlation of chromatin state with expression across gene bodies
+We used the normalized gene coordinates calculated above to calculate 
+position-based correlations between chromatin state and gene expression.
+To do this we used a sliding window across the gene body from normalized
+coordinates -1 to +2 and correlated state proportion within each window
+with gene expression.
+
 
 ## Imputing chromatin states in DO
 To better investigate the effect of chromatin state on local gene expression,
 we imputed chromatin state into a diversity outbred (DO) mouse population. 
-
+There is good evidence that, especially early in life, chromatin modifications 
+are genetically determined [cite]. For each transcript, we multiplied the 
+genotype at the nearest marker by the chromatin state matrix across the full
+gene body ($\pm 1kb) to derive an imputed chromatin state matrix identifying
+a chromatin state for each DO mouse across the gene body. We used R/qtl2 [cite]
+to calculate the effect of each chromatin state on gene expression. We calculated
+the total variance explained by both the local genotype as well as the local
+chromatin state for each transcript. 
 
 ## RRBS processing
 
 # Results
 
-## Eight-state model correlated best with gene expression
+## Nine-state model had highest correlation with gene expression
+To identify the ChromHMM model that corresponded best with gene 
+expression, we compared the correlation of each state with gene 
+expression (Methods) across all ChromHMM models (Supp Fig. XXX). 
+Across all models, the correlations between gene expression and 
+chromatin state could be binned roughly into five bins: low, 
+moderately low, no correlation, moderately high correlation, and 
+high correlation. The nine-state model had states in each of these 
+categories with the lowest redundancy. Furthermore, state seven in 
+the nine-state model had the maximum correlation with gene expression. 
+Therefore, we chose the nine-state model for downstream analysis.
 
-## State proportion correlated with gene expression
-Higher proportions of state 7 were correlated with increased expression
-both across genes (within-strain), and across strains. For example,
-Irf5 was expressed at low levels in PWK and CAST. Both strains had state 3
-at the TSS, and low levels of state 7 elsewhere in the gene. The other 
-strains expressed Irf5 much more highly. All of these strains had state 7 
-at the TSS and at higher levels throughout the rest of the gene. Proportion
-of state 7 throughout the gene was positively correlated with expression.
+## Genomic Position Enrichments Aided Interpretation of States
 
-Higher proportions of state 2 were correlated with decreased expression
-figure shows the number of whose expression was significantly correlated
-with each state at a nominal $p$ value of 0.01. 
+We were able to annotate some of the states based on their correlation 
+with gene expression as well as their enrichments around functionally
+annotated positions in the genome. For example, State 5 was characterized
+by the presence of both H3K27ac and H3K4me1, the co-occurence of which has 
+previously been associated with active enhancers [21106759, 21160473, 29273804].
+In line with previous observations, in out study, State 5 was primarily
+localized around known enhancers and its presence was positively correlated
+with gene expression.
 
-State 7 was associated 
-with the expression of the largest number of genes.
+State 7, which was characterized by the presence of three activating
+marks, H3k27ac, H3k4me1, and H3K4me3. It was enriched around 
+transcription start sites (TSS) and promoters and was also positively 
+correlated with gene expression. 
 
-We see activating and suppressing marks at locations all through the gene.
-not necessarily just at the TSS
-(check to see if we can get coordinates of different transcripts)
+State 3 was characterized by the presence of H3K4me1 and H3k27me3. 
+H3K27me3 is associated with downregulation of transcription and
+poised enhancers. When paired with H3K4me1
 
-## Spatial distribution of states around gene bodies
-Each state was distributed unevenly relative to gene bodies.
+also enriched around 
+promoters and TSS, but was most strongly enriched at transcription 
+factor binding sites, 
 
-State 1: trough at TSS, climbs through gene body 
-State 2: pretty low throughout, but slight peak at TSS
-State 3: pretty low, but a distinct peak at TSS
-State 4: low throughout, but higher in gene body than at TSS
-State 5: trough at TSS, maybe a peak upstream of TSS
-State 6: very low in gene body
-State 7: big spike at TSS, declines through gene body
-State 8: slight trough right at TSS, but higher just upstream and downstream of TSS
-  another peak after TES.
+Table?? Figure?? Supp Figure??
+
+## Promoter and enhancer states correlated with increased expression
+Chromatin states 5 and 7, which were enriched around enhancers and promoters 
+respectively were correlated with increased expression. This was true
+both across the liver transcriptome, as well as across strains. That is,
+that within a single strain, genes with higher proportions of states 5 
+or 7 across the gene body were more highly expressed than genes with 
+low proportions of these states. And for individual genes, strains 
+with higher proportions of states 5 and 7 had higher expression than 
+strains with lower proportions of these states (Figure?).
+
+State 6 was also correlated with increased gene expression to a lesser
+degree. This state was also enriched at enhancers, though less so than 
+state 5.
+
+## H3K27me3 and the absence of chromatin modification correlated with decreased expression
+
+High abundance of states 1, 2, and 3 were correlated with decreased 
+gene expression. State 1 was the absence of chromatin modification,
+and states 2 and 3 were the only states with the suppressing 
+modification H3K27me3. State 1 was enriched in intergenic regions
+and state 3 was enriched around transcription factor binding sites. 
+Positional enrichment of state 2 was not clear.
+
+## Differential spatial distribution of states around gene bodies
+Chromatin states were each distributed in a specific pattern 
+across gene bodies (Methods) (Figure XXX). For example, state 1
+was strongly depleted near the TSS, indicating that this region
+is commonly subject to chromatin modification. However, its
+abundance increased steadily to a peak at the TES. In contrast,
+state 7 was present in over 60\% of TSS, but decreased to almost 
+0\% near the TES.
+
+The remaining states were relatively low in abundance compared
+to states 1 and 7, but also showed gene-body specific distribution
+patterns. State 8, was depleted at the TSS, but enriched immediately
+downstream of the TSS. State 9 had slight enrichments immediately 
+upstream of the TSS and immediately downstream of the TES. The 
+enrichment of these states in regulatory regions indicates the 
+possibility that these states are used for regulating expression 
+levels whereas states 7 and 3 at the transcription start site may
+be primarily related to switching gene transcription on and off.
 
 ## Correlation of chromatin state and gene expression was differentially distributed across the gene body
 
 We examined whether there was a spatial component to the correlation between
-chromatin state and gene expression. To do this we normalized all gene coordinates
-to run from 0 at the transcription start site (TSS) and 1 at the transcription 
-end site (TES). We then correlated gene expression to chromatin state in a 
-sliding window across the gene body. 
+chromatin state and gene expression (Methods). 
 
-Figure XXX shows the average Pearson correlation between expression and chromatin 
-state across all windows for each chromatin state. 
+Figure XXX shows the Pearson correlation between expression and chromatin 
+state across all windows for each chromatin state. The most prominant
+position-specific correlations between state and gene expression were
+for state 3 and state 9, which were both negatively correlated with 
+gene expression exclusively at the TSS. There were no TES-specific
+correlations for any state. 
 
-States 1 and 2 generally suppress expression regardless of position, but do seem
-to have stronger effects at positions near the TSS. 
+## Results from inbred mice were recapitulated in diversity outbred mice
 
-State 7 generally enhances expression regardless of position, but does seem to have
-a stronger effect at positions near the TSS.
+We investigated the extent to which chromatin state imputed into DO mice 
+explained variation in expression across individuals. Although local 
+genetic variation explains a large amount of variation in gene 
+expression [cite], chromatin state may offer further insight into 
+regulation of gene expression at the local level. [more compelling stuff here]
 
-The presence of states 3 and 8 suppress expression primarily when they
-are present at the TSS. Big swings upstream and downstream of the gene 
-for state 3 are primarily due to small numbers of genes in those groups.
+We imputed genome-wide chromatin states in a population of DO mice based 
+on their genotype (Methods) and compared the percent variance explained by
+local genotype to the maximum percent variance explained by local chromatin 
+state for each transcript (Figure XXX.) The two measurements were very 
+tightly correlated (Pearson R = 0.95) indicating that chromatin state
+determined by genetics is an excellent approximation of the genetic 
+effect on gene expression. The imputation further allowed us to observe 
+the effects of chromatin state across [500] genetically diverse mice
+by measuring chromatin modifications in a handful of inbred mice. Further,
+because chromatin modifications are measured at extremely high density,
+we can map high-density chromatin effects in the DO mice, which may help 
+prioritize functional SNPs within gene bodies and in regulatory regions.
 
-States 5 and 6 are moderately positively correlated with expresion when they
-are present within the gene body.
+For example, Figure XXX shows chromatin states across the gene Irf5
+in the inbred founders along with the LOD score and chromatin state
+effects at each position along the gene body as calculated in the DO 
+population. The LOD scores and allele effects highlight variation 
+at the TSS, and at several internal positions in the gene as potentially
+regulating gene expression. 
 
-State 4 has very little effect anywhere and is generally not associated with
-differential expression.
+## DNA methylation varied across the gene body
 
-Overall there is very little effect of any state on expression near the TES 
-specifically.
-
-## Regulation of Gene Expression in the Diversity Outbred Mice
-We investigated whether chromatin states provided regulatory information on 
-top of that provided by the underlying genetics. 
-
-We imputed chromatin state onto a population of DO mice based on their genotype.
-There is good evidence that, especially early in life, chromatin modifications are
-genetically determined. Twins chromatin modifications are identical when they are
-born and slowly drift apart from each other [cite]. 
-
-With high-resolution chromatin state information, we can potentially look at 
-fine-grained regulatory structures within cis eQTL.
-
+but did not have any correlation with expression
 
 
 # Discussion
+
 
 
 # Acknowledgements

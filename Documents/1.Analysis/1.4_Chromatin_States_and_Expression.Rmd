@@ -1,0 +1,805 @@
+---
+title: "Analyzing ChromHMM Results"
+author: Anna L Tyler
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  html_document:
+    code_folding: hide
+    collapsed: no
+    toc: yes
+    toc_float: yes
+---
+
+## Introduction
+
+The purpose of this workflow is to combine chromatin state data from 
+a single chromHMM model and gene expression. This workflow takes a 
+gene-based approach. It calculates the chromatin state composition of 
+each gene and calculates correlations between the state composition and
+gene expression.
+
+This workflow generates data files that are used in downstream analyses and
+performs the following specific tasks:
+
+**Gene Expression**
+
+1. Generate information file for RNA-Seq data.
+    * produces file RNASeq\_gene\_info.RData
+2. Average expression across individuals in a given strain.
+    * produces file Strain\_Mean\_C\_Expression.RData
+2. Filter out genes with low variance across strains.
+    * no file is produced. Low-variance genes are replace with NA's.
+
+**DO eQTL**
+
+1. Extracts cis eQTL coefficients and writes to cis.coef.RData.
+
+**Chromatin**
+
+1. Create matrices of chromatin states for each transcript.
+    * produces file with the pattern 
+    Chromatin\_States\_num.states\_gene.type\_bp.buffer.RData
+2. Create matrices of chromatin state proportions for each transcript.
+    * produces a file with the pattern 
+    Chromatin\_State\_num.states\_Prop\_gene.type\_bp.buffer.RData
+3. Dimension reduces the proportion matrices using multi-dimensional scaling.
+    * produces a file with the pattern 
+    Chromatin\_State\_num.states\_MDS\_gene.type\_bp.buffer.RData
+4. Exploration of states
+    * Heatmap of state proportions across strains.
+
+**Chromatin and Expression**
+
+1. Correlate proportion of each chromatin state in each gene with gene expression.
+    * produces file with the pattern
+    State\_num.states\_Prop_\Expression\_Cor\_gene.type\_bp.buffer.RData
+    *This file contains pearson correlation r values and p values.
+2. Correlate MDS dimension-reduced chromatin proportion matrix with gene expression
+    * produces file with the pattern
+    State\_num.states\_MDS\_Expression\_Cor\_gene.type\_bp.buffer.RData
+3. Explore examples
+    Plots are generated for example genes showing where specific chromatin 
+    states are correlated with gene expression across the strains.
+
+```{r set_args}
+args <- commandArgs(trailingOnly=T)
+num.states <- as.numeric(args[1])
+delete.previous = as.logical(args[2]) #whether to delete and regenerate files 
+                    #from previous a run.
+is.interactive = FALSE
+#is.interactive = TRUE
+
+if(is.na(num.states)){
+    num.states = 9; delete.previous = FALSE
+    #num.states = 9; delete.previous = FALSE
+}
+```
+
+
+```{r source_code}
+library("here")
+all.code.dir <- list.files(here("Code"), full.names = TRUE)
+for(i in 1:length(all.code.dir)){
+	all.fun <- list.files(all.code.dir[i], full.names = TRUE, pattern = ".R")
+	for(j in 1:length(all.fun)){source(all.fun[j])}
+}
+```
+
+```{r load_libraries, message = FALSE, warning = FALSE, error = FALSE}
+needed.packages <- c("VennDiagram", "ape", "gprofiler2", 
+"e1071", "DESeq2", "knitr", "pheatmap", "hexbin", "RColorBrewer", "MASS", 
+"gridExtra", "grid", "ggplotify", "qtl2")
+load_libraries(needed.packages)
+```
+
+
+## Setup
+Set the number of states to be analyzed, and the mark, if relevant.
+
+```{r state_num}
+sig.val = 0.01
+selected.mark <- NULL #set to null to use all marks
+#selected.mark <- "H3K4me1"
+#selected.mark <- "H3K4me3"
+#selected.mark <- "H3K27ac"
+#selected.mark <- "H3K27me3"
+```
+
+Set up additional parameters for looking at states around gene bodies.
+These are changeable, but will not change after the 
+
+```{r set_param}
+start.feature = "start_position" #feature of gene to start from. start_position means TSS, and end_position means TES
+end.feature = "end_position" #feature of gene to end at. start_position means TSS, and end_position means TES
+upstream.buffer = 1000 #number of bp upstream to go from start.feature
+downstream.buffer = 1000 #number of bp downstream to go from end.feature
+T.or.C <- "C" #whether to analyze the control (C) or treatment (T) animals.
+```
+
+```{r setup_dir}
+#data and results are a little bit mixed up, since results from one
+#analysis can be data for another analysis. I try to keep processed
+#data in data directories and final results in results directories.
+#form.states <- paste0(formatC(num.states, digits = 2, flag = 0), "_states", selected.mark, "_", T.or.C)
+form.states <- paste0(num.states, "_states", selected.mark, "_", T.or.C)
+data.dir <- here("Data", "ChromHMM", form.states)
+results.dir <- here("Results", "ChromHMM", form.states)
+if(!file.exists(results.dir)){dir.create(results.dir)}
+```
+
+```{r results_files}
+if(start.feature == "start_position" && end.feature == "start_position"){
+    gene.text <- "TSS"
+    }
+if(start.feature == "start_position" && end.feature == "end_position"){
+    gene.text <- "full_gene"
+    }
+
+buffer.text <- paste(unique(c(upstream.buffer, downstream.buffer)), collapse = "_")
+```
+
+```{r clear_results}
+#If evaluated, this chunk will clear out all results generated
+#by this script to trigger recalculation of all results
+if(delete.previous){
+    delete.files <- list.files(here("Results", "ChromHMM", form.states), full.names = TRUE)
+    if(length(delete.files) > 0){
+        for(i in 1:length(delete.files)){
+            unlink(delete.files[i])
+        }
+    }
+}
+```
+
+Strain names between different analyses are inconsistent. We have a table for 
+comparing different names as well as for defining strain colors. I made this
+table by hand. Load it here:
+
+```{r load_color_key}
+key.file <- here("Data", "support_files", "strain.color.table.txt")
+col.table <- as.matrix(read.table(key.file, sep = "\t", comment.char = "%", 
+stringsAsFactors = FALSE))
+```
+
+## Expression Data
+
+The expression data were processed in the Expression workflow. That workflow
+performed the following. 
+1. Filtered for genes with at least 5 reads in at least 20\% of animals
+2. Performed vst on expression data.
+All animals are female, so we do not need to do a correction for sex.
+
+### Expression distribution across samples
+
+```{r load_expression, fig.width = 7, fig.height = 7}
+rna.seq.file <- here("Data", "RNASeq", "StrainsEffCts9_vst.RDS")
+rna.seq <- readRDS(rna.seq.file)
+boxplot(rna.seq, las = 2)
+
+col.order <- match.order(substr(colnames(rna.seq), 1, 2), col.table[,1], col.table)
+expr.decomp <- plot.decomp(t(rna.seq), cols = col.table[col.order,3], pc = 5)
+
+#This plot shows how the strains separate along a given pc
+#pc = 3
+#boxplot(expr.decomp$u[,pc]~as.factor(col.table[col.order,1]), col = col.table[,3])
+
+```
+
+```{r gene_info}
+#Get information about all expressed genes from BiomaRt:
+gene.info.file <- here("Data", "RNASeq", "RNASeq_gene_info.RData")
+all.var <- ls()
+if(!file.exists(gene.info.file)){
+    library(biomaRt) #only load this if we need to query it
+    lib.loaded <- as.logical(length(which(all.var == "mus")))
+    if(!lib.loaded){
+        if(!file.exists(gene.info.file)){
+            #mus <- useEnsembl(biomart="ensembl", dataset="mmusculus_gene_ensembl") #most current library
+            #use this stable version because we need locations to be in mm10
+            mus <- useEnsembl("ENSEMBL_MART_ENSEMBL", dataset = "mmusculus_gene_ensembl", 
+            host = "may2017.archive.ensembl.org") #stable archived library
+            }
+        } 
+    rnaseq.gene.info.comp <- getBM(attributes = c("ensembl_gene_id", "external_gene_name", 
+    "chromosome_name", "start_position", "end_position", "transcription_start_site", 
+    "exon_chrom_start", "exon_chrom_end", "5_utr_start","5_utr_end","3_utr_start", 
+    "3_utr_end", "strand"), 
+    filters = "ensembl_gene_id", values = rownames(rna.seq), mart = mus)
+    saveRDS(rnaseq.gene.info, gene.info.file)
+}else{
+    rnaseq.gene.info <- readRDS(gene.info.file)
+}
+```
+
+Average expression across individuals in each strain.
+
+```{r strain_expr}
+#file containing strain averages for each transcript. These
+#do not change from run to run. Save in data
+strain.expr.file <- here("Data", "RNASeq", paste0("Strain_Mean_", T.or.C, "_Expression.RData"))
+if(!file.exists(strain.expr.file)){
+    #get expression for the condition (control or treatment)
+    strain.mean.expr <- lapply(rownames(rna.seq), function(x) 
+    get.cond.expr(rnaseq.gene.info, rna.seq, x, T.or.C = T.or.C, return.mean = TRUE))
+    names(strain.mean.expr) <- rownames(rna.seq)
+    #save the results
+    saveRDS(strain.mean.expr, strain.expr.file)
+}else{
+    strain.mean.expr <- readRDS(strain.expr.file)
+}
+
+#also scale the expression for each gene.
+strain.scaled.expr.file <- here("Data", "RNASeq", paste0("Strain_Scaled_", T.or.C, "_Expression.RData"))
+if(!file.exists(strain.scaled.expr.file)){
+    scaled.mean.expr  <- lapply(strain.mean.expr, scale)
+    saveRDS(scaled.mean.expr, strain.scaled.expr.file)
+}else{
+    scaled.mean.expr <- readRDS(strain.scaled.expr.file)
+}
+```
+
+### Expression Variation Filter
+
+Because we are specifically interested in variance in expression across 
+strains, we filtered the transcripts to include those that had a large amount
+of variation across strains. We chose only those transcripts that had at least 
+a minimum difference between the highest-expressing strain, and the 
+lowest-expressing strain.
+
+The plot below shows the distribution of the variance across strains 
+with a vertical line indicating the threshold for selection.
+
+```{r strain_expr_filter}
+var.lim = 0.3
+zero.expr <- rep(NA, 9)
+names(zero.expr) <- names(strain.mean.expr[[1]])
+strain.var <- sapply(strain.mean.expr, function(x) max(x) - min(x))
+hist(strain.var, breaks = 100)
+abline(v = var.lim, col = "red", lwd = 2)
+
+low.var <- which(strain.var < var.lim)
+if(length(low.var) > 0){
+    for(i in 1:length(low.var)){
+        strain.mean.expr[[low.var[i]]] <- zero.expr
+    }
+}
+
+still.used <- length(which(sapply(strain.mean.expr, function(x) !all(is.na(x)))))
+```
+
+We removed `r length(low.var)` genes with across-strain variance lower than
+`r var.lim`. This leaves a total of `r still.used` transcripts for analysis.
+
+
+## DO eQTL data
+We want to compare histone effects on expression with genetic effects. To identify
+genetic effects we use the DO478. These data were collected from whole DO mouse liver. 
+
+
+```{r do_QTL}
+do.eqtl.info.file <- here("Data", "DOQTL", "mRNA_Info.csv")
+do.eqtl.info <- read.csv(do.eqtl.info.file, header = TRUE, stringsAsFactors = FALSE)
+
+#A file containing the cis eQTL coefficients for each haplotype and each transcript
+do.qtl.file <- here("Data", "DOQTL", "eQTL_statistics.RDS")
+do.eqtl.loaded <- as.logical(length(which(all.var == "do.eqtl")))
+if(!do.eqtl.loaded){
+    do.eqtl <- readRDS(do.qtl.file)
+    names(do.eqtl) <- qtl.ids <- do.eqtl.info[,"gene.id"]
+}
+
+qtl.viewer.loaded <- as.logical(length(which(all.var == "dataset.mrna")))
+if(!qtl.viewer.loaded){
+    load(here("Data", "DOQTL", "Svenson_DO850_for_eQTL_viewer_v9.RData"))
+}
+
+```
+
+## ChromHMM Output Processing
+We analyzed the chromatin states based on states output by ChromHMM. 
+See analysis 1.ChromHMM.Rmd. This analysis looks at the output from the model with
+`r num.states` states.
+
+
+```{r load_bed}
+#Load the ChromHMM bed files for all strains:
+bed.files <- list.files(data.dir, pattern = "dense.bed", full.names = TRUE)
+strains <- substr(colnames(rna.seq), 1,2)
+strain.names <- sort(unique(strains))
+strain.bed.names <- sapply(strsplit(basename(bed.files), "_"), function(x) x[1])
+
+#Naming conventions between data sets are inconsistent.
+#make a key by hand for conversion
+if(T.or.C == "C"){
+    strain.key <- cbind(strain.bed.names, c(strain.names[8], strain.names[-8]))
+}else{
+    strain.match <- match(strain.bed.names, strains)
+    strain.key <- cbind(strain.bed.names, strains[strain.match])
+}
+
+all.bed <- vector(mode = "list", length = nrow(strain.key))
+names(all.bed) <- strain.key[,1]
+for(i in 1:nrow(strain.key)){
+    bed.locale <- grep(pattern = strain.bed.names[i], bed.files)[1]
+    if(!is.na(bed.locale) > 0){
+        all.bed[[i]] <- read.table(bed.files[bed.locale], sep = "\t", skip = 1, 
+        stringsAsFactors = FALSE)
+    }
+}
+```
+
+## Chromatin states by gene
+The first step in this analysis is to create matrices of chromatin states for each 
+transcript. In this step, we go through all transcripts in the RNA Seq data set. 
+For each transcript, we get the ChromHMM states around the gene body or transcription 
+start site as defined by the parameters at the top of this file. The states across 
+all strains are combined into a single matrix.
+
+```{r get_chrom_states, warning = FALSE}
+#This chunk takes about 3 hours to run depending 
+#on the number of genes in the filtered expression 
+#table.
+#file containing chromatin states in and around each transcript
+chrom.state.file <- file.path(results.dir, 
+paste0("Chromatin_States_", num.states, "_", gene.text, "_", buffer.text, ".RData"))
+if(!file.exists(chrom.state.file)){
+    #get the states around each transcript across all strains
+	chrom.mats <- lapply(rownames(rna.seq), function(x) get.chrom.state(bed.info = all.bed, 
+    rnaseq.gene.info, rna.seq, x, start.feature, end.feature, upstream.buffer, 
+    downstream.buffer))
+	names(chrom.mats) <- rownames(rna.seq)
+	saveRDS(chrom.mats, chrom.state.file)
+}else{
+    chrom.mats <- readRDS(chrom.state.file)
+}
+
+#file containing proportions of each chromatin state in and around each transcript
+chrom.prop.file <- file.path(results.dir,
+paste0("Chromatin_State_", num.states, "_Prop_", gene.text, "_", buffer.text, ".RData"))
+if(!file.exists(chrom.prop.file)){
+	chrom.state.props <- get.chrom.state.prop(chrom.mats, num.states = num.states, verbose = FALSE)
+	names(chrom.state.props) <- rownames(rna.seq)
+	saveRDS(chrom.state.props, chrom.prop.file)
+}else{
+    chrom.state.props <- readRDS(chrom.prop.file)
+}
+
+#file containing the one-dimensional reduction of each chromatin state matrix
+chrom.mds.file <- file.path(results.dir,
+paste0("Chromatin_State_", num.states, "_MDS_", gene.text, "_", buffer.text, ".RData"))
+if(!file.exists(chrom.mds.file)){
+    chrom.mds <- get.scaled.chrom.mats(chrom.mats, 1)
+    saveRDS(chrom.mds, chrom.mds.file)
+}else{
+    chrom.mds <- readRDS(chrom.mds.file)
+}
+```
+
+## Chromatin state and expression within strain
+
+We looked across genes within strain to see if individual states were
+associated with highly expressed genes and lowly expressed genes.
+
+The following heatmap shows the correlations between the proportion of each
+state and gene expression across genes. Presence of states 7 and 5 is correlated
+with highly expressed genes, whereas the presence of states 1 and 2 is correlated
+with lowly expressed genes.
+
+```{r within_strain}
+has.expr <- which(sapply(strain.mean.expr, length) == 9)
+has.chrom <- which(sapply(chrom.state.props, length) > 1)
+common.genes <- intersect(names(strain.mean.expr)[has.expr], names(chrom.state.props)[has.chrom])
+common.expr.locale <- match(common.genes, names(strain.mean.expr))
+common.chrom.locale <- match(common.genes, names(chrom.state.props))
+chrom.order <- match.order(names(strain.mean.expr[[1]]), colnames(chrom.state.props[[1]]), col.table)
+
+all.strain.r <- all.strain.p <- matrix(NA, nrow = num.states, ncol = length(strain.mean.expr[[1]]))
+colnames(all.strain.r) <- colnames(all.strain.p) <- names(strain.mean.expr[[1]])
+rownames(all.strain.r) <- rownames(all.strain.p) <- 1:num.states
+
+for(s in 1:9){
+    strain.expr <- sapply(strain.mean.expr[common.expr.locale], function(x) x[s])
+    strain.chrom <- sapply(chrom.state.props[common.chrom.locale], function(x) x[,chrom.order[s]])
+    strain.chrom.cor <- apply(strain.chrom, 1, function(x) cor.test(x, strain.expr))
+    all.strain.r[,s] <- sapply(strain.chrom.cor, function(x) x$estimate)
+    all.strain.p[,s] <- sapply(strain.chrom.cor, function(x) x$p.value)
+}
+pheatmap(all.strain.r, cluster_rows = FALSE, cluster_cols = FALSE, display_numbers = TRUE)
+```
+
+## Chromatin state and inbred expression
+We also wanted to see if differential expression across strains could be 
+partly explained by chromatin state. 
+
+For each transcript, we correlated the mean inbred expression with the proportion of 
+the chromatin state in the sampled region.
+
+This gives us a matrix with transcripts in rows and chromatin states in columns.
+
+```{r states_and_expression}
+#file containing r and p values indicating 
+#correlation between state proportions and 
+#expression values. Expression values are
+#scaled within each gene.
+states.expression.file <- file.path(results.dir,
+paste0("State_", num.states, "_Prop_Expression_Cor_", gene.text, "_", buffer.text, ".RData"))
+
+if(!file.exists(states.expression.file)){
+    cor.prop.results <- state.prop.expression(chrom.state.prop = chrom.state.props, 
+    group.mean.expr = strain.mean.expr, strain.key = col.table, verbose = is.interactive)
+    
+    all.prop.p <- Reduce("rbind", lapply(cor.prop.results, function(x) x$p))
+    rownames(all.prop.p) <- names(strain.mean.expr)
+    all.prop.r <- Reduce("rbind", lapply(cor.prop.results, function(x) x$r))
+    rownames(all.prop.r) <- names(strain.mean.expr)
+    saveRDS(list("all.p" = all.prop.p, "all.r" = all.prop.r), states.expression.file)
+}else{
+    cor.prop.results <- readRDS(states.expression.file)
+    all.prop.p <- cor.prop.results$all.p
+    all.prop.r <- cor.prop.results$all.r
+}
+
+#do the same for the matrices scaled with mds
+state.mds.expression.file <- file.path(results.dir,
+paste0("State_", num.states, "_MDS_Expression_Cor_", gene.text, "_", buffer.text, ".RData"))
+
+if(!file.exists(state.mds.expression.file)){
+    cor.mds.results <- state.scaled.expression(scaled.chrom = chrom.mds, 
+    group.mean.expr = scaled.mean.expr, strain.key = col.table, 
+    verbose = is.interactive)
+    all.mds.p <- sapply(cor.mds.results, function(x) x[2])
+    all.mds.r <- sapply(cor.mds.results, function(x) x[1])
+    saveRDS(list("all.p" = all.mds.p, "all.r" = all.mds.r), state.mds.expression.file)
+}else{
+    cor.mds.results <- readRDS(state.mds.expression.file)
+    all.mds.p <- cor.mds.results$all.p
+    all.mds.r <- cor.mds.results$all.r
+    }
+```
+
+## State Annotations
+
+The heatmap below shows the emission probabilities for each state found by ChromHMM.
+This shows us which marks each of the states in the barplot has.
+
+```{r emissions, results = "asis"}
+emissions.file <- file.path(data.dir, paste0("emissions_", num.states, ".png"))
+cat("![](",emissions.file,")")
+```
+
+### Correlation distributions by state
+
+The plot below shows all values of Pearson's r for each state and each transcript.
+For each gene we calculated the correlation between the proportion of each state
+and gene expression across strains.
+
+Points are colored based on the -log of the p value of the correlation. This gives
+an idea of how many correlations were able to be calculated for each state (i.e. the 
+state had some variation across strains), the range of correlations, and whether the 
+significant correlations were predominantly positive or negative.
+
+```{r state.effect}
+if(is.interactive){quartz()}
+plot.new()
+plot.window(xlim = c(0,(ncol(all.prop.r)+1)), ylim = c(-1, 1))
+for(i in 1:ncol(all.prop.r)){
+    p.col <- colors.from.values(-log10(all.prop.p[,i]), use.pheatmap.colors = TRUE)
+    not.na <- which(!is.na(all.prop.r[,i]))
+    points(x = jitter(rep(i, nrow(all.prop.r))), y = all.prop.r[,i], col = p.col, 
+    pch = 16, cex = 0.5)
+    boxplot(all.prop.r[not.na,i], at = i, col = "lightgray", add = TRUE)
+    }
+axis(2);mtext(side = 2, "Correlation Coefficient", line = 2.5)
+abline(h = 0)
+par(xpd = TRUE)
+text(x = 1:ncol(all.prop.r), y = -1.1, labels = paste0("State", 1:ncol(all.prop.r)), 
+srt = 90, adj = 1)
+par(xpd = FALSE)
+```
+
+The following boxplot shows the correlations between the proportion of each state
+and gene expression across strains, only for the correlations that were significant
+at a nominal $p$ value of `r sig.val`. The numbers across the top show the number of
+genes in each group.
+
+
+```{r sig_r}
+sig.r <- all.prop.r
+sig.r[which(all.prop.p > sig.val)] <- NA
+sig.r.list <- lapply(1:ncol(sig.r), function(x) sig.r[,x])
+a <- boxplot(sig.r.list, main = 'Nominally Significant Correlations')
+par(xpd = TRUE)
+text(x = 1:length(sig.r.list), y = rep(1.15, length(sig.r.list)), labels = a$n)
+```
+
+## Functional enrichment of state-responsive genes {.tabset .tabset-fade .tabset-pills}
+
+We looked for functional enrichment in these groups of genes. The
+results are shown below. Each set of genes is a set whose differential
+expression across strains is correlated with one of the chromatin states.
+
+
+```{r state_enrichment, results = "asis", fig.width = 9, fig.height  = 8}
+state.enrichment.file <- here("Results", "ChromHMM", form.states, "enrichment.by.state.RData")
+if(!file.exists(state.enrichment.file)){
+    state.enrich <- lapply(sig.r.list, function(x) gost(names(x)[which(!is.na(x))], 
+    organism = "mmusculus", evcodes = TRUE, sources = c("GO", "KEGG", "REACTOME")))
+    names(state.enrich) <- 1:num.states
+    saveRDS(state.enrich, state.enrichment.file)
+}else{
+    state.enrich <- readRDS(state.enrichment.file)
+}
+
+for(i in 1:length(state.enrich)){
+    cat("### State", i, "\n")
+    if(is.interactive){quartz(width = 8, height = 8)}
+    plot.enrichment(state.enrich[[i]], order.by = "p_value",
+    num.terms = 20, plot.label = paste("State", i))
+    cat("\n\n")
+}
+
+cat("### Overall")
+plot.enrichment.group(state.enrich, n.terms = 10)
+cat("\n\n")
+```
+
+
+## Relative position of chromatin state
+
+We were interseted in whether each state was particularly enriched 
+at any particular position in the genes. To address this, we 
+
+To address this, we normalized the coordinates of each gene to run from 
+0 at the TSS to 1 at the TES. Upstream coordinates were less than 0 and 
+upstream coordinates were greater than 1. 
+
+We then calculated the proportion of genes at each position that contained
+each state. To avoid contamination of the up and downstream regions with 
+regulatory regions from other genes, we selected only genes that were at 
+least 2kb from any other gene. However, the pattern was the same even if 
+we looked at all genes.
+
+```{r align_states}
+#scale the coordinates on all the chromatin matrices to put the 
+#TSS at 0 and the TES at 1.
+
+cent.chrom.file <- file.path(results.dir, "Chromatin.States.Gene.Coords.RDS")
+if(!file.exists(cent.chrom.file)){
+    cent.mats <- chrom.mats
+    for(i in 1:length(chrom.mats)){
+        report.progress(i, length(chrom.mats))
+        gene.id <- names(chrom.mats)[i]
+        gene.name <- unique(rnaseq.gene.info[which(rnaseq.gene.info[,"ensembl_gene_id"] == gene.id), "external_gene_name"])
+        if(length(gene.name) > 0 && length(chrom.mats[[i]]) > 1){
+            rownames(cent.mats[[i]]) <- names(center.on.feature(gene.name, rnaseq.gene.info, chrom.mats[[i]][,1], feature = "full"))
+        }
+    }
+    saveRDS(cent.mats, cent.chrom.file)
+}else{
+    cent.mats <- readRDS(cent.chrom.file)
+}
+
+
+min.coord <- -1; max.coord <- 2; nbins = 500
+binned.chromatin.file <- file.path(results.dir, "Chromatin.Matrices.Scaled.RDS")
+if(!file.exists(binned.chromatin.file)){
+    binned.chromatin <- lapply_pb(cent.mats, 
+    function(x) if(length(x) > 1){bin.centered.chromatin(centered.chrom.mat = x, 
+    coord.min = min.coord, coord.max = max.coord, nbins = nbins, nstates = num.states,
+    tally.type = "present")}else{NA})
+    saveRDS(binned.chromatin, binned.chromatin.file)
+}else{
+    binned.chromatin <- readRDS(binned.chromatin.file)
+}
+
+```
+
+We wanted to look at whether we could discern spatial patterns to the presence
+of different states.
+
+```{r test_gene_sets, fig.width = 3, fig.height = 10}
+#get scaled expression values for each gene
+#the chromatin boundaries go 1000 bp beyond the end of the gene
+#here we filter only to genes for which the nearest gene is no
+#closer than 2000 bp away. This is to look at whether the 
+#uptick in state 8 after the TSS is due to bleeding into the 
+#next gene or related to the post-transcriptional region
+far.position.file <- file.path(results.dir, "Chromatin.State.Position.Far.Genes.RDS")
+if(!file.exists(far.position.file)){
+    far.genes <- get.distant.genes(rnaseq.gene.info, 2000) 
+    gene.ids <- rnaseq.gene.info[match(unlist(far.genes), rnaseq.gene.info[,"external_gene_name"]),"ensembl_gene_id"]
+    state.position <- lapply(1:num.states, function(x) state.by.position(gene.ids, 
+    group.gene.expr = scaled.mean.expr, state.id = x, binned.chrom = binned.chromatin))
+    saveRDS(state.position, far.position.file)
+}else{
+    state.position <- readRDS(far.position.file)
+}
+
+state.col <- colors.from.values(1:num.states, use.pheatmap.colors = TRUE, 
+	global.color.scale = TRUE, global.min = 1, global.max = num.states)
+par(mfrow = c(num.states, 1), mar = c(2,2,2,2))
+for(s in 1:length(state.position)){
+    if(s == num.states){x.axis = TRUE}else{x.axis = FALSE}
+    plot.state.by.position(state.position[[s]], error.type = "se", 
+    plot.label = paste("State", s), col = state.col[s], x.axis = x.axis,
+    xlim = c(-0.5, 1.5), ylim = NULL)
+    abline(h = 0, col = "gray")
+}
+```
+
+```{r states_together, fig.width = 8.5, fig.height = 5}
+if(is.interactive){quartz(width = 8.5, height = 5)}
+plot.new()
+plot.window(xlim = c(-0.5, 1.5), ylim = c(0,1))
+if(num.states == 9){state.order = c(4,5,6,1,7,8,3,9)}else{state.order = 1:num.states}
+for(s in state.order){ #ordered for ease of visualization
+    plot.state.by.position(state.position[[s]], error.type = "se", 
+    plot.label = "", col = state.col[s], add = TRUE, lwd = 3)
+}
+legend("topright", pch = 16, col = state.col, legend = paste("State", 1:num.states))
+axis(1);axis(2)
+mtext("Relative Gene Position", side = 1, line = 2.5)
+mtext("Proportion Genes State Present", side = 2, line = 2.5)
+```
+
+## How does state position affect correlation with expression?
+
+We looked at correlations between expression and state abundance in a sliding
+window along the gene body. 
+
+The figure below shows the average correlation between expression across strains
+and state proporion along sliding windows around gene bodies. The TSS is at 0, and
+the TES is at 1. 
+
+My general impressions are as follows:
+States 1 and 2 generally suppress expression regardless of position, but do seem
+to have stronger effects at positions near the TSS. 
+
+State 7 generally enhances expression regardless of position, but does seem to have
+a stronger effect as positionas near the TSS.
+
+The presence of states 3 and 8 suppress expression primarily when they
+are present at the TSS. Big swings upstream and downstream of the gene 
+for state 3 are primarily due to small numbers of genes in those groups.
+
+States 5 and 6 are moderately positively correlated with expresion when they
+are present within the gene body.
+
+State 4 has very little effect anywhere and is generally not associated with
+differential expression.
+
+Overall there is very little effect of any state on expression near the TES 
+specifically.
+
+```{r gene_coord_expr, fig.height = 10, fig.width = 3.5}
+
+window.cor.file <- file.path(results.dir, "State.Expr.Cor.r.by.Window.RDS")
+window.p.file <- file.path(results.dir, "State.Expr.Cor.p.by.Window.RDS")
+
+common.genes <- intersect(names(cent.mats), names(scaled.mean.expr))
+gene.windows <- sliding.window.el(seq.int(-1, 2, length.out = 100), 10, 5)
+
+if(!file.exists(window.cor.file)){
+
+    state.expr.window.r <- state.expr.window.p <- vector(mode = "list", length = length(gene.windows))
+    names(state.expr.window.r) <- names(state.expr.window.p) <- sapply(gene.windows, 
+        function(x) paste0(signif(min(x), 2), "__", signif(max(x), 2)))
+
+    for(w in 1:length(gene.windows)){
+        window.min <- min(gene.windows[[w]])
+        window.max <- max(gene.windows[[w]])
+        if(is.interactive){cat(signif(window.min, 2), "to", signif(window.max, 2), "\n")}
+    
+        all.gene.body.cor <- vector(mode = "list", length = length(common.genes))
+        names(all.gene.body.cor) <- common.genes
+        for(i in 1:length(common.genes)){
+            if(is.interactive){report.progress(i, length(common.genes))}
+            gene.name <- common.genes[i]
+            chrom.locale <- which(names(cent.mats) == common.genes[i])
+            expr.locale <- which(names(scaled.mean.expr) == common.genes[i])
+            all.gene.body.cor[[i]] <- binned.state.expr.cor(cent.chrom = cent.mats[[chrom.locale]], 
+            gene.expr = scaled.mean.expr[[expr.locale]], col.table = col.table, 
+            bin.min = window.min, bin.max = window.max, num.states = num.states)    
+        }
+
+        one.window.r <- sapply(all.gene.body.cor, function(x) x$r)
+        one.window.p <- sapply(all.gene.body.cor, function(x) x$p)
+
+        state.expr.window.r[[w]] <- one.window.r
+        state.expr.window.p[[w]] <- one.window.p
+        #boxplot(t(one.window.r), main = paste(signif(window.min, 2), "to", signif(window.max, 2)))
+        #abline(h = 0)
+        if(is.interactive){cat("\n")}
+    }
+    saveRDS(state.expr.window.r, window.cor.file)
+    saveRDS(state.expr.window.p, window.p.file)
+}else{
+    state.expr.window.r <- readRDS(window.cor.file)
+    state.expr.window.p <- readRDS(window.p.file)
+}
+
+
+cor.list <- lapply(state.expr.window.r, t)
+cor.means <- lapply(cor.list, function(x) colMeans(x, na.rm = TRUE))
+cor.var <- lapply(cor.list, function(x) apply(x, 2, function(y) var(y, na.rm = TRUE)))
+cor.n <- lapply(cor.list, function(x) apply(x, 2, function(y) length(which(!is.na(y)))))
+cor.sd <- lapply(1:length(cor.var), function(x) sqrt(cor.var[[x]]))
+cor.se <- lapply(1:length(cor.var), function(x) sqrt(cor.var[[x]])/sqrt(cor.n[[x]]))
+
+state_by_pos <- sapply(1:num.states, function(x) lapply(cor.means, function(y) y[x]))
+colnames(state_by_pos) <- 1:num.states
+n_by_pos <- sapply(1:num.states, function(x) lapply(cor.n, function(y) y[x]))
+se_by_pos <- sapply(1:num.states, function(x) lapply(cor.se, function(y) y[x]))
+sd_by_pos <- sapply(1:num.states, function(x) lapply(cor.sd, function(y) y[x]))
+
+cor.min <- min(unlist(cor.means) - unlist(cor.se))
+cor.max <- max(unlist(cor.means) + unlist(cor.se))
+
+if(is.interactive){quartz(height = 8, width = 3)}
+par(mfrow = c(num.states, 1), mar = c(0,3,0,4))
+for(i in 1:ncol(state_by_pos)){
+    #if(is.interactive){quartz()}
+    plot.new()
+    plot.window(xlim = c(min(unlist(gene.windows)), max(unlist(gene.windows))), 
+    ylim = c(cor.min, cor.max))
+
+    #for(w in 1:length(gene.windows)){
+    #    state_window_cor <- state_by_pos[w,i][[1]]
+    #    if(state_window_cor > 0){
+    #        draw.rectangle(min(gene.windows[[w]]), max(gene.windows[[w]]), 0, state_window_cor,
+    #        fill = state.col[i], border.col = NA)
+    #    }else{
+    #        draw.rectangle(min(gene.windows[[w]]), max(gene.windows[[w]]), state_window_cor, 0,
+    #        fill = state.col[i], border.col = NA)
+    #    }
+    #}
+    
+    window.mids <- sapply(gene.windows, mean)
+    one.state.col <- col2rgb(state.col[i])
+    plot.poly.xy(poly.top.x = window.mids, poly.bottom.x = window.mids, 
+    poly.top.y = unlist(state_by_pos[,i]) + unlist(se_by_pos[,i]),
+    poly.bottom.y = unlist(state_by_pos[,i]) - unlist(se_by_pos[,i]), 
+    col = rgb(one.state.col[1]/256, one.state.col[2]/256, one.state.col[3]/256, alpha = 0.5))
+    #points(window.mids, unlist(state_by_pos[,i]), type = "l", col = state.col[i])
+
+    axis(2, cex.axis = 0.7)
+    abline(v = c(0,1), col = "gray", lty = 2)
+    abline(h = 0)
+    par(xpd = TRUE)
+    text(x = max(unlist(gene.windows))*1.1, y = 0, labels = paste("State", i), srt = 270,
+    cex = 1.5)
+    par(xpd = FALSE)
+}
+```
+
+A nice example shown below is Irf5 (Interferon regulatory factor 5).
+CAST and PWK have very low expression and both have state 3 at the TSS. 
+The other strains have much higher expression and all have state 7 at the 
+TSS. State 7 elsewhere in the gene is also correlated with expression. 
+
+```{r examples, fig.width = 7, fig.height = 8, eval = FALSE}
+#find example genes with significant correlations at specified
+#positions
+find_example_cor <- function(window.p, sig.val, state, pos){
+    window.lim <- t(sapply(strsplit(names(window.p), "__"), as.numeric))
+    window.which <- intersect(which(window.lim[,1] <= pos), which(window.lim[,2] >= pos))
+    search.window <- window.p[window.which]
+    sig.cor <- lapply(search.window, function(x) x[state, which(x[state,] <= sig.val),drop=FALSE])
+    u_genes <- unique(unlist(sapply(sig.cor, colnames)))
+    return(u_genes)
+}
+
+#get genes that have significant correlations with both states 3 and 7 at the TSS
+tss.example.genes <- Reduce("intersect", lapply(c(3,7), 
+function(x) find_example_cor(state.expr.window.p, sig.val, x, 0)))
+tss.example.names <- rnaseq.gene.info[match(tss.example.genes, rnaseq.gene.info[,"ensembl_gene_id"]),"external_gene_name"]
+#gene.name <- sample(tss.example.names, 1)
+
+plot.one.gene.chromatin(do.eqtl, rnaseq.gene.info, rna.seq, all.bed, col.table, 
+gene.name = "Irf5", T.or.C, start.feature, end.feature, upstream.buffer, 
+downstream.buffer, separate.windows = is.interactive, dim.rd = "state.prop", 
+state = 7, total.states = num.states, show.state.numbers = FALSE)
+
+plot.one.gene.genetic(gene.name = "Irf5", rnaseq.gene.info, genoprobs, map, 
+pheno = dataset.mrna$data$rz)
+```

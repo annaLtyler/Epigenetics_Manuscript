@@ -1,0 +1,225 @@
+---
+title: "SNPs in DO"
+author: Anna L Tyler
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  html_document:
+    code_folding: hide
+    collapsed: no
+    toc: yes
+    toc_float: yes
+---
+
+
+## Introduction
+
+The purpose of this workflow is to impute SNPs from the DO founders
+into the current DO population to perform association mapping using
+local SNPs and expression values. We will then overlay the SNP 
+associations with the chromatin associations to see if we can annotate
+SNPs with chromatin state functions. This function performs the imputation
+for all genes we have data for.
+
+```{r set_param}
+num.states = 9
+gene.buffer = 1000 #base pair buffer around gene when looking for SNPs
+snp.alleles <- c("A", "C", "G", "T") #alleles of SNPs
+```
+
+```{r load_libraries}
+library(here)
+```
+
+
+```{r source_code}
+all.code.dir <- list.files(here("Code"), full.names = TRUE)
+for(i in 1:length(all.code.dir)){
+	all.fun <- list.files(all.code.dir[i], full.names = TRUE)
+	for(j in 1:length(all.fun)){source(all.fun[j])}
+}
+```
+
+```{r load_other_lib}
+needed.packages <- c("curl", "stringr", "qtl2", "abind")
+load_libraries(needed.packages)
+```
+
+```{r read_data}
+gene.info <- readRDS(here("Data", "RNASeq", "RNASeq_gene_info.RData"))
+strain.table <- as.matrix(read.delim(here("Data", "support_files", "strain.color.table.txt"),
+comment.char = "!", header = FALSE))
+
+expr.data <- readRDS(here("Data", "DOQTL", "DO_Expression.RDS")) 
+expr <- expr.data$expr
+covar <- expr.data$covar
+
+chrom.mats <- readRDS(here("Results", "ChromHMM", paste0(num.states, "_states_C"), 
+paste0("Chromatin_States_", num.states, "_full_gene_1000.RData")))
+
+#transcripts that are shared between chromatin and DO expression data
+common.transcripts <- intersect(colnames(expr), names(chrom.mats)) 
+transcript.info.table <- gene.info[match(common.transcripts, gene.info[,"ensembl_gene_id"]),]
+```
+
+
+```{r fun}
+table_to_snp_mat <- function(snp.table, snp.alleles, strain.key, strain.locale){
+    #The SNP matrix holds genotypes for each strain at 
+    #each position in the gene. Each position is in a row
+    #A 1 indicates that the strain at that position has 
+    #the particular allele
+    snp.mat <- array(0, dim = c(nrow(snp.table), 8, 4), 
+        dimnames = list(snp.table[,"Position"], LETTERS[1:8], snp.alleles))
+    strain.names <- gsub("/", "_", str_trim(strain.key[,2]))
+    for(i in 1:nrow(snp.table)){
+        ref.allele <- which(snp.alleles == snp.table[i,"Ref"])
+        snp.mat[i,,ref.allele] <- 1 #start with everyone having the reference allele
+        alt.allele <- trim_alt_allele(snp.table[i,strain.locale])
+        alt.strain <- strain.table[match(names(alt.allele), strain.names),5]
+        #take out DBA, because this isn't in the DO
+        alt.strain <- alt.strain[which(!is.na(alt.strain))]
+        #set the strains with SNPs to 0 for the referece allele 
+        snp.mat[i,alt.strain,ref.allele] <- 0
+        #and set the alternate allele to 1 for these strains
+        snp.mat[i,alt.strain, alt.allele] <- 1
+    }
+    return(snp.mat)
+}
+
+get_nearest_marker <- function(chr, start.pos){
+    if(is.na(chr)){return(NA)}
+    if(chr == "MT"){return(NA)}
+    chr.locale <- which(names(map) == chr)
+    nearest.marker <- get.nearest.pt(map[[chr.locale]], start.pos)
+    marker.geno <- genoprobs[[chr.locale]][,,nearest.marker]
+    return(marker.geno)
+}
+
+trim_alt_allele <- function(alt_allele, allowable_alleles = snp.alleles){
+    allele.names <- names(alt_allele)
+    caps_allele <- str_to_upper(alt_allele)
+    names(caps_allele) <- allele.names
+    allowable_locale <- which(caps_allele %in% allowable_alleles)
+    trimmed_allele <- caps_allele[allowable_locale]
+    return(trimmed_allele)
+}
+
+snp_geno <- function(gene.snp.array, haplotype.matrix, gene.chr){
+    all.snp <- lapply(1:nrow(gene.snp.array), 
+        function(x) haplotype.matrix %*% gene.snp.array[x,,])
+    all.snp.mat <- abind(all.snp, along = 3)
+    dimnames(all.snp.mat)[[3]] <- paste(gene.chr, rownames(gene.snp.array), sep = "_")
+    one.geno <- list(all.snp.mat)
+
+    #add attributes
+    names(one.geno) <- gene.chr
+    if(gene.chr == "X"){
+      attr(one.geno, "is_x_chr") <- TRUE
+    }else{
+      attr(one.geno, "is_x_chr") <- FALSE
+    }
+    attr(one.geno, "crosstype") <- "do"
+    attr(one.geno, "alleles") <- dimnames(gene.snp.array)[[3]]
+    attr(one.geno, "alleleprobs") <- TRUE
+    attr(one.geno, "class") <- c("calc_genoprob", "list")
+    return(one.geno)
+}
+```
+
+## Get Genotypes for Nearest Markers
+
+For every gene in our list, pull out the genotype matrix for the marker
+nearest the TSS.
+
+```{r set_gene}
+gene.marker <- vector(mode = "list", length = length(common.transcripts))
+names(gene.marker) <- common.transcripts
+for(i in 1:nrow(transcript.info.table)){
+        gene.marker[[i]] <- get_nearest_marker(transcript.info.table[i,"chromosome_name"], 
+        transcript.info.table[i, "start_position"])
+    }
+}
+```
+
+
+## Download Sanger SNPs
+
+Get the Sanger SNPs in the region of each gene. Build a SNP matrix
+for the 8 founder strains.
+
+```{r get_snps}
+#Download Sanger SNP tables
+snp.table.file <- here("Results", "SNPs", "Sanger.SNP.Tables.RDS")
+if(!file.exists(snp.table.file)){
+    gene.snps <- lapply(1:length(common.transcripts), 
+        function(x) get.sanger.snps(transcript.info.table[x,"chromosome_name"], 
+        start.pos = transcript.info.table[x,"start_position"] - gene.buffer, 
+        end.pos = transcript.info.table[x,"end_position"] + gene.buffer))
+    names(gene.snps) <- common.transcripts
+    saveRDS(gene.snps, snp.table.file)
+}else{
+    gene.snps <- readRDS(snp.table.file)
+}
+
+#convert to binary SNP arrays
+snp.by.position.file <- here("Results", "SNPs", "SNP.by.Position.RDS")
+if(!file.exists(snp.by.position.file)){
+    #find the columns where strain information is stored
+    strain.locale <- unlist(sapply(strain.table[,9], 
+        function(x) which(colnames(gene.snps[[1]]) == x)))
+    snp.mats <- lapply(gene.snps, 
+        function(x) table_to_snp_mat(snp.table = x, snp.alleles, strain.table, strain.locale))
+    saveRDS(snp.mats, snp.by.position.file)
+}else{
+    snp.mats <- readRDS(snp.by.position.file)
+}
+```
+
+Derive a set of SNPs for each mouse given the genoprobs and the 
+SNPs from Sanger. This array will have SNP estimates for each 
+individual by position by SNP allele.
+
+To generate this array we multiply each SNP genotype matrix along the 
+genome by the haplotype matrix for the gene.
+
+
+```{r get_snp_geno}
+imputed.snp.file <- here("Results", "SNPs", "Imputed.SNPs.RDS")
+if(!file.exists(imputed.snp.file)){
+    all.snp.mats <- lapply(1:length(snp.mats), 
+        function(x) snp_geno(snp.mats[[x]], gene.marker[[x]], 
+        transcript.info.table[x,"chromosome_name"]))
+    names(all.snp.mats) <- common.transcripts
+    saveRDS(all.snp.mats, imputed.snp.file)
+}else{
+    all.snp.mats <- readRDS(imputed.snp.file)
+}
+```
+
+## Perform eQTL scans on imputed SNPs
+
+```{r scan_chQTL_and_eQTL}
+snp.lod.file <- here("Results", "SNPs", "SNP.QTL.lod.RDS")
+if(!file.exists(snp.mat.file)){
+  start.at <- 1
+  #if we are at the beginning, intialize all the objects for holding
+  #results. Make space for one set of genoprob coefficients for each 
+  #transcript
+  snp.lod <- vector(mode = "list", length = length(common.transcripts))
+  names(snp.lod) <- common.transcripts
+}
+```
+
+
+```{r map_expression}
+ordered.expr <- expr[,match(common.transcripts, colnames(expr))]
+
+all.snp.lod.file <- here("Results", "SNPs", "SNP.LOD.RDS")
+if(!file.exists(all.snp.lod.file)){
+    all.snp.scans <- lapply(1:length(all.snp.mats), 
+        function(x) scan1(all.snp.mats[[x]], ordered.expr[,x], addcovar = covar))
+    saveRDS(all.snp.scans, all.snp.lod.file)
+}else{
+    all.snp.scans <- readRDS(all.snp.lod.file)
+}
+```

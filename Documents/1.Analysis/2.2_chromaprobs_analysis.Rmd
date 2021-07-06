@@ -139,12 +139,15 @@ The chromatin variance explained and genetics variance explained are
 very highly correlated. There are many cases in which the chromatin does
 not explain as much variance as the genetics.
 
-```{r r2_comp}
+```{r r2_comp, fig.width = 8, fig.height = 4}
 max.ch.r2 <- t(sapply(ch.r2, function(x) if(length(x) == 0){return(rep(NA, 4))}else{apply(x, 2, function(y) max(y, na.rm = TRUE))}))
 r2.diff <- e.r2 - max.ch.r2
 large.r2.diff <- 0.01
 
 par(mfrow = c(1,2))
+#plot.hexbin(e.r2[,1], max.ch.r2[,1], xbins = 50)
+#test <- plot.with.model(e.r2[,1], max.ch.r2[,1], report = "cor.test")
+
 plot(e.r2[,1], max.ch.r2[,1], pch = 16, col = "gray", cex = 0.7,
 xlab = "R2 Genetic eQTL", ylab = "R2 Chromatin eQTL", 
 main = "Comparison of Chromatin and Genetic R2")
@@ -170,7 +173,11 @@ mitochrondrial and ribosomal genes.
 ```{r mismatch_enrich, fig.height = 10, fig.width = 7}
 enrich <- lapply(big.diff, function(x) gost(x, organism = "mmusculus", source = "GO"))
 if(is.interactive){quartz(height = 10, width = 7)}
-plot.enrichment.group(enrich, sort.by = "p_value", n.terms = 30, max.term.size = 500)
+if(sum(sapply(enrich, length)) > 2){
+  plot.enrichment.group(enrich, sort.by = "p_value", n.terms = 30, max.term.size = 500)
+}else{
+  plot.text("No enrichment in these genes")
+}
 ```
 
 ## Mismatched Gene Characterization
@@ -233,7 +240,7 @@ these clusters to see if there is a more general cell-type signature.s
 
 There is no longer an enrichment if I merge the cell type clusters.
 
-```{r merge_aizarani, fig.width = 5, fig.height = 7}
+```{r merge_aizarani, fig.width = 5, fig.height = 7, eval = FALSE}
 cell.types <- sapply(strsplit(path.names, "_"), function(x) paste(x[1:(length(x)-1)], collapse = "_"))
 u_cell.types <- unique(cell.types)
 merged.cell.genes <- vector(mode = "list", length = length(u_cell.types))
@@ -257,7 +264,7 @@ for(i in 1:length(ordered.genes)){
 }
 ```
 
-### Conclusion
+## Conclusion
 There is no strong evidence that that the mismatches between genetic
 and chromatin eQTLs are related to cell type. 
 
@@ -308,7 +315,7 @@ plot.gsea.results(go.bp.enrich, "padj", p.thresh = 0.05, plot.label = "GO:BP")
 plot.gsea.results(go.cc.enrich, "padj", p.thresh = 0.05, plot.label = "GO:CC")
 ```
 
-### Conclusion
+## Conclusion
 There is some weak enrichment for ribosomal genes and genes translocated to the
 ER. Does this suggest the posibility of post-transcriptional regulation not
 captured by the chromatin? I don't think it does, necessarily, but that's
@@ -328,7 +335,7 @@ animals. This was not the case. The figures below show the correlation
 between the genetic and chromatin eQTLs in the chow and HF animals
 independently. 
 
-```{r chow_hf_comp}
+```{r chow_hf_comp, fig.width = 9, fig.height = 3}
 par(mfrow = c(1,3))
 plot.with.model(e.r2[,"Chow"], max.ch.r2[,"Chow"], xlab = "genetic eQTL R2", 
 ylab = "chromatin eQTL R2", main = "Chow Animals", pch = 16, col = "gray", cex = 0.7)
@@ -343,7 +350,7 @@ xlab = "Chow R2 Difference", ylab = "HF R2 Difference", main = "Chow vs. HF")
 abline(0,1)
 ```
 
-### Conclusion 
+## Conclusion 
 We cannot explain variation in expression through chromatin any 
 better in chow animals than in HF animals. Therefore we cannot conclude
 that the mismatches between the genetic eQTLs and chromatin eQTLs are
@@ -386,7 +393,7 @@ For these genes, the highest LOD scores are immediately upstream of the TSS
 
 ```{r lod_with_var}
 chrom.gene.names <- transcript.info[match(names(chrom.mats), transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
-norm.states <- lapply_pb(1:length(chrom.mats), 
+norm.states <- lapply(1:length(chrom.mats), 
 function(x) if(length(chrom.mats[[x]]) > 1){center.on.feature(chrom.gene.names[x], 
 transcript.info, chrom.mats[[x]][,1], feature = "full")}else{NA})
 tss.locale <- lapply(norm.states, function(x) get.nearest.pt(0, as.numeric(names(x))))
@@ -438,7 +445,7 @@ plot.enrichment(invar.enrich, num.terms = 30,
 plot.label = "Genes with No Variation in Chromatin State at TSS")
 ```
 
-### Conclusion
+## Conclusion
 Most genes have no variation in chromatin at the TSS, and thus chromatin
 state at this position is not used for regulating gene expression across
 strains. 
