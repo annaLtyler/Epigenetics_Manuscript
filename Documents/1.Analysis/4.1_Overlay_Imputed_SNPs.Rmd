@@ -54,6 +54,8 @@ chrom.lod.file <- here("Results", "chQTL", "chQTL.lod.RDS")
 chrom.lod <- readRDS(chrom.lod.file)
 
 inbred.expr <- readRDS(here("Data", "RNASeq", "Strain_Scaled_C_Expression.RData"))
+
+snp.lod.file <- here("Results", "SNPs", "SNP.LOD.RDS")
 ```
 
 ```{r fun}

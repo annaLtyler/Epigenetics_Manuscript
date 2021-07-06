@@ -68,6 +68,7 @@ table_to_snp_mat <- function(snp.table, snp.alleles, strain.key, strain.locale){
     #each position in the gene. Each position is in a row
     #A 1 indicates that the strain at that position has 
     #the particular allele
+    if(length(snp.table) == 0){return(NA)}
     snp.mat <- array(0, dim = c(nrow(snp.table), 8, 4), 
         dimnames = list(snp.table[,"Position"], LETTERS[1:8], snp.alleles))
     strain.names <- gsub("/", "_", str_trim(strain.key[,2]))
@@ -105,6 +106,7 @@ trim_alt_allele <- function(alt_allele, allowable_alleles = snp.alleles){
 }
 
 snp_geno <- function(gene.snp.array, haplotype.matrix, gene.chr){
+    if(length(gene.snp.array) == 1){return(NA)}
     all.snp <- lapply(1:nrow(gene.snp.array), 
         function(x) haplotype.matrix %*% gene.snp.array[x,,])
     all.snp.mat <- abind(all.snp, along = 3)
@@ -203,10 +205,6 @@ if(!file.exists(imputed.snp.file)){
 ```{r scan_chQTL_and_eQTL}
 snp.lod.file <- here("Results", "SNPs", "SNP.QTL.lod.RDS")
 if(!file.exists(snp.mat.file)){
-  start.at <- 1
-  #if we are at the beginning, intialize all the objects for holding
-  #results. Make space for one set of genoprob coefficients for each 
-  #transcript
   snp.lod <- vector(mode = "list", length = length(common.transcripts))
   names(snp.lod) <- common.transcripts
 }
@@ -215,11 +213,11 @@ if(!file.exists(snp.mat.file)){
 
 ```{r map_expression}
 ordered.expr <- expr[,match(common.transcripts, colnames(expr))]
-
 all.snp.lod.file <- here("Results", "SNPs", "SNP.LOD.RDS")
 if(!file.exists(all.snp.lod.file)){
     all.snp.scans <- lapply(1:length(all.snp.mats), 
-        function(x) scan1(all.snp.mats[[x]], ordered.expr[,x], addcovar = covar))
+        function(x) if(length(all.snp.mats[[x]][[1]]) > 1){
+            scan1(all.snp.mats[[x]], ordered.expr[,x], addcovar = covar)}else{NA})
     saveRDS(all.snp.scans, all.snp.lod.file)
 }else{
     all.snp.scans <- readRDS(all.snp.lod.file)
