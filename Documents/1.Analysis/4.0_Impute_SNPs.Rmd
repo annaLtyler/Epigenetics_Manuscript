@@ -49,9 +49,9 @@ gene.info <- readRDS(here("Data", "RNASeq", "RNASeq_gene_info.RData"))
 strain.table <- as.matrix(read.delim(here("Data", "support_files", "strain.color.table.txt"),
 comment.char = "!", header = FALSE))
 
-expr.data <- readRDS(here("Data", "DOQTL", "DO_Expression.RDS")) 
-expr <- expr.data$expr
-covar <- expr.data$covar
+vars <- load(here("Data", "DOQTL", "Svenson_DO850_for_eQTL_viewer_v9.RData"))
+expr <- dataset.mrna$data$rz
+covar <- dataset.mrna$covar.matrix
 
 chrom.mats <- readRDS(here("Results", "ChromHMM", paste0(num.states, "_states_C"), 
 paste0("Chromatin_States_", num.states, "_full_gene_1000.RData")))
