@@ -124,6 +124,15 @@ snp_geno <- function(gene.snp.array, haplotype.matrix, gene.chr){
     attr(one.geno, "class") <- c("calc_genoprob", "list")
     return(one.geno)
 }
+
+one.gene.snps <- function(i){
+    if(is.na(transcript.info.table[i,"chromosome_name"])){return(NA)}
+    if(transcript.info.table[i,"chromosome_name"] == "MT"){return(NA)}
+    gene.snps <- get.sanger.snps(transcript.info.table[i,"chromosome_name"], 
+        start.pos = transcript.info.table[i,"start_position"] - gene.buffer, 
+        end.pos = transcript.info.table[i,"end_position"] + gene.buffer)
+    return(gene.snps)
+}
 ```
 
 ## Get Genotypes for Nearest Markers
@@ -148,17 +157,12 @@ for the 8 founder strains.
 ```{r get_snps}
 #Download Sanger SNP tables
 snp.table.file <- here("Results", "SNPs", "Sanger.SNP.Tables.RDS")
-if(!file.exists(snp.table.file)){
-    gene.snps <- lapply(1:length(common.transcripts), 
-        function(x) get.sanger.snps(transcript.info.table[x,"chromosome_name"], 
-        start.pos = transcript.info.table[x,"start_position"] - gene.buffer, 
-        end.pos = transcript.info.table[x,"end_position"] + gene.buffer))
-    names(gene.snps) <- common.transcripts
-    saveRDS(gene.snps, snp.table.file)
-}else{
-    gene.snps <- readRDS(snp.table.file)
-}
+save.periodically(one.gene.snps, max.iter = length(common.transcripts), 
+    filename = snp.table.file, save.every = save.every)
+gene.snps <- readRDS(snp.table.file)
+```
 
+```{r snp_arrays}
 #convert to binary SNP arrays
 snp.by.position.file <- here("Results", "SNPs", "SNP.by.Position.RDS")
 if(!file.exists(snp.by.position.file)){
