@@ -24,6 +24,7 @@ for all genes we have data for.
 num.states = 9
 gene.buffer = 1000 #base pair buffer around gene when looking for SNPs
 snp.alleles <- c("A", "C", "G", "T") #alleles of SNPs
+save.every = 100
 ```
 
 ```{r load_libraries}
