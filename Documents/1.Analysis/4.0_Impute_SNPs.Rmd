@@ -31,7 +31,6 @@ save.every = 100
 library(here)
 ```
 
-
 ```{r source_code}
 all.code.dir <- list.files(here("Code"), full.names = TRUE)
 for(i in 1:length(all.code.dir)){
