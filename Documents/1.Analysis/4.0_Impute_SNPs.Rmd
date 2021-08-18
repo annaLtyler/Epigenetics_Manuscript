@@ -25,6 +25,8 @@ num.states = 9
 gene.buffer = 1000 #base pair buffer around gene when looking for SNPs
 snp.alleles <- c("A", "C", "G", "T") #alleles of SNPs
 save.every = 100
+is.interactive = FALSE
+#is.interactive = TRUE
 ```
 
 ```{r load_libraries}
@@ -52,6 +54,11 @@ comment.char = "!", header = FALSE))
 vars <- load(here("Data", "DOQTL", "Svenson_DO850_for_eQTL_viewer_v9.RData"))
 expr <- dataset.mrna$data$rz
 covar <- dataset.mrna$covar.matrix
+
+#if not mapping, you can load smaller data sets
+#expr.data <- readRDS(here("Data", "DOQTL", "DO_Expression.RDS"))
+#expr <- expr.data$expr
+#covar <- expr.data$covar
 
 chrom.mats <- readRDS(here("Results", "ChromHMM", paste0(num.states, "_states_C"), 
 paste0("Chromatin_States_", num.states, "_full_gene_1000.RData")))
@@ -91,7 +98,7 @@ get_nearest_marker <- function(chr, start.pos){
     if(is.na(chr)){return(NA)}
     if(chr == "MT"){return(NA)}
     chr.locale <- which(names(map) == chr)
-    nearest.marker <- get.nearest.pt(map[[chr.locale]], start.pos)
+    nearest.marker <- get.nearest.pt(map[[chr.locale]], start.pos/1e6)
     marker.geno <- genoprobs[[chr.locale]][,,nearest.marker]
     return(marker.geno)
 }
@@ -104,6 +111,7 @@ trim_alt_allele <- function(alt_allele, allowable_alleles = snp.alleles){
     trimmed_allele <- caps_allele[allowable_locale]
     return(trimmed_allele)
 }
+
 
 snp_geno <- function(gene.snp.array, haplotype.matrix, gene.chr){
     if(length(gene.snp.array) == 1){return(NA)}
@@ -127,7 +135,7 @@ snp_geno <- function(gene.snp.array, haplotype.matrix, gene.chr){
     return(one.geno)
 }
 
-one.gene.snps <- function(i){
+one.gene.snps <- function(i, gene.buffer){
     if(is.na(transcript.info.table[i,"chromosome_name"])){return(NA)}
     if(transcript.info.table[i,"chromosome_name"] == "MT"){return(NA)}
     gene.snps <- get.sanger.snps(transcript.info.table[i,"chromosome_name"], 
@@ -156,23 +164,39 @@ for(i in 1:nrow(transcript.info.table)){
 Get the Sanger SNPs in the region of each gene. Build a SNP matrix
 for the 8 founder strains.
 
-```{r get_snps}
-#Download Sanger SNP tables
+```{r snp_debugging}
 snp.table.file <- here("Results", "SNPs", "Sanger.SNP.Tables.RDS")
-save.periodically(one.gene.snps, max.iter = length(common.transcripts), 
-    filename = snp.table.file, save.every = save.every)
-gene.snps <- readRDS(snp.table.file)
+snp.tables <- readRDS(snp.table.file)
+is.done <- length(snp.tables[[length(snp.tables)]]) > 0
+if(!is.done){
+    start.idx <- min(which(sapply(snp.tables, length) == 0))
+    for(i in start.idx:length(snp.tables)){
+        print(i)
+        snp.tables[[i]] <- one.gene.snps(i)
+        if(i %% 100 == 0){
+            saveRDS(snp.tables, snp.table.file)        
+        }
+    }
+    #this loop stops a lot. The following lines
+    #are useful for manual restart
+    #start.idx <- i
+    #start.idx <- i + 1
+    names(snp.tables) <- common.transcripts
+    saveRDS(snp.tables, snp.table.file)
+}
 ```
 
 ```{r snp_arrays}
 #convert to binary SNP arrays
-snp.by.position.file <- here("Results", "SNPs", "SNP.by.Position.RDS")
+snp.by.position.file <- here("Results", "SNPs", "SNP.by.Position.RDS") # nolint
 if(!file.exists(snp.by.position.file)){
+    snp.mats <- vector(mode = "list", length = length(snp.tables))
     #find the columns where strain information is stored
     strain.locale <- unlist(sapply(strain.table[,9], 
-        function(x) which(colnames(gene.snps[[1]]) == x)))
-    snp.mats <- lapply(gene.snps, 
-        function(x) table_to_snp_mat(snp.table = x, snp.alleles, strain.table, strain.locale))
+        function(x) which(colnames(snp.tables[[1]]) == x)))
+    snp.mats <- lapply_pb(snp.tables, 
+        function(x) if(length(x) > 1){table_to_snp_mat(snp.table = x, snp.alleles, 
+        strain.table, strain.locale)}else{NA})
     saveRDS(snp.mats, snp.by.position.file)
 }else{
     snp.mats <- readRDS(snp.by.position.file)
@@ -186,41 +210,33 @@ individual by position by SNP allele.
 To generate this array we multiply each SNP genotype matrix along the 
 genome by the haplotype matrix for the gene.
 
-
 ```{r get_snp_geno}
-imputed.snp.file <- here("Results", "SNPs", "Imputed.SNPs.RDS")
-if(!file.exists(imputed.snp.file)){
-    all.snp.mats <- lapply(1:length(snp.mats), 
-        function(x) snp_geno(snp.mats[[x]], gene.marker[[x]], 
-        transcript.info.table[x,"chromosome_name"]))
-    names(all.snp.mats) <- common.transcripts
-    saveRDS(all.snp.mats, imputed.snp.file)
-}else{
-    all.snp.mats <- readRDS(imputed.snp.file)
-}
-```
-
-## Perform eQTL scans on imputed SNPs
-
-```{r scan_chQTL_and_eQTL}
-snp.lod.file <- here("Results", "SNPs", "SNP.QTL.lod.RDS")
+#conver to SNP arrays and scan.
+#The arrays are too big to store, so we
+#scan them right away and only keep the 
+#LOD scores.
+snp.lod.file <- here("Results", "SNPs", "SNP.LOD.scores.RDS")
+snp.r2.file <- here("Results", "SNPs", "SNP.R2.RDS")
+common.ind <- intersect(rownames(genoprobs[[1]]), rownames(expr))
+common.genoprob.locale <- match(common.ind, rownames(genoprobs[[1]]))
+common.expr.locale <- match(common.ind, rownames(expr))
 if(!file.exists(snp.lod.file)){
-  snp.lod <- vector(mode = "list", length = length(common.transcripts))
-  names(snp.lod) <- common.transcripts
-}
-```
-
-
-```{r map_expression}
-ordered.expr <- expr[,match(common.transcripts, colnames(expr))]
-all.snp.lod.file <- here("Results", "SNPs", "SNP.LOD.RDS")
-if(!file.exists(all.snp.lod.file)){
-    all.snp.scans <- lapply(1:length(all.snp.mats), 
-        function(x) if(length(all.snp.mats[[x]][[1]]) > 1){
-            scan1(all.snp.mats[[x]], ordered.expr[,x], addcovar = covar)}else{NA})
-    names(all.snp.scans) <- common.transcripts
-    saveRDS(all.snp.scans, all.snp.lod.file)
-}else{
-    all.snp.scans <- readRDS(all.snp.lod.file)
+    all.snp.lod <- all.snp.r2 <- vector(mode = "list", length = length(snp.mats))
+    names(all.snp.lod) <- names(all.snp.r2) <- common.transcripts
+    for(i in 1:length(all.snp.lod)){
+        if(is.interactive){report.progress(i, length(all.snp.lod))}
+        if(length(snp.mats[[i]]) > 1 && nrow(snp.mats[[i]]) <= 5000){
+            snp.array <- snp_geno(gene.snp.array = snp.mats[[i]], 
+            haplotype.matrix = gene.marker[[i]], 
+            gene.chr = transcript.info.table[i,"chromosome_name"])
+            gene.expr <- expr[,which(colnames(expr) == common.transcripts[i]),drop=FALSE]
+            all.snp.lod[[i]] <- scan1(snp.array, gene.expr)
+            #quartz();plot(all.snp.lod[[i]][,1], type = "h") 
+            regression.models  <- apply(snp.array[[1]], 3, function(x) lm(gene.expr[common.expr.locale,]~x[common.genoprob.locale,]))
+            all.snp.r2[[i]] <- sapply(regression.models, function(x) if(length(x) > 1){summary(x)$adj.r.squared}else{NA})
+        }
+    }
+    saveRDS(all.snp.lod, snp.lod.file)
+    saveRDS(all.snp.r2, snp.r2.file)
 }
 ```

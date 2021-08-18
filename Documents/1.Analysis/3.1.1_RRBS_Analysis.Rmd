@@ -18,6 +18,7 @@ This workflow uses the output from the RRBS workflow.
 ```{r load_libraries, echo = FALSE}
 is.interactive = FALSE
 #is.interactive = TRUE
+seq.by = 0.1 #the density at which to bin methylation across relative gene positions from -2 to 2
 needed.packages <- c("here", "pheatmap", "hexbin", "RColorBrewer", "gprofiler2",
 "knitr")
 for(i in 1:length(needed.packages)){library(needed.packages[i], character.only = TRUE)}
@@ -54,8 +55,8 @@ id.table <- cbind(strain, treat.label, ind)
 
 ```{r load_expression_data}
 strain.expr <- readRDS(here("Data", "RNASeq", "Strain_Mean_C_Expression.RData"))
-#scaled.expr <- lapply(strain.expr, scale)
-scaled.expr <- lapply(strain.expr, function(x) x - x[2]) #center on B6
+scaled.expr <- lapply(strain.expr, scale)
+#scaled.expr <- lapply(strain.expr, function(x) x - x[2]) #center on B6
 
 col.table <- as.matrix(read.table(here("Data", "support_files", "strain.color.table.txt"), 
 sep = "\t", comment.char = "%", stringsAsFactors = FALSE))
@@ -112,19 +113,25 @@ avg_methyl <- function(methyl_mat, min_rep = 2){
   }
 }
 
-strain_avg_rrbs <- vector(mode = "list", length = length(strains))
-names(strain_avg_rrbs) <- strains
-for(st in 1:length(strains)){
-  if(is.interactive){
-    cat(strains[st], "\n")
-    strain_avg_rrbs[[st]] <- lapply_pb(strain.gene.methylation[[st]], 
-    function(x) if(length(x) > 3){avg_methyl(x, min_rep = 2)}else{NA})
-    names(strain_avg_rrbs[[st]]) <- names(strain.gene.methylation[[st]])
-  }else{
-    strain_avg_rrbs[[st]] <- lapply(strain.gene.methylation[[st]], 
-    function(x) if(length(x) > 3){avg_methyl(x, min_rep = 2)}else{NA})
-    names(strain_avg_rrbs[[st]]) <- names(strain.gene.methylation[[st]])
+strain.avg.file <- here("Results", "RRBS", "Strain.Avg.RRBS.RDS")
+if(!file.exists(strain.avg.file)){
+  strain_avg_rrbs <- vector(mode = "list", length = length(strains))
+  names(strain_avg_rrbs) <- strains
+  for(st in 1:length(strains)){
+    if(is.interactive){
+      cat(strains[st], "\n")
+      strain_avg_rrbs[[st]] <- lapply_pb(strain.gene.methylation[[st]], 
+      function(x) if(length(x) > 3){avg_methyl(x, min_rep = 2)}else{NA})
+      names(strain_avg_rrbs[[st]]) <- names(strain.gene.methylation[[st]])
+    }else{
+      strain_avg_rrbs[[st]] <- lapply(strain.gene.methylation[[st]], 
+      function(x) if(length(x) > 3){avg_methyl(x, min_rep = 2)}else{NA})
+      names(strain_avg_rrbs[[st]]) <- names(strain.gene.methylation[[st]])
+    }
   }
+  saveRDS(strain_avg_rrbs, strain.avg.file)
+}else{
+  strain_avg_rrbs <- readRDS(strain.avg.file)
 }
 ```
 
@@ -149,6 +156,8 @@ if(!file.exists(methyl.mat.file)){
     #pheatmap(strain.mat, cluster_rows = FALSE, cluster_cols = FALSE)
   }
 saveRDS(methyl.mats, methyl.mat.file)
+}else{
+  methyl.mats <- readRDS(methyl.mat.file)
 }
 ```
 
@@ -158,13 +167,16 @@ Normalize gene coordinates to run from 0 to 1 from the TSS to the TES.
 norm.rrbs.file <- here("Results", "RRBS", "RRBS.Normalized.Position.RDS")
 
 if(!file.exists(norm.rrbs.file)){
-    norm_coords <- lapply(1:length(methyl.mats), 
+  #first center all the coordinates
+    norm_rrbs_coord <- lapply_pb(1:length(methyl.mats), 
         function(x) center.on.feature(gene.name = names(methyl.mats)[x], 
         gene.info = transcript.info, vals = methyl.mats[[x]][1,], 
         feature = "full"))
+    #put the normalized coordinates onto the methyl.mats
     norm_rrbs <- methyl.mats
+    names(norm_rrbs) <- names(methyl.mats)
     for(i in 1:length(norm_rrbs)){
-      colnames(norm_rrbs[[i]]) <- names(norm_coords[[i]])
+      colnames(norm_rrbs[[i]]) <- names(norm_rrbs_coord[[i]])
     }
     saveRDS(norm_rrbs, norm.rrbs.file)
 }else{
@@ -182,483 +194,359 @@ to the next position. Around 80% of DNA methylation positions were
 a single base pair from the next position in all strains.
 
 ```{r methyl_dens}
-
 methyl_consec <- lapply(methyl.mats, function(x) if(length(x) > 1){consec.pairs(as.numeric(colnames(x)))}else{NA})
 methyl_dist <- lapply(methyl_consec, function(x) if(length(x) >  1){x[,2] - x[,1]}else{NA})
 for(i in 1:length(methyl_dist)){
-  if(length(methyl_dist[[i]]) > 1){
+  if(!is.null(colnames(norm_rrbs[[i]]))){
     consec.coord <- consec.pairs(as.numeric(colnames(norm_rrbs[[i]])))
     mean.coords <- rowMeans(consec.coord)
     names(methyl_dist[[i]]) <- mean.coords
   }
 }
-plot.centered.vals(val.list = methyl_dist, 
-  seq.by = 0.01, min.representation = 10, ylim = c(0, 2500),
-  plot.label = paste("Average Distance to Next Methylation Position"),
-  ylab = "Distance to Next Methylation Position")
+if(is.interactive){quartz()}
+methyl_dens_file <- here("Results", "RRBS", "Methylation_Density.RDS")
+if(!file.exists(methyl_dens_file)){
+  avg_methyl_dist <- plot.centered.vals(val.list = methyl_dist, 
+    seq.by = seq.by, min.representation = 10, ylim = c(0, 3500),
+    plot.label = paste("Average Distance to Next Methylation Position"),
+    ylab = "Distance to Next Methylation Position", return.means = FALSE)
+  abline(v = c(0,1))
+  saveRDS(avg_methyl_dist, methyl_dens_file)
+}else{
+  avg_methyl_dist <- readRDS(methyl_dens_file)
+  plot.centered.mat(avg_methyl_dist, ylim = c(0, 3500),
+    plot.label = paste("Average Distance to Next Methylation Position"),
+    ylab = "Distance to Next Methylation Position")
+      abline(v = c(0,1))
+}
 ```
 
-## Percent methylation by gene position {.tabset .tabset-fade .tabset-pills}
 
-We looked at the percent methylation across the gene body, for all 
-genes. Genes tend to be hypomethylated at the TSS, and hypermethylated
-within the gene body. 
+## DNA methylation percentage
 
-```{r methyl_by_position, fig.height = 5, fig.width = 7, results = "asis"}
-avg_percent_methyl <- lapply(norm_rrbs, function(x) colMeans(x, na.rm = TRUE))
-plot.centered.vals(val.list = avg_percent_methyl, 
-    seq.by = 0.01, min.representation = 10, ylim = c(0, 100),
-    plot.label = "Average Methylation Across Gene Body")
-abline(v = c(0,1))
-```
-
-
-## Within-strain correlation between DNA methylation and expression
-
-### Full gene body {.tabset .tabset-fade .tabset-pills}
-
-Correlate DNA methylation with expression across gene the full gene body within
-one strain.
+The following plots show the percent methylation across the gene body. 
+Methylation sites outside gene bodies have 50% 
+methylation. Sites at the TSS have very low percentage methylation,
+and sites within the gene body have very high methylation.
 
 ```{r within_strain, results = "asis"}
-strain.locale <- match.order(strains, names(strain.expr[[1]]), col.table)
-
-for(st in 1:length(strains)){
-  cat("####", strains[st], "\n")
-    strain.name.expr <- names(strain.expr[[1]])[strain.locale[st]]
-    strain.name.rrbs <- strains[st]
-    
-    strain.rrbs <- norm_rrbs[[st]]
-    mean.strain.rrbs <- sapply(strain.rrbs, mean)
-    one.strain.expr <- sapply(strain.expr, function(x) x[strain.locale[st]])
-
-    expr.gene.id <- gsub(paste0(".", strain.name.expr), "", names(one.strain.expr))
-    rrbs.gene.id <- transcript.info[match(names(strain.rrbs), transcript.info[,"external_gene_name"]), "ensembl_gene_id"]
-    common.id <- intersect(rrbs.gene.id, expr.gene.id)
-
-    id.rrbs.locale <- match(common.id, rrbs.gene.id)
-    id.expr.locale <- match(common.id, expr.gene.id)
-
-    plot.with.model(mean.strain.rrbs[id.rrbs.locale], one.strain.expr[id.expr.locale],
-    report = "cor.test", xlab = "Percent Methylation", ylab = "Expression")
+strain.methyl.file <- here("Results", "RRBS", "Strain.RRBS.Percent.RDS")
+if(!file.exists(strain.methyl.file)){
+  strain_rrbs_mat <- vector(mode = "list", length = length(strains))
+  names(strain_rrbs_mat) <- strains
+  for(st in 1:length(strains)){
+    cat("###", strains[st], "\n")
+    strain_rrbs <- lapply(norm_rrbs, function(x) x[st,])
+    strain_rrbs_mat[[st]] <- plot.centered.vals(val.list = strain_rrbs, 
+    return.means = FALSE, seq.by = seq.by, ylim = c(0,100), 
+    plot.label = paste("Percent Methylation Across the Gene Body in", strains[st]))
+    abline(v = c(0,1))
     cat("\n\n")
+  }
+  saveRDS(strain_rrbs_mat, strain.methyl.file)
+}else{
+  strain_rrbs_mat <- readRDS(strain.methyl.file)
 }
 ```
 
-### TSS only {.tabset .tabset-fade .tabset-pills}
+The following heat map shows all 
 
-We also looked at the correlation between DNA methylation just at the TSS
-and gene expression.
-
-```{r tss_methyl, results = "asis"}
-for(st in 1:length(strains)){
-  cat("####", strains[st], "\n")
-    strain.name.expr <- names(strain.expr[[1]])[strain.locale[st]]
-    strain.name.rrbs <- strains[st]
-    
-    strain.rrbs <- norm_rrbs[[st]]
-    tss.methyl <- sapply(strain.rrbs, function(x) x[get.nearest.pt(as.numeric(names(x)), 0)])
-    no.val <- which(sapply(tss.methyl, length) == 0)
-    tss.methyl[no.val] <- NA
-    one.strain.expr <- sapply(strain.expr, function(x) x[strain.locale[st]])
-
-    expr.gene.id <- gsub(paste0(".", strain.name.expr), "", names(one.strain.expr))
-    rrbs.gene.id <- transcript.info[match(names(strain.rrbs), transcript.info[,"external_gene_name"]), "ensembl_gene_id"]
-    common.id <- intersect(rrbs.gene.id, expr.gene.id)
-
-    id.rrbs.locale <- match(common.id, rrbs.gene.id)
-    id.expr.locale <- match(common.id, expr.gene.id)
-
-    plot.with.model(unlist(tss.methyl[id.rrbs.locale]), one.strain.expr[id.expr.locale],
-    report = "cor.test", xlab = "Percent Methylation", ylab = "Expression")
-    cat("\n\n")
+```{r methyl_heat, eval = FALSE}
+strain.locale <- order.strains(strains, names(strain.expr[[1]]), col.table)
+for(st in 1:length(strain_rrbs_mat)){
+  tss.pos <- which(colnames(strain_rrbs_mat[[st]]) == "0")
+  tss.order <- order(strain_rrbs_mat[[st]][,tss.pos])
+  ordered.id <- transcript.info[match(rownames(strain_rrbs_mat[[st]])[tss.order], transcript.info[,"external_gene_name"]),"ensembl_gene_id"]
+  ordered.expr <- sapply(strain.expr[match(ordered.id, names(strain.expr))], function(x) x[strain.locale[st]])
+  expr.df <- data.frame(ordered.expr)
+  if(is.interactive){quartz()}
+  pheatmap(strain_rrbs_mat[[1]][tss.order,], cluster_rows = FALSE, cluster_cols = FALSE, 
+  show_rownames = FALSE)
 }
+
 ```
 
-## Between-strain variation in DNA methylation
+The pattern of methylation was the same across all strains. 
+The following plot shows the median percent methylation by position.
 
-For each gene, we also looked for inter-strain variation in expression associated
-with DNA methylation.
+```{r avg_methyl_percent}
 
-First we aligned the DNA methylation values across strains and genes.
-The following code chunk creates a list of matrices, one for each gene
-in which the strain DNA methylation values are aligned across the strains.
+all_rrbs_med <- t(sapply(strain_rrbs_mat, function(x) apply(x, 2, function(y) median(y, na.rm = TRUE))))
+rel.pos <- as.numeric(colnames(all_rrbs_med))
+
+if(is.interactive){quartz()}
+plot.new()
+plot.window(xlim = c(min(rel.pos), max(rel.pos)), ylim = c(0, 100))
+for(i in 1:nrow(all_rrbs_med)){
+  points(rel.pos, all_rrbs_med[i,], col = col.table[i,3], lwd = 2, type = "l")
+}
+axis(1);axis(2)
+abline(v = c(0,1))
+mtext(side = 1, text = "Relative Genomic Position", line = 2.5)
+mtext(side = 2, text = "Median Percent DNA Methylation", line = 2.5)
+```
+
+## Within-Strain Correlation Between Methylation and Expression
+
+The following plots show the correlation with gene expression 
+across these normalized positions calculated above within each 
+strain. These plots do not look at variation across strains, 
+only across genes within one strain. 
+
+There is a weak negative correlation between DNA methylation 
+and gene expression at the TSS (r = -0.2). There are also two
+weak, but consistent signals of positive correlation between
+DNA methylation and gene expression just upstream of the TSS.
+As weak as these blips are, they are very consistent across the
+strains.
+
+Even farther upstream of the TSS, there is another negative 
+correlation between DNA methylation and gene expression. This
+correlation may be slightly stronger than the correlation at the
+TSS. 
+
+```{r rrbs_expr_cor, fig.width = 10, fig.height = 5}
+rrbs.expr.cor <- matrix(NA, nrow = length(strains), ncol = ncol(strain_rrbs_mat[[1]]))
+rownames(rrbs.expr.cor) <- strains
+colnames(rrbs.expr.cor) <- colnames(strain_rrbs_mat[[1]])
+strain.expr.order <- order.strains(strains,names(strain.expr[[1]]), col.table)
+
+#align gene methylation percentages with expression in this strain.
+common.genes <- Reduce("intersect", lapply(strain_rrbs_mat, rownames))
+gene.id <- transcript.info[match(common.genes, 
+  transcript.info[,"external_gene_name"]),"ensembl_gene_id"]
+gene.idx <- match(gene.id, names(strain.expr))
+strain.expr.mat <- t(sapply(gene.idx, function(x) if(length(strain.expr[[x]]) > 1){strain.expr[[x]]}else{rep(NA, 9)}))
+rownames(strain.expr.mat) <- common.genes
+colnames(strain.expr.mat) <- rownames(strain.expr[[1]])
+
+for(st in 1:length(strains)){
+  strain_mat <- strain_rrbs_mat[[st]][match(common.genes, rownames(strain_rrbs_mat[[st]])),]
+  rrbs.expr.cor[st,] <- apply(strain_mat, 2, function(x) cor(x, strain.expr.mat[,strain.expr.order[st]], use = "pairwise.complete.obs", method = "pearson"))
+}
+
+rel.pos <- as.numeric(colnames(rrbs.expr.cor))
+strain.col <- col.table[match(strains, col.table[,6]),3]
+if(is.interactive){quartz(width = 9, height = 5)}
+layout(matrix(c(1,2), nrow = 1), width = c(1, 0.3))
+par(mar = c(4,4,4,0))
+plot.new()
+plot.window(xlim = c(min(rel.pos), max(rel.pos)), ylim = c(min(rrbs.expr.cor), max(rrbs.expr.cor))) 
+for(st in 1:nrow(rrbs.expr.cor)){
+  points(rel.pos, rrbs.expr.cor[st,], col = strain.col[st], type = "l", lwd = 2)
+}
+axis(1)
+axis(2)
+mtext(text = "Relative Gene Position", side = 1, line = 2.5)
+mtext(text = "Pearson Correlation Between Expression and Methylation", side = 2, line = 2.5)
+abline(v = c(0,1))
+abline(h = 0, col = "darkgray", lty = 2)
+plot.new()
+plot.window(xlim = c(0,1), ylim = c(0,1))
+par(mar = c(4,0,4,0))
+legend(0,0.9, col = strain.col, lty = 1, legend = col.table[match(strains, col.table[,6]),1], lwd = 3)
+#pheatmap(rrbs.expr.cor, cluster_cols = FALSE, cluster_rows = FALSE)
+```
+
+
+## Across-strain variation in DNA methylation
+
+For each gene, we also looked for inter-strain variation in expression 
+associated with DNA methylation.
+
+We used the aligned DNA methylation values generated above. For
+each gene, we correlated DNA methylation percent with expression 
+across strains. 
+
+Overall, there is an ever-so-slight negative correlation between 
+percent DNA methylation and gene expression across strains. 
+
 
 ```{r inter_strain}
-one.gene.rrbs <- sapply(norm_rrbs, function(x) x[[1]])
-one.rrbs.mat <- plot.centered.vals(val.list = one.gene.rrbs, 
-    seq.by = 1e-2, min.representation = 1, ylim = c(0, 100), 
-    plot.label = paste(strains[st], "Average Methylation Across Gene Body"), 
-    plot.line = FALSE, return.means = FALSE)
-#pheatmap(one.rrbs.mat, cluster_rows = FALSE, cluster_cols = FALSE)
 
-#for each gene collect the rrbs statistics for all strains.
-#this step just reorganizes norm_rrbs
-rrbs.strain.list <- lapply(1:length(norm_rrbs[[1]]), 
-  function(x) lapply(norm_rrbs, function(y) y[[x]]))
-names(rrbs.strain.list) <- names(norm_rrbs[[1]])
-#for each gene align the rrbs coordinates, so we can compare 
-#across strains.
-rrbs.strain.mat.file <- here("Results", "RRBS", "RRBS_Aligned_Across_Strains.RDS")
+rrbs.by.gene.file <- here("Results", "RRBS", "RRBS.by.Gene.RDS")
 
-if(!file.exists(rrbs.strain.mat.file)){
-  rrbs.strain.mat <- vector(mode = "list", length = length(rrbs.strain.list))
-  names(rrbs.strain.mat) <- names(rrbs.strain.list)
-  for(i in 1:length(rrbs.strain.list)){
-    if(is.interactive){report.progress(i, length(rrbs.strain.list))}
-    num.measures <- sapply(rrbs.strain.list[[i]], length)
-    if(all(num.measures > 1)){
-      rrbs.strain.mat[[i]] <- plot.centered.vals(val.list = rrbs.strain.list[[i]], 
-        seq.by = 1e-2, min.representation = 1, 
-        plot.line = FALSE, return.means = FALSE)
-    }else{
-      rrbs.strain.mat[[i]] <- NA
+if(!file.exists(rrbs.by.gene.file)){
+  gene.by.strain <- lapply_pb(common.genes, function(y) sapply(strain_rrbs_mat, function(x) x[which(rownames(x) == y),]))
+  names(gene.by.strain) <- common.genes
+  saveRDS(gene.by.strain, rrbs.by.gene.file)
+}else{
+  gene.by.strain <- readRDS(rrbs.by.gene.file)
+}
+
+gene.expr.cor.file <- here("Results", "RRBS", "RRBS.Expr.Cor.Across.Strains.RDS")
+if(!file.exists(gene.expr.cor.file)){
+  gene.expr.cor <- matrix(NA, nrow = length(gene.by.strain), ncol = ncol(strain_rrbs_mat[[1]]))
+  colnames(gene.expr.cor) <- colnames(strain_rrbs_mat[[1]])
+  rownames(gene.expr.cor) <- names(gene.by.strain)
+
+  expr.order <- order.strains(strains, names(strain.expr[[1]]), col.table)
+  for(i in 1:length(gene.by.strain)){
+    if(is.interactive){report.progress(i, length(gene.by.strain))}
+    gene.id <- transcript.info[match(names(gene.by.strain)[i], 
+      transcript.info[,"external_gene_name"]),"ensembl_gene_id"]
+    gene.idx <- match(gene.id, names(strain.expr))
+    if(length(scaled.expr[[gene.idx]]) > 1){
+      one.strain.expr <- scaled.expr[[gene.idx]][expr.order,1]
+      methyl.mat <- apply(gene.by.strain[[i]], 2, function(x) bin.vector(x, c(0, 50, 100)))
+      has.all <- which(apply(methyl.mat, 1, function(x) all(!is.na(x))))
+      if(length(has.all) > 0){
+        gene.expr.cor[i,has.all] <- apply(methyl.mat[has.all,,drop=FALSE], 1, function(x) cor(x, one.strain.expr))
+      }
     }
   }
-  saveRDS(rrbs.strain.mat, rrbs.strain.mat.file)
+  saveRDS(gene.expr.cor, gene.expr.cor.file)
 }else{
-  rrbs.strain.mat <- readRDS(rrbs.strain.mat.file)
+  gene.expr.cor <- readRDS(gene.expr.cor.file)
 }
+
+if(is.interactive){quartz()}
+plot.centered.mat(gene.expr.cor, ylim = c(-0.15, 0.15), 
+  ylab = "Pearson Correlation r Between DNA Methylation and Gene Expression",
+  plot.label = "")
+abline(v = c(0,1), h = 0)
 ```
 
-The following figure shows an example alignment for one gene.
-Hypomethylation at the TSS is shown as two blue bars at positions
-0 and 0.01. There is very little variation across the strains
-for this gene.
+The top figure below shows an example alignment for one gene.
+The color scale runs from blue to red indicating hypo- to 
+hypermethylation.
+
+The bottom figure shows the correlation between each position
+with methylation, and gene expression in the inbred mice. 
 
 ```{r rrbs_example, fig.width = 10, fig.height = 4}
-gene.name = "Gnai3"
-#gene.name <- "6530409C15Rik"
-#gene.name <- "Rps26-ps1"
-gene.locale <- which(names(rrbs.strain.mat) == gene.name)
-pheatmap(rrbs.strain.mat[[gene.locale]], cluster_rows = FALSE, cluster_cols = FALSE)
+#gene.name = "Gnai3"
+gene.name <- "Irf5"
+
+gene.locale <- which(names(gene.by.strain) == gene.name)
+if(is.interactive){quartz()}
+methyl.mat <- apply(t(gene.by.strain[[gene.locale]]), 2, function(x) bin.vector(x, c(0, 50, 100)))
+colnames(methyl.mat) <- round(as.numeric(colnames(methyl.mat)), 2)
+pheatmap(methyl.mat, cluster_rows = FALSE, cluster_cols = FALSE,
+main = gene.name)
+#boxplot(methyl.mat)
+if(is.interactive){quartz()}
+plot(as.numeric(colnames(gene.expr.cor)), gene.expr.cor[gene.name,], 
+xlab = "Relative Genomic Position", pch = 16, type = "h", main = gene.name,
+ylab = "Correlation Between DNA Methylation and Gene Expression")
+abline(h = 0)
+
 ```
+
+## Variation in Percent Methylation Across Strains
 
 We looked at the variation across all genes by subtracting the maximum methylation
 percent from the minimum methylation percent across strains at each position.
 
 ```{r methyl_var}
-methyl_var <- lapply(rrbs.strain.mat, function(x) if(length(x) > 1){apply(x, 2, function(y) max(y, na.rm = TRUE) - min(y,  na.rm = TRUE))}else{NA})
-plot.centered.vals(val.list = methyl_var, min.representation = 10, 
-plot.label = "Variation in Methylation", plot.individual = FALSE, ylim = c(0, 40), 
+
+get_methyl_var <- function(methyl.by.strain.mat){
+  var.v <- rep(NA, nrow(methyl.by.strain.mat))
+  has.vals <- which(apply(methyl.by.strain.mat, 1, function(x) all(!is.na(x))))
+  if(length(has.vals) > 0){
+    #methyl.max <- apply(methyl.by.strain.mat[has.vals,,drop=FALSE], 1, function(x) max(x, na.rm = TRUE))
+    #methyl.min <- apply(methyl.by.strain.mat[has.vals,,drop=FALSE], 1, function(x) min(x, na.rm = TRUE))
+    #var.v[has.vals] <- methyl.max - methyl.min
+    var.v[has.vals] <- apply(methyl.by.strain.mat[has.vals,,drop=FALSE], 1, function(x) sd(x, na.rm = TRUE))
+  }
+  return(var.v)
+}
+
+get_methyl_mean <- function(methyl.by.strain.mat){
+  mean.v <- rep(NA, nrow(methyl.by.strain.mat))
+  has.vals <- which(apply(methyl.by.strain.mat, 1, function(x) all(!is.na(x))))
+  if(length(has.vals) > 0){
+    mean.v[has.vals] <- apply(methyl.by.strain.mat[has.vals,,drop=FALSE], 1, function(x) mean(x, na.rm = TRUE))
+  }
+  return(mean.v)
+}
+
+methyl_var <- t(sapply(gene.by.strain, get_methyl_var))
+methyl_mean <- t(sapply(gene.by.strain, get_methyl_mean))
+```
+
+The following plot shows distributions of percent methylation by position
+across all genes. This plot makes it obious that there is low methylation
+with low variance in methylation at the TSS, and high methylation with 
+low variance toward the TES. All other positions have varying means, but
+also very high variaion in percent methylation.
+
+```{r methyl_var}
+boxplot(methyl_mean)
+```
+
+
+The following plot shows mean methylation plotted against the standard
+deviation of methylation. This plot reiterates the observation that 
+positions with very high or very low methylation are also consistent
+across strains. 
+
+```{r mean_var}
+if(is.interactive){quartz()}
+plot(as.vector(methyl_mean), as.vector(methyl_var), xlab = "Methylation Mean",
+  ylab = "Methylation SD")
+colnames(methyl_var) <- colnames(methyl_mean) <- rownames(gene.by.strain[[1]])
+```
+
+The following plot shows the same data as above, but with the methylation 
+percent binned. In this plot it is easier to see that methylation varies 
+vary little across strains when it is very high or very low.
+
+```{r mean_var_box}
+mean.bins <- seq(0, 100, 10)
+var_by_position <- sapply(1:ncol(methyl_mean), function(y) sapply(1:(length(mean.bins) - 1), function(x) mean(methyl_var[intersect(which(methyl_mean[,y] >= mean.bins[x]), which(methyl_mean[,y] <= mean.bins[(x+1)])),y], na.rm = TRUE)))
+rownames(var_by_position) <- apply(cbind(mean.bins[1:10], mean.bins[2:11]),1, function(x) paste0(x[1], "-", x[2]))
+colnames(var_by_position) <- round(as.numeric(colnames(methyl_mean)), 2)
+
+boxplot(t(var_by_position), ylab = "Methylation SD", xlab = "Methylation Mean")
+```
+
+The following plot again shows the same information as above, but this 
+time split by relative genomic position. The $x$-axis shows the genomic
+position relative to the gene body. The $y$-axis shows binned percent
+methylation mean, and the individual cells show the variation in percent
+methylation for the corresponding methylation mean and gene position.
+
+This plot shows that the low variation seen in positions with high or
+low mean methylation does not depend on position. All positions with 
+high or low percent methylation are stable across strains. Positions 
+with mid-range DNA methylation have higher variance. This variation
+may be slightly higher upstream of gene bodies, but the effect is 
+not very strong.
+
+
+```{r mean_var_heat}
+pheatmap(var_by_position, cluster_rows = FALSE, cluster_cols = FALSE, 
+  main = "Methylation Mean and SD by Relative Genomic Position")
+```
+
+The following plot shows that variaion in DNA methylation is lower 
+at the TSS than at other genomic positions. This is due to the 
+observation that variation is low when average methylation is low,
+and the TSS has the lowest methylation on average.
+
+```{r var_by_position}
+#quartz();barplot(colMeans(methyl_var, na.rm = TRUE))
+if(is.interactive){quartz(width = 8, height = 5)}
+plot.centered.mat(methyl_var, ylim = c(0, 10), 
 ylab = "Difference between maximum and minimum methylation",
-seq.by = 0.05, merge.by = 1, plot.line = TRUE, plot.hex = FALSE, 
-min.upstream = -2, max.downstream = 2, return.means = FALSE, verbose = FALSE)
-abline(v = c(0,1), h = 0)
+plot.label = "Methylation Variation")
+abline(v = c(0,1))
 ```
 
-## Methylation and Expression 
+The following plot shows the number of genes that have variation
+in methylation percent at each position. Now I'm confused. There is
+a very high number of genes with variation at the TSS. More than 
+anywhere else. But this variation is of particularly low magnitude?
 
-For each gene, we then correlated the methylation at each position with
-expression.
+```{r number_var}
+num.var.genes <- apply(methyl_var, 2, function(x) length(which(x > 0)))
+if(is.interactive){quartz()}
+plot(as.numeric(colnames(methyl_var)), num.var.genes, 
+  xlab = "Relative Gene Position", ylab = "Number of Genes with Variation", type = "l",
+  lwd = 3, col = "darkgray")
+abline(v = c(0,1), lty = 2)
 
-```{r methyl_expression_cor}
-gene.ids <- transcript.info[match(names(rrbs.strain.mat), transcript.info[,"external_gene_name"]),"ensembl_gene_id"]
-rrbs.expr.cor.r.file <- here("Results", "RRBS", "Expr.RRBS.Cor.r.RDS")
-rrbs.expr.cor.p.file <- here("Results", "RRBS", "Expr.RRBS.Cor.p.RDS")
-
-if(!file.exists(rrbs.expr.cor.r.file)){
-  rrbs.cor.r <- rrbs.cor.p <- vector(mode = "list", length = length(rrbs.strain.mat))
-  names(rrbs.cor.r) <- names(rrbs.cor.p) <- names(rrbs.strain.mat)
-
-  for(i in 1:length(rrbs.strain.mat)){
-    if(is.interactive){report.progress(i, length(rrbs.strain.mat))}
-    gene.id <- gene.ids[i]
-    methyl.mat <- rrbs.strain.mat[[i]]
-    #pheatmap(methyl.mat, cluster_rows = FALSE, cluster_cols = FALSE)
-    if(length(methyl.mat) > 1 && nrow(methyl.mat) > 2){
-      id.locale <- which(names(scaled.expr) == gene.id)
-      if(length(id.locale) > 0){
-        gene.expr <- scaled.expr[[id.locale]]
-        #gene.expr <- strain.expr[[id.locale]]
-        if(length(gene.expr) > 1){
-          expr.order <- match.order(rownames(methyl.mat), names(gene.expr), col.table)
-          expr.cor <- apply(methyl.mat, 2, 
-            function(x) if(length(which(!is.na(x))) > 2){cor.test(x, gene.expr[expr.order])}else{NA})
-            cor.r <- sapply(expr.cor, function(x) if(length(x) > 1){x$estimate}else{NA})
-            cor.p <- sapply(expr.cor, function(x) if(length(x) > 1){x$p.value}else{NA})
-            names(cor.r) <- gsub(".cor", "", names(cor.r))
-            rrbs.cor.r[[i]] <- cor.r
-            rrbs.cor.p[[i]] <- cor.p
-        }
-      }
-    }
-  }
-saveRDS(rrbs.cor.r, rrbs.expr.cor.r.file)
-saveRDS(rrbs.cor.p, rrbs.expr.cor.p.file)
-}else{
-  rrbs.cor.r <- readRDS(rrbs.expr.cor.r.file)
-  rrbs.cor.p <- readRDS(rrbs.expr.cor.p.file)
-}
+#plot(sort(methyl_var[,21])) #TSS variation
 ```
 
-We looked at the correlation of RRBS and expression across strains as a function 
-of gene position.
-
-There does not appear to be any overall correlation at all between 
-percentage of DNA methylation and expression along the gene body.
-
-There is an ever so slight dip in mean correlation with expression 
-near the TSS, but it is not impressive at all.
-
-```{r}
-cor.r.mat  <- plot.centered.vals(val.list = rrbs.cor.r, min.representation = 10, 
-plot.label = "Correlation between expression and DNA methylation",
-plot.individual = FALSE, ylim = c(-0.2, 0.2), ylab = "Correlation (r)",
-seq.by = 0.05, merge.by = 1, plot.line = TRUE, plot.hex = FALSE, 
-min.upstream = -2, max.downstream = 2, return.means = FALSE, verbose = FALSE)
-abline(v = c(0,1), h = 0)
-#boxplot(cor.r.mat);abline(h = 0, col = "red")
-
-#rrbs.cor.log.p <- lapply(rrbs.cor.p, function(x) if(length(x) > 1){-log10(x)})
-#log.p.mat <- plot.centered.vals(val.list = rrbs.cor.log.p, min.representation = 10, 
-#plot.label = "Correlation -log10(p) between expression and DNA methylation",
-#plot.individual = FALSE, ylim = c(0, 1), ylab = "-log10(p)",
-#seq.by = 0.01, merge.by = 1, plot.line = TRUE, plot.hex = FALSE, 
-#min.upstream = -2, max.downstream = 2, return.means = FALSE, verbose = FALSE)
-#abline(v = c(0,1))
-```
-
-
-```{r set_p}
-p.thresh = 0.001
-```
-
-We next asked whether there were any genes whose expression was correlated with 
-DNA methylation at any point at $p \leq$ `r p.thresh`. There are, but there is 
-still no overall pattern relating DNA methylation to gene expression.
-
-```{r any_gene}
-has.sig.cor <- lapply(rrbs.cor.p, function(x) if(length(x) > 1){which(x < p.thresh)})
-sig.cor <- which(sapply(has.sig.cor, function(x) length(x) > 1))
-#length(sig.cor)
-
-cor.mat <- plot.centered.vals(val.list = rrbs.cor.r[sig.cor], min.representation = 10, 
-plot.label = "Correlation between expression and DNA methylation Significant Genes Only",
-plot.individual = FALSE, ylim = c(-1, 1), ylab = "-log10(p)",
-seq.by = 0.01, merge.by = 1, plot.line = TRUE, plot.hex = FALSE, 
-min.upstream = -2, max.downstream = 2, return.means = FALSE, verbose = FALSE)
-
-#pheatmap(cor.mat, cluster_rows = FALSE, cluster_cols = FALSE, show_rownames = FALSE,
-#show_colnames = FALSE)
-```
-
-Above plots suggest that there is very little variation across strains
-in DNA methylation. Below we invesetigate this variation and its potential
-to be used in differential transcriptional regulation.
-
-The plot below shows average DNA methylation percent across all strains
-along the gene body. This confirms plots from above that all strains have
-hypomethylation at the TSS and increasing methylation throughtout the 
-gene body.
-
-```{r methyl_percent}
-strain.mean.rrbs <- lapply(rrbs.strain.mat, function(x) if(length(x) > 1){colMeans(x, na.rm = TRUE)})
-plot.centered.vals(strain.mean.rrbs, seq.by = 0.01, ylim = c(0,100))
-```
-
-## Methylation at the TSS and Expression
-
-We then investigated whether there were any genes that were hypomethylated
-at the TSS in some strains, but not others.
-
-
-```{r set_methyl_bins}
-methyl.bins <- seq(0, 100, 50)
-```
-
-We binned the methylation at the TSS into the follwing bins:
-
-```{r}
-df <- data.frame(consec.pairs(methyl.bins))
-colnames(df) <- c("min", "max")
-kable(df)
-```
-
-
-We looked at expression of genes with methylation percentages at the TSS
-falling into each of these bins. This time we scaled the expression across strains.
-
-```{r tss_methyl2}
-get_tss_methyl <- function(methyl.mat){
-  if(length(methyl.mat) > 1){
-    tss.pos <- get.nearest.pt(as.numeric(colnames(methyl.mat)), 0)
-    return(methyl.mat[,tss.pos])
-  }else{
-    return(NA)
-    }
-}
-
-tss.methyl <- lapply(rrbs.strain.mat, get_tss_methyl)
-binned.expr <- matrix(NA, nrow = length(tss.methyl), ncol = (length(methyl.bins)-1))
-rownames(binned.expr) <- names(rrbs.strain.mat)
-
-for(i in 1:length(tss.methyl)){
-  if(is.interactive){report.progress(i, length(tss.methyl))}
-  gene.id <- gene.ids[i]
-  if(length(tss.methyl[[i]]) > 1){
-    binned.methyl <- bin.vector2(tss.methyl[[i]], methyl.bins)
-    if(length(binned.methyl) > 1){
-      expr.locale <- which(names(scaled.expr) == gene.id)
-      if(length(expr.locale) > 0 && length(scaled.expr[[expr.locale]]) > 1){
-        expr.bin <- lapply(binned.methyl, 
-          function(x) if(length(x) > 1){scaled.expr[[expr.locale]][match.order(names(x), rownames(scaled.expr[[expr.locale]]), col.table)]}else{NA})
-        binned.expr[i,] <- sapply(expr.bin, mean)
-      }
-    }
-  }
-}
-```
-
-The histogram below shows the number of bins that are present at the TSS 
-for each gene. For the vast majority of genes the methylation level falls 
-into the same bin across all strains.
-
-There were very few genes for which methylation varied substantially
-at the TSS across strains.
-
-```{r methyl_bins}
-bins.occupied <- apply(binned.expr, 1, function(x) length(which(!is.na(x))))
-hist(bins.occupied)
-has.var <- which(bins.occupied > 1)
-```
-
-There were `r length(has.var)` genes with variation 
-in methylation across strains. Overall, it looks as if the genes in this 
-group that are highly methylated do have slightly lower expression than 
-ones that are less highly methylated, but it's not overwhelming.
-
-When we plot the two values against each other, they are negatively correlated.
-This means that genes with low expression and low methylation, tended to 
-have high expression and high methylation. And vice versa: genes with high 
-expression and low methylation tended to have low expression when methylated.
-What?
-
-What is that weird stripe in the plot? There seem to be spokes. 
-Is this an artifact of the scaling?
-
-So does methylation at the TSS reverse your expression? Rather than just 
-suppressing it overall? 
-
-```{r}
-colnames(binned.expr) <- apply(df, 1, function(x) paste(x, collapse = "-"))
-
-pairs(binned.expr, upper.panel = function(x,y) plot.with.model(x, y, add = TRUE),
-lower.panel = function(x,y) plot.with.model(x, y, add = TRUE, report = "cor.test"))
-
-expr.diff <- binned.expr[,2] - binned.expr[,1]
-pt.col <- rep("#5ab4ac", length(expr.diff)) #blue
-pt.col[which(expr.diff > 0)] <- "#d8b365"
-plot.with.model(binned.expr[has.var,1], binned.expr[has.var,2], report = "cor.test",
-col = pt.col[has.var], xlab = "Expression with lower methylation", 
-ylab = "Expression with higher methylation", 
-main = "Genes with Variation in Methylation at the TSS")
-abline(h = 0, v = 0)
-
-boxplot(binned.expr[has.var,])
-t.test(binned.expr[has.var,1], binned.expr[has.var,2])
-
-get_expr_slope <- function(expr.vals){
-  no.na <- which(!is.na(expr.vals))
-  if(length(no.na) > 1){
-    slope <- instant.slope(1:length(no.na), expr.vals[no.na])
-    return(slope)
-  }else{
-    return(NA)
-  }
-}
-expr.slope <- apply(binned.expr[has.var,], 1, get_expr_slope)
-```
-
-However, if we look at the slope in expression from low methylation to 
-high methylation, it goes both up and down. There's no overall trend 
-toward lower expression with higher methylation.
-
-```{r expr.slope}
-boxplot(unlist(expr.slope), breaks = 100)
-abline(h = 0)
-```
-
-## Gene subsets {.tabset .tabset-fade .tabset-pills}
-
-Below, we looked at subsets of genes that had expression significantly 
-correlated with DNA methylation, either positively, or negatively. 
-
-For both groups of genes, there does appear to be a peak correlation 
-around the TSS, but it's still quite weak.
-
-### Genes for which DNA methylation has a positive correlation with expression
-```{r pos_slope, fig.width = 10, fig.height = 4}
-pos.slope <- which(expr.slope > 0)
-pos.locale <- match(names(pos.slope), names(rrbs.cor.r))
-plot.centered.vals(val.list = rrbs.cor.r[pos.locale], min.representation = 10, 
-plot.label = "Correlation between expression and DNA methylation",
-plot.individual = FALSE, ylim = c(-0.2, 0.4), ylab = "Correlation (r)",
-seq.by = 0.01, merge.by = 1, plot.line = TRUE, plot.hex = FALSE, 
-min.upstream = -2, max.downstream = 2, return.means = FALSE, verbose = FALSE)
-abline(v = c(0,1), h = 0)
-```
-
-### Genes for which DNA methylation has a negative correlation with expression
-```{r neg_slope, fig.width = 10, fig.height = 4}
-neg.slope <- which(expr.slope < 0)
-neg.locale <- match(names(neg.slope), names(rrbs.cor.r))
-if(is.interactive){quartz(width = 10, height = 4)}
-plot.centered.vals(val.list = rrbs.cor.r[neg.locale], min.representation = 10, 
-plot.label = "Correlation between expression and DNA methylation",
-plot.individual = FALSE, ylim = c(-0.4, 0.4), ylab = "Correlation (r)",
-seq.by = 0.01, merge.by = 1, plot.line = TRUE, plot.hex = FALSE, 
-min.upstream = -2, max.downstream = 2, return.means = FALSE, verbose = FALSE)
-abline(v = c(0,1), h = 0)
-```
-
-## Expression on/off
-
-There are no overall correlations between expression and methylation.
-I think that what this is telling us is that no matter which strain you 
-extract hepatocytes from, you always get hepatocytes. 
-
-However, there is one more thing to look at. It is possible that there
-are some genes that are expressed highly in some strains, but not in 
-others in hepatocytes. These genes may be differentially methylated in
-a was that correlates with expression. 
-
-I will look for such genes and their patterns of methylation.
-First we identified genes for which some strains had an average 
-expression below 6, while others had expression above [some val].
-
-```{r on_off}
-on_and_off <- function(gene.expr, off_thresh = 6, on_thresh = 15){
-  off.locale <- which(gene.expr <= off_thresh)
-  on.locale <- which(gene.expr >= on_thresh)
-  if(length(off.locale) > 0 && length(on.locale) > 0){
-    return(TRUE)
-  }else{
-    return(FALSE)
-  }
-}
-off_thresh = 6
-on_thresh = 10
-on.off.expr <- which(sapply(strain.expr, function(x) on_and_off(x, off_thresh, on_thresh)))
-```
-
-There are `r length(on.off.expr)` genes with some strains expressing below
-`r off_thresh` and other expressing above `r on_thresh`.
-
-There is still no overall pattern in DNA methylation across strains for these 
-genes.
-
-```{r}
-on.off.genes <- transcript.info[match(names(on.off.expr), transcript.info[,"ensembl_gene_id"]), "external_gene_name"]
-on.off.locale <- match(on.off.genes, names(rrbs.cor.r))
-rmat <- plot.centered.vals(val.list = rrbs.cor.r[on.off.locale], min.representation = 10, 
-plot.label = "Correlation between expression and DNA methylation",
-plot.individual = FALSE, ylim = c(-0.4, 0.4), ylab = "Correlation (r)",
-seq.by = 0.1, merge.by = 1, plot.line = TRUE, plot.hex = FALSE, 
-min.upstream = -2, max.downstream = 2, return.means = FALSE, verbose = FALSE)
-abline(v = c(0,1), h  = 0)
-
-#pheatmap(rmat, cluster_rows = FALSE, cluster_cols = FALSE)
-boxplot(rmat)
-abline(h = 0)
-```

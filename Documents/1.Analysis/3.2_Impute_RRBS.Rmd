@@ -1,0 +1,193 @@
+---
+title: "DNA Methylation in the DO"
+author: Anna L Tyler
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  html_document:
+    code_folding: hide
+    collapsed: no
+    toc: yes
+    toc_float: yes
+---
+
+The purpose of this workflow is to impute DNA methylation states
+in DO mice and map local gene expression.
+
+```{r load_libraries}
+library(here)
+is.interactive = FALSE
+#is.interactive = TRUE
+```
+
+```{r source_code}
+all.code.dir <- list.files(here("Code"), full.names = TRUE)
+for(i in 1:length(all.code.dir)){
+	all.fun <- list.files(all.code.dir[i], full.names = TRUE)
+	for(j in 1:length(all.fun)){source(all.fun[j])}
+}
+```
+
+
+```{r load_other_lib}
+needed.packages <- c("qtl2", "abind", "pheatmap")
+load_libraries(needed.packages)
+```
+
+
+```{r read_data}
+gene.info <- readRDS(here("Data", "RNASeq", "RNASeq_gene_info.RData"))
+strain.table <- as.matrix(read.delim(here("Data", "support_files", "strain.color.table.txt"),
+comment.char = "!", header = FALSE))
+
+vars <- load(here("Data", "DOQTL", "Svenson_DO850_for_eQTL_viewer_v9.RData"))
+expr <- dataset.mrna$data$rz
+covar <- dataset.mrna$covar.matrix
+
+col.table <- as.matrix(read.table(here("Data", "support_files", "strain.color.table.txt"), 
+sep = "\t", comment.char = "%", stringsAsFactors = FALSE))
+strains <- col.table[,6]
+```
+
+Read in the gene methylation data from 3.1.1_RRBS_Analysis.Rmd
+
+```{r gene_methyl}
+methyl.mat.file <- here("Results", "RRBS", "Aligned.Methyl.Mats.RDS")
+methyl.mats <- readRDS(methyl.mat.file)
+
+#transcripts that are shared between RRBS and DO expression data
+methyl.id <- gene.info[match(names(methyl.mats), gene.info[,"external_gene_name"]),"ensembl_gene_id"]
+methyl.id <- methyl.id[which(!is.na(methyl.id))]
+ordered.transcript.info <- gene.info[match(methyl.id, gene.info[,"ensembl_gene_id"]),]
+```
+
+```{r fun}
+get_nearest_marker <- function(chr, start.pos){
+    if(is.na(chr)){return(NA)}
+    if(chr == "MT"){return(NA)}
+    chr.locale <- which(names(map) == chr)
+    nearest.marker <- get.nearest.pt(map[[chr.locale]], start.pos/1e6)
+    marker.geno <- genoprobs[[chr.locale]][,,nearest.marker]
+    return(marker.geno)
+}
+
+rrbs_geno <- function(gene.rrbs.array, haplotype.matrix, gene.chr){
+    if(length(gene.rrbs.array) == 1){return(NA)}
+    if(length(haplotype.matrix) <= 1){return(NA)}
+    #filter out NAs
+    has.all <- which(apply(gene.rrbs.array, 2, function(x) all(!is.na(x))))
+    if(length(has.all) <= 1){return(NA)}
+    #quartz();plot.methyl.mat(gene.rrbs.array[,has.all])
+    #quartz();boxplot(gene.rrbs.array[,has.all])
+    #quartz();pheatmap(cor(gene.rrbs.array[,has.all]), cluster_rows = FALSE, cluster_cols = FALSE)
+
+    #bin the methylation into 0 and 100
+    #this prevents transferring haplotypes directly
+    #to directly onto very small variations in methylation
+    binned.rrbs <- t(apply(gene.rrbs.array[,has.all,drop=FALSE], 1, function(x) bin.vector(x, c(0, 50, 100))))
+
+    all.rrbs <- haplotype.matrix %*% binned.rrbs
+    #pheatmap(all.rrbs, cluster_cols = FALSE)
+    #boxplot(all.rrbs) 
+    #pheatmap(haplotype.matrix)
+    #hap.cor <- matrix(NA, nrow = ncol(haplotype.matrix), ncol = ncol(all.rrbs))
+    #rownames(hap.cor) <- colnames(haplotype.matrix)
+    #colnames(hap.cor) <- colnames(all.rrbs)
+    #for(i in 1:ncol(haplotype.matrix)){    
+    #  hap.cor[i,] <- apply(all.rrbs, 2, function(x) cor(x, haplotype.matrix[,i]))
+    #}
+    #pheatmap(hap.cor, cluster_rows = FALSE, cluster_cols = FALSE)
+    #which(hap.cor[1,] == 1)
+    #gene.rrbs.array[,"67245515"]
+    
+    
+    all.rrbs.mat <- abind(all.rrbs, round(100-all.rrbs), along = 3)
+    dimnames(all.rrbs.mat)[[3]] <- c("A", "B")
+    all.rrbs.array <- aperm(all.rrbs.mat, c(1,3,2))
+    one.geno <- list(all.rrbs.array)
+
+    #add attributes
+    names(one.geno) <- gene.chr
+    if(gene.chr == "X"){
+      attr(one.geno, "is_x_chr") <- TRUE
+    }else{
+      attr(one.geno, "is_x_chr") <- FALSE
+    }
+    attr(one.geno, "crosstype") <- "do"
+    attr(one.geno, "alleles") <- dimnames(all.rrbs.array)[[3]]
+    attr(one.geno, "alleleprobs") <- TRUE
+    attr(one.geno, "class") <- c("calc_genoprob", "list")
+    return(one.geno)
+}
+
+```
+
+
+## Get Genotypes for Nearest Markers
+
+For every gene in our list, pull out the genotype matrix for the marker
+nearest the TSS.
+
+```{r set_gene}
+gene.marker <- vector(mode = "list", length = length(methyl.id))
+names(gene.marker) <- methyl.id
+for(i in 1:length(methyl.id)){
+  if(is.interactive){report.progress(i, length(methyl.id))}
+  gene.chr <- ordered.transcript.info[i,"chromosome_name"]
+  gene.pos <- ordered.transcript.info[i, "start_position"]
+  if(gene.chr != "Y" && gene.chr != "MT"){
+    gene.marker[[i]] <- get_nearest_marker(gene.chr,gene.pos) 
+  }
+}
+```
+
+## Impute DO methylation percent and map
+
+Derive DNA methylation percentages for each mouse given 
+the genoprobs and the methylation data compiled from 3.1.1_RRBS_Analysis.Rmd. 
+This array will have DNA methylation percentage estimates for each 
+individual by position.
+
+To generate this array we multiply each DNA methylation matrix along 
+the genome by the haplotype matrix for the gene.
+
+```{r scan_rrbs_geno}
+#convert to RRBS arrays and scan.
+#The arrays are too big to store, so we
+#scan them right away and only keep the 
+#LOD scores.
+strain.order <- order.strains(dimnames(genoprobs[[1]])[[2]], rownames(methyl.mats[[1]]), col.table)
+common.ind <- intersect(rownames(expr), rownames(genoprobs[[1]]))
+common.expr.locale <- match(common.ind, rownames(expr))
+common.genoprob.locale <- match(common.ind, rownames(genoprobs[[1]]))
+rrbs.lod.file <- here("Results", "RRBS", "RRBS.LOD.scores.RDS")
+rrbs.r2.file <- here("Results", "RRBS", "RRBS.R2.RDS")
+if(!file.exists(rrbs.lod.file)){
+    all.rrbs.lod <- all.rrbs.r2 <- vector(mode = "list", length = length(methyl.id))
+    names(all.rrbs.lod) <- names(all.rrbs.r2) <- methyl.id
+    for(i in 1:length(all.rrbs.lod)){
+        if(is.interactive){report.progress(i, length(all.rrbs.lod))}
+        methyl.mat.locale <- which(names(methyl.mats) == ordered.transcript.info[i,"external_gene_name"])
+        if(length(methyl.mats[[methyl.mat.locale]]) > 1 && nrow(methyl.mats[[methyl.mat.locale]]) <= 5000){
+          transcript.chr <- ordered.transcript.info[i,"chromosome_name"]
+          if(!is.na(transcript.chr) && transcript.chr != "X" && transcript.chr != "MT"){
+              rrbs.mat <- methyl.mats[[methyl.mat.locale]][strain.order,,drop=FALSE]
+              hap.mat <- gene.marker[[i]]
+              rrbs.array <- rrbs_geno(gene.rrbs.array = rrbs.mat, haplotype.matrix = hap.mat, 
+              gene.chr = ordered.transcript.info[i,"chromosome_name"])
+              if(!is.na(rrbs.array)){
+                gene.expr <- expr[,which(colnames(expr) == methyl.id[i]),drop=FALSE]
+                if(length(gene.expr) > 0){
+                  all.rrbs.lod[[i]] <- scan1(rrbs.array, gene.expr)
+                  #quartz();plot(as.numeric(rownames(all.rrbs.lod[[i]])), all.rrbs.lod[[i]][,1], type  = "h",xlab = "Genomic Position", ylab = "DNA Methylation LOD score")
+                  regression.models <- apply(rrbs.array[[1]][common.genoprob.locale,1,], 2, function(x) if(var(x) > 0){lm(gene.expr[common.expr.locale,]~x)}else{NA})
+                  all.rrbs.r2[[i]] <- sapply(regression.models, function(x) if(length(x) > 1){summary(x)$adj.r.squared}else{NA})
+                  #quartz();barplot(r2)
+                }
+              }
+          }
+        }
+    }
+    saveRDS(all.rrbs.lod, rrbs.lod.file)
+    saveRDS(all.rrbs.r2, rrbs.r2.file)
+}
+```

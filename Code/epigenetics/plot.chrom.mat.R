@@ -3,13 +3,15 @@
 #state colors
 #island.bins is for drawing outlines of methyl bins
 
-plot.chrom.mat <- function(state.mat, num.states = 8, xlim = NULL, island.bins = NULL,
-line.color = "gray"){
+plot.chrom.mat <- function(state.mat, num.states = 8, xlim = NULL, 
+state.labels = 1:num.states, ylab = "Chromatin State", island.bins = NULL, 
+line.color = "gray", state.cols = NULL){
 
     #pheatmap(state.mat, cluster_rows = FALSE, cluster_cols = FALSE)
-
-    state.cols <- colors.from.values(1:num.states, use.pheatmap.colors = TRUE, 
-    global.color.scale = TRUE, global.min = 1, global.max = num.states)
+    if(is.null(state.cols)){
+        state.cols <- colors.from.values(1:num.states, use.pheatmap.colors = TRUE, 
+        global.color.scale = TRUE, global.min = 1, global.max = num.states)
+    }
 
     methyl.pos <- as.numeric(colnames(state.mat))
     if(is.null(xlim)){xlim <- c(min(methyl.pos), max(methyl.pos))}
@@ -53,7 +55,7 @@ line.color = "gray"){
         }
     }
     par(xpd = FALSE)
-    mtext("Chromatin State", side = 2)
+    mtext(ylab, side = 2)
 
     if(!is.null(island.bins)){
         u_islands <- unique(island.bins[,1])
@@ -80,7 +82,7 @@ line.color = "gray"){
     for(i in 1:(length(yseg)-1)){
         draw.rectangle(xmin, xmax, yseg[i], yseg[i+1], fill = state.cols[i], 
         border.col = line.color)
-        text(x = xmid, y = mean(c(yseg[i], yseg[i+1])), labels = i)
+        text(x = xmid, y = mean(c(yseg[i], yseg[i+1])), labels = state.labels[i])
     }
 
     par(xpd = FALSE)

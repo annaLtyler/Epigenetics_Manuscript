@@ -1,0 +1,335 @@
+plot(adipose.mod.qtl, map = map, lodcol = mod.locale)
+mod.idx <- which(names(mem) == gsub("ME", "", mod))
+mod.genes <- mem[[mod.idx]]
+length(mod.genes)
+gene.idx <- match(mod.genes, gene.info[,1])
+gene.table <- gene.info[gene.idx,]
+gene.table
+table(gene.table[,"chr"])
+barplot(table(gene.table[,"chr"]))
+gene.lod.idx <- which(lod.table[,1] %in% mod.genes)
+gene.lod.table <- lod.table[gene.lod.idx,]
+dim(gene.lod.table)
+plot(adipose.mod.qtl, map = map, lodcol = mod.locale)
+head(gene.lod.table)
+lod.chr <- strsplit(gene.lod.table[,"marker"], "_")
+lod.chr <- strsplit(gene.lod.table[,"marker.id"], "_")
+lod.chr
+lod.chr <- sapply(strsplit(gene.lod.table[,"marker.id"], "_"), function(x) x[1])
+lod.chr
+barplot(table(lod.chr))
+plot(adipose.mod.qtl, map = map, lodcol = mod.locale)
+barplot(table(lod.chr))
+head(gene.lod.table, 20)
+gene.id <- "ENSMUSG00000000948"
+gene.locale <- which(colnames(expr) == gene.id)
+gene.scan <- scan1(genoprobs, expr[,gene.locale], addcovar = dataset.DO.Cube.Adipose$covar.matrix, kinship = K)
+plot(gene.scan, map = map)
+chr = 7
+gene.coef <- scan1coef(genoprobs[,chr], expr[,gene.locale], addcovar = dataset.DO.Cube.Adipose$covar.matrix, kinship = K[[chr]])
+plot_coefCC(gene.coef, map = map)
+length(mod.genes)
+library(WGCNA)
+?blockwiseModules
+library(WGCNA)
+?blockwiseModules
+library(propagate)
+mat <- matrix(rnorm(100), 10, 10)
+test <- bigcor(mat)
+test
+pheatmap(test)
+library(pheatmap)
+pheatmap(test)
+class(test)
+pheatmap(test[[1]])
+test[[1]]
+test[[2]]
+pheatmap(as.matrix(test))
+as.matrix(test)
+dim(test)
+?propagate
+?blockwiseModules
+library(WGCNA)
+?blockwiseModules
+install.packages("tinytex")
+library(tinytex)
+q()
+library(WGCNA)
+citation(WGCNA)
+citation("WGCNA")
+library(qtl2)
+citation("qtl2")
+library(qtl2)
+?find_peaks
+test <- readRDS("~/Documents/Projects/Epigenetics/Epigenetics_Manuscript/Results/ChromHMM/9_states_C/Chromatin.State.Position.Far.Genes.RDS")
+str(test)
+length(test)
+length(test[[1]])
+str(test[[1]])
+if (!requireNamespace("BiocManager", quietly = TRUE))#
+    install.packages("BiocManager")#
+#
+BiocManager::install("simplifyEnrichment")
+library(simplifyEnrichment)
+BiocManager::install("ComplexHeatmap")
+BiocManager::install("simplifyEnrichment")
+?GO_similarity
+library(simplifyEnrichment)
+GO_similarity
+?GO_similarity
+?simplifyGO
+library(simplifyEnrichment)
+?GO_similarity
+?compare_clustering_methods
+?simplifyGOFromMultipleLists
+page(simplifyGOFromMultipleLists)
+library(RColorBrewer)
+brewer_pal_all()
+?brewer_pal
+??brewer_pal
+??brewer
+??show_pal
+??brewer_pal
+??all
+display.brewer.all()
+library(qtl2)
+?fit1
+?scan1blup
+library(RColorBrewer)
+display.brewer.all()
+library(simplifyGo)
+library(simplifyEnrichment)
+?simplify_GO
+?simplifyGO
+page(simplifyGO)
+?binary_cut
+library(simplifyEnrichment)
+page(simplifyGO)
+library(kohonen)
+?som
+plot.som
+?som.plot
+??som.plot
+??plot.som
+?som
+mod.mem <- readRDS("~/Dropbox (JAX)/Jax Summer 2021/Projects/Module_Mapping/Data/Adipose/Module_Membership.RDS")
+str(mod.mem)
+test <- unlist(mod.mem)
+str(test)
+head(test)
+mod.names <- sapply(1:length(mod.mem), function(x) rep(names(mod.mem)[x], length(mod.mem[[x]])))
+head(mod.names)
+mod.names <- sapply(1:length(mod.mem), function(x) paste0("Mod", rep(names(mod.mem)[x], length(mod.mem[[x]])))
+)
+str(mod.names)
+mod.transcripts <- matrix(unlist(mod.mem), ncol = 1)
+head(mod.transcripts)
+mod.transcript.info <- cbind(mod.names, mod.transcripts)
+mod.names <- sapply(1:length(mod.mem), function(x) paste0("Mod", rep(names(mod.mem)[x], length(mod.mem[[x]]))))
+mod.transcript.info <- cbind(mod.names, mod.transcripts)
+length(mod.transcripts)
+length(mod.names)
+mod.transcript.info <- cbind(unlist(mod.names), mod.transcripts)
+head(mod.transcript.info)
+qtl.transcripts <- sample(unlist(mod.mem), 100)
+qtl.transcripts
+eqtl.transcripts <- sample(unlist(mod.mem), 100)
+eqtl.mod <- match(eqtl.transcripts, mod.transcript.info[,2])
+eqtl.mod
+eqtl.mod <- mod.transcript.info[eqtl.mod.idx,1]
+eqtl.mod.idx <- match(eqtl.transcripts, mod.transcript.info[,2])
+eqtl.mod <- mod.transcript.info[eqtl.mod.idx,1]
+eqtl.mod
+rnd.transcript.table <- cbind(eqtl.mod, eqtl.transcripts)
+rnd.transcript.table
+library(simplifyEnrichment)
+?GO_similarity
+a <- matrix(rnorm(100), 10, 10)
+a
+b <- matrix(rnorm(100), 10, 10)
+b
+plot(a, b)
+plot(as.vector(a), as.vector(b))
+plot(a, b, xlab = "Distance Between Transcripts", ylab = "Allele Correlation")
+source('~/Documents/R/shiny/Chromatin_State_and_eQTL_Viewer/code/useful_r_code/sliding.window.el.R', chdir = TRUE)
+gene.windows <- sliding.window.el(seq.int(-1, 2, length.out = 100), 10, 5)
+gene.windows
+sapply(gene.windows, length)
+sapply(gene.windows, function(x) max(x) - min(x))
+length(gene.windows)
+q()
+library(kohonen)
+?som
+cent <- list()
+cent$overlap <- rnorm(100)
+cent$no-overlap <- rnorm(100)
+cent$nooverlap <- rnorm(100)
+cent
+boxplot(cent)
+test <- readRDS("~/Desktop/eQTL_stats.RDS")
+str(test)
+library(pheatmap)
+islet.trait.cor <- test[[1]]$invivo_me_cor
+str(islet.trait.cor)
+pheatmap(islet.trait.cor)
+pheatmap(t(islet.trait.cor))
+pdf("~/Desktop/trait.cor.pdf", width = 10, height = 7)
+pheatmap(t(islet.trait.cor))
+dev.off()
+pdf("~/Desktop/trait.cor.pdf", width = 12, height = 5.5)
+pheatmap(t(islet.trait.cor))
+dev.off()
+mod <- c(72, 45, 9, 43, 58, 65, 46, 59, 64, 66, 63, 62, 67)
+mod.locale <- match(rownames(trait.islet.cor))
+mod.locale <- match(rownames(islet.trait.cor))
+mod.locale <- match(mod, rownames(islet.trait.cor))
+mod.locale
+rownames(islet.trait.cor)
+mod.names <- paste0("ME", mod)
+mod.locale <- match(mod.rownames(islet.trait.cor))
+mod.locale <- match(rownames(islet.trait.cor))
+mod.locale <- match(mod, rownames(islet.trait.cor))
+mod.locale
+mod
+mod.locale <- match(mod.names, rownames(islet.trait.cor))
+mod.locale
+mod.cor <- islet.trait.cor[modl.locale,]
+mod.cor <- islet.trait.cor[mod.locale,]
+setdiff(mod.locale, 1:nrow(islet.trait.cor))
+setdiff(1:nrow(islet.trait.cor), mod.locale)
+other.locale <- setdiff(1:nrow(islet.trait.cor), mod.locale)
+boxplot(as.vector(islet.trait.cor[mod.locale,]), as.vector(islet.trait.cor[other.locale,]))
+boxplot(abs(as.vector(islet.trait.cor[mod.locale,])), abs(as.vector(islet.trait.cor[other.locale,])))
+library(qtl2)
+?scan1
+source('~/Documents/git_repositories/useful_r_code/plot.hexbin.R')
+x <- rnorm(100)
+y <- rnorm(100)
+plot.hexbin(x,y)
+library(oposSOM)
+?opossom.run
+?barplot
+??pam
+library(cluster)
+?cluster
+??cluster
+?pam
+test <- readRDS("~/Documents/Projects/Epigenetics/Epigenetics_Manuscript/Results/SNPs/Sanger.SNP.Tables.RDS")
+min(which(length(sapply(test, length) == 0)))
+min(which(length(sapply(test, length)) == 0))
+results <- sapply(test, length)
+head(results)
+which(results == 0)
+min(which(results == 0))
+i = 3301
+names(results)
+names(test)
+str(test)
+setwd("~/Documents/Projects/Epigenetics/Epigenetics_Manuscript/")
+num.states = 9#
+gene.buffer = 1000 #base pair buffer around gene when looking for SNPs#
+snp.alleles <- c("A", "C", "G", "T") #alleles of SNPs#
+save.every = 100
+library(here)
+all.code.dir <- list.files(here("Code"), full.names = TRUE)#
+for(i in 1:length(all.code.dir)){#
+	all.fun <- list.files(all.code.dir[i], full.names = TRUE)#
+	for(j in 1:length(all.fun)){source(all.fun[j])}#
+}
+gene.info <- readRDS(here("Data", "RNASeq", "RNASeq_gene_info.RData"))#
+strain.table <- as.matrix(read.delim(here("Data", "support_files", "strain.color.table.txt"),#
+comment.char = "!", header = FALSE))
+chrom.mats <- readRDS(here("Results", "ChromHMM", paste0(num.states, "_states_C"), #
+paste0("Chromatin_States_", num.states, "_full_gene_1000.RData")))
+expr <- readRDS("~/Documents/Projects/Epigenetics/Epigenetics_Manuscript/Data/DOQTL/DO_Expression.RDS")
+common.transcripts <- intersect(colnames(expr), names(chrom.mats))
+transcript.info.table <- gene.info[match(common.transcripts, gene.info[,"ensembl_gene_id"]),]
+str(common.transcripts)
+str(expr)
+expr.data <- readRDS(here("Data", "DOQTL", "DO_Expression.RDS"))#
+expr <- expr.data$expr#
+covar <- expr.data$covar
+common.transcripts <- intersect(colnames(expr), names(chrom.mats)) #
+transcript.info.table <- gene.info[match(common.transcripts, gene.info[,"ensembl_gene_id"]),]
+str(common.transcripts)
+i
+table_to_snp_mat <- function(snp.table, snp.alleles, strain.key, strain.locale){#
+    #The SNP matrix holds genotypes for each strain at #
+    #each position in the gene. Each position is in a row#
+    #A 1 indicates that the strain at that position has #
+    #the particular allele#
+    if(length(snp.table) == 0){return(NA)}#
+    snp.mat <- array(0, dim = c(nrow(snp.table), 8, 4), #
+        dimnames = list(snp.table[,"Position"], LETTERS[1:8], snp.alleles))#
+    strain.names <- gsub("/", "_", str_trim(strain.key[,2]))#
+    for(i in 1:nrow(snp.table)){#
+        ref.allele <- which(snp.alleles == snp.table[i,"Ref"])#
+        snp.mat[i,,ref.allele] <- 1 #start with everyone having the reference allele#
+        alt.allele <- trim_alt_allele(snp.table[i,strain.locale])#
+        alt.strain <- strain.table[match(names(alt.allele), strain.names),5]#
+        #take out DBA, because this isn't in the DO#
+        alt.strain <- alt.strain[which(!is.na(alt.strain))]#
+        #set the strains with SNPs to 0 for the referece allele #
+        snp.mat[i,alt.strain,ref.allele] <- 0#
+        #and set the alternate allele to 1 for these strains#
+        snp.mat[i,alt.strain, alt.allele] <- 1#
+    }#
+    return(snp.mat)#
+}
+get_nearest_marker <- function(chr, start.pos){#
+    if(is.na(chr)){return(NA)}#
+    if(chr == "MT"){return(NA)}#
+    chr.locale <- which(names(map) == chr)#
+    nearest.marker <- get.nearest.pt(map[[chr.locale]], start.pos)#
+    marker.geno <- genoprobs[[chr.locale]][,,nearest.marker]#
+    return(marker.geno)#
+}#
+#
+trim_alt_allele <- function(alt_allele, allowable_alleles = snp.alleles){#
+    allele.names <- names(alt_allele)#
+    caps_allele <- str_to_upper(alt_allele)#
+    names(caps_allele) <- allele.names#
+    allowable_locale <- which(caps_allele %in% allowable_alleles)#
+    trimmed_allele <- caps_allele[allowable_locale]#
+    return(trimmed_allele)#
+}
+snp_geno <- function(gene.snp.array, haplotype.matrix, gene.chr){#
+    if(length(gene.snp.array) == 1){return(NA)}#
+    all.snp <- lapply(1:nrow(gene.snp.array), #
+        function(x) haplotype.matrix %*% gene.snp.array[x,,])#
+    all.snp.mat <- abind(all.snp, along = 3)#
+    dimnames(all.snp.mat)[[3]] <- paste(gene.chr, rownames(gene.snp.array), sep = "_")#
+    one.geno <- list(all.snp.mat)#
+#
+    #add attributes#
+    names(one.geno) <- gene.chr#
+    if(gene.chr == "X"){#
+      attr(one.geno, "is_x_chr") <- TRUE#
+    }else{#
+      attr(one.geno, "is_x_chr") <- FALSE#
+    }#
+    attr(one.geno, "crosstype") <- "do"#
+    attr(one.geno, "alleles") <- dimnames(gene.snp.array)[[3]]#
+    attr(one.geno, "alleleprobs") <- TRUE#
+    attr(one.geno, "class") <- c("calc_genoprob", "list")#
+    return(one.geno)#
+}
+one.gene.snps <- function(i){#
+    if(is.na(transcript.info.table[i,"chromosome_name"])){return(NA)}#
+    if(transcript.info.table[i,"chromosome_name"] == "MT"){return(NA)}#
+    gene.snps <- get.sanger.snps(transcript.info.table[i,"chromosome_name"], #
+        start.pos = transcript.info.table[i,"start_position"] - gene.buffer, #
+        end.pos = transcript.info.table[i,"end_position"] + gene.buffer)#
+    return(gene.snps)#
+}
+i
+i = 3301
+transcript.info.table[i,"chromosome_name"]
+gene.snps <- get.sanger.snps(transcript.info.table[i,"chromosome_name"], #
+        start.pos = transcript.info.table[i,"start_position"] - gene.buffer, #
+        end.pos = transcript.info.table[i,"end_position"] + gene.buffer)
+library(curl)
+gene.snps <- get.sanger.snps(transcript.info.table[i,"chromosome_name"], #
+        start.pos = transcript.info.table[i,"start_position"] - gene.buffer, #
+        end.pos = transcript.info.table[i,"end_position"] + gene.buffer)
+str(gene.snps)

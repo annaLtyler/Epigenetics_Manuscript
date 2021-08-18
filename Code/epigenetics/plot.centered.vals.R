@@ -15,8 +15,9 @@
 
 plot.centered.vals <- function(val.list, min.representation = 10, plot.label = "Center",
 plot.individual = FALSE, ylim = c(0, 50), ylab = "Methylation Percent Mean",
-seq.by = 1, merge.by = 1, plot.line = TRUE, plot.hex = FALSE, 
-min.upstream = -2, max.downstream = 2, return.means = TRUE, verbose = FALSE){
+sum.fun = c("mean", "median"), seq.by = 1, merge.by = 1, plot.line = TRUE, 
+plot.hex = FALSE, min.upstream = -2, max.downstream = 2, return.means = TRUE, 
+verbose = FALSE){
   
   not.null <- which(sapply(val.list, function(x) !all(is.na(x))))
   if(length(not.null) == 0){
@@ -25,8 +26,8 @@ min.upstream = -2, max.downstream = 2, return.means = TRUE, verbose = FALSE){
   sub.val.list <- val.list[not.null]
 
   all.pos <- unlist(sapply(sub.val.list, function(x) as.numeric(names(x))))
-  min.x <- max(c(floor(min(all.pos)), min.upstream))
-  max.x <- min(c(ceiling(max(all.pos)), max.downstream))
+  min.x <- max(c(floor(min(all.pos, na.rm = TRUE)), min.upstream))
+  max.x <- min(c(ceiling(max(all.pos, na.rm = TRUE)), max.downstream))
   all.vals <- unlist(sub.val.list)
   min.val <- min(all.vals, na.rm = TRUE)
   max.val <- max(all.vals, na.rm = TRUE)
@@ -101,7 +102,9 @@ min.upstream = -2, max.downstream = 2, return.means = TRUE, verbose = FALSE){
     }
   sub.bulk.mat <- merged.mat[,high.rep,drop=FALSE]
 
-  methyl.means <- colMeans(sub.bulk.mat, na.rm = TRUE)
+  merge.fun <- match.fun(sum.fun[1])
+
+  methyl.means <- apply(sub.bulk.mat, 2, function(x) merge.fun(x, na.rm = TRUE))
   methyl.var <- apply(sub.bulk.mat, 2, function(x) sd(x, na.rm = TRUE)/sqrt(length(which(!is.na(x)))))
 
   if(plot.line){

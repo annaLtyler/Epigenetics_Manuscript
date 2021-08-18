@@ -1,0 +1,316 @@
+
+## Methylation and Expression 
+
+For each gene, we then correlated the methylation at each position with
+expression.
+
+```{r methyl_expression_cor}
+gene.ids <- transcript.info[match(names(rrbs.strain.mat), transcript.info[,"external_gene_name"]),"ensembl_gene_id"]
+rrbs.expr.cor.r.file <- here("Results", "RRBS", "Expr.RRBS.Cor.r.RDS")
+rrbs.expr.cor.p.file <- here("Results", "RRBS", "Expr.RRBS.Cor.p.RDS")
+
+if(!file.exists(rrbs.expr.cor.r.file)){
+  rrbs.cor.r <- rrbs.cor.p <- vector(mode = "list", length = length(rrbs.strain.mat))
+  names(rrbs.cor.r) <- names(rrbs.cor.p) <- names(rrbs.strain.mat)
+
+  for(i in 1:length(rrbs.strain.mat)){
+    if(is.interactive){report.progress(i, length(rrbs.strain.mat))}
+    gene.id <- gene.ids[i]
+    methyl.mat <- rrbs.strain.mat[[i]]
+    #pheatmap(methyl.mat, cluster_rows = FALSE, cluster_cols = FALSE)
+    if(length(methyl.mat) > 1 && nrow(methyl.mat) > 2){
+      id.locale <- which(names(scaled.expr) == gene.id)
+      if(length(id.locale) > 0){
+        gene.expr <- scaled.expr[[id.locale]]
+        #gene.expr <- strain.expr[[id.locale]]
+        if(length(gene.expr) > 1){
+          expr.order <- match.order(rownames(methyl.mat), names(gene.expr), col.table)
+          expr.cor <- apply(methyl.mat, 2, 
+            function(x) if(length(which(!is.na(x))) > 2){cor.test(x, gene.expr[expr.order])}else{NA})
+            cor.r <- sapply(expr.cor, function(x) if(length(x) > 1){x$estimate}else{NA})
+            cor.p <- sapply(expr.cor, function(x) if(length(x) > 1){x$p.value}else{NA})
+            names(cor.r) <- gsub(".cor", "", names(cor.r))
+            rrbs.cor.r[[i]] <- cor.r
+            rrbs.cor.p[[i]] <- cor.p
+        }
+      }
+    }
+  }
+saveRDS(rrbs.cor.r, rrbs.expr.cor.r.file)
+saveRDS(rrbs.cor.p, rrbs.expr.cor.p.file)
+}else{
+  rrbs.cor.r <- readRDS(rrbs.expr.cor.r.file)
+  rrbs.cor.p <- readRDS(rrbs.expr.cor.p.file)
+}
+```
+
+We looked at the correlation of RRBS and expression across strains as a function 
+of gene position.
+
+There does not appear to be any overall correlation at all between 
+percentage of DNA methylation and expression along the gene body.
+
+There is an ever so slight dip in mean correlation with expression 
+near the TSS, but it is not impressive at all.
+
+```{r}
+cor.r.mat  <- plot.centered.vals(val.list = rrbs.cor.r, min.representation = 10, 
+plot.label = "Correlation between expression and DNA methylation",
+plot.individual = FALSE, ylim = c(-0.2, 0.2), ylab = "Correlation (r)",
+seq.by = 0.05, merge.by = 1, plot.line = TRUE, plot.hex = FALSE, 
+min.upstream = -2, max.downstream = 2, return.means = FALSE, verbose = FALSE)
+abline(v = c(0,1), h = 0)
+#boxplot(cor.r.mat);abline(h = 0, col = "red")
+
+#rrbs.cor.log.p <- lapply(rrbs.cor.p, function(x) if(length(x) > 1){-log10(x)})
+#log.p.mat <- plot.centered.vals(val.list = rrbs.cor.log.p, min.representation = 10, 
+#plot.label = "Correlation -log10(p) between expression and DNA methylation",
+#plot.individual = FALSE, ylim = c(0, 1), ylab = "-log10(p)",
+#seq.by = 0.01, merge.by = 1, plot.line = TRUE, plot.hex = FALSE, 
+#min.upstream = -2, max.downstream = 2, return.means = FALSE, verbose = FALSE)
+#abline(v = c(0,1))
+```
+
+
+```{r set_p}
+p.thresh = 0.001
+```
+
+We next asked whether there were any genes whose expression was correlated with 
+DNA methylation at any point at $p \leq$ `r p.thresh`. There are, but there is 
+still no overall pattern relating DNA methylation to gene expression.
+
+```{r any_gene}
+has.sig.cor <- lapply(rrbs.cor.p, function(x) if(length(x) > 1){which(x < p.thresh)})
+sig.cor <- which(sapply(has.sig.cor, function(x) length(x) > 1))
+#length(sig.cor)
+
+cor.mat <- plot.centered.vals(val.list = rrbs.cor.r[sig.cor], min.representation = 10, 
+plot.label = "Correlation between expression and DNA methylation Significant Genes Only",
+plot.individual = FALSE, ylim = c(-1, 1), ylab = "-log10(p)",
+seq.by = 0.01, merge.by = 1, plot.line = TRUE, plot.hex = FALSE, 
+min.upstream = -2, max.downstream = 2, return.means = FALSE, verbose = FALSE)
+
+#pheatmap(cor.mat, cluster_rows = FALSE, cluster_cols = FALSE, show_rownames = FALSE,
+#show_colnames = FALSE)
+```
+
+Above plots suggest that there is very little variation across strains
+in DNA methylation. Below we invesetigate this variation and its potential
+to be used in differential transcriptional regulation.
+
+The plot below shows average DNA methylation percent across all strains
+along the gene body. This confirms plots from above that all strains have
+hypomethylation at the TSS and increasing methylation throughtout the 
+gene body.
+
+```{r methyl_percent}
+strain.mean.rrbs <- lapply(rrbs.strain.mat, function(x) if(length(x) > 1){colMeans(x, na.rm = TRUE)})
+plot.centered.vals(strain.mean.rrbs, seq.by = 0.01, ylim = c(0,100))
+```
+
+## Methylation at the TSS and Expression
+
+We then investigated whether there were any genes that were hypomethylated
+at the TSS in some strains, but not others.
+
+
+```{r set_methyl_bins}
+methyl.bins <- seq(0, 100, 50)
+```
+
+We binned the methylation at the TSS into the follwing bins:
+
+```{r}
+df <- data.frame(consec.pairs(methyl.bins))
+colnames(df) <- c("min", "max")
+kable(df)
+```
+
+
+We looked at expression of genes with methylation percentages at the TSS
+falling into each of these bins. This time we scaled the expression across strains.
+
+```{r tss_methyl2}
+get_tss_methyl <- function(methyl.mat){
+  if(length(methyl.mat) > 1){
+    tss.pos <- get.nearest.pt(as.numeric(colnames(methyl.mat)), 0)
+    return(methyl.mat[,tss.pos])
+  }else{
+    return(NA)
+    }
+}
+
+tss.methyl <- lapply(rrbs.strain.mat, get_tss_methyl)
+binned.expr <- matrix(NA, nrow = length(tss.methyl), ncol = (length(methyl.bins)-1))
+rownames(binned.expr) <- names(rrbs.strain.mat)
+
+for(i in 1:length(tss.methyl)){
+  if(is.interactive){report.progress(i, length(tss.methyl))}
+  gene.id <- gene.ids[i]
+  if(length(tss.methyl[[i]]) > 1){
+    binned.methyl <- bin.vector2(tss.methyl[[i]], methyl.bins)
+    if(length(binned.methyl) > 1){
+      expr.locale <- which(names(scaled.expr) == gene.id)
+      if(length(expr.locale) > 0 && length(scaled.expr[[expr.locale]]) > 1){
+        expr.bin <- lapply(binned.methyl, 
+          function(x) if(length(x) > 1){scaled.expr[[expr.locale]][match.order(names(x), rownames(scaled.expr[[expr.locale]]), col.table)]}else{NA})
+        binned.expr[i,] <- sapply(expr.bin, mean)
+      }
+    }
+  }
+}
+```
+
+The histogram below shows the number of bins that are present at the TSS 
+for each gene. For the vast majority of genes the methylation level falls 
+into the same bin across all strains.
+
+There were very few genes for which methylation varied substantially
+at the TSS across strains.
+
+```{r methyl_bins}
+bins.occupied <- apply(binned.expr, 1, function(x) length(which(!is.na(x))))
+hist(bins.occupied)
+has.var <- which(bins.occupied > 1)
+```
+
+There were `r length(has.var)` genes with variation 
+in methylation across strains. Overall, it looks as if the genes in this 
+group that are highly methylated do have slightly lower expression than 
+ones that are less highly methylated, but it's not overwhelming.
+
+When we plot the two values against each other, they are negatively correlated.
+This means that genes with low expression and low methylation, tended to 
+have high expression and high methylation. And vice versa: genes with high 
+expression and low methylation tended to have low expression when methylated.
+What?
+
+What is that weird stripe in the plot? There seem to be spokes. 
+Is this an artifact of the scaling?
+
+So does methylation at the TSS reverse your expression? Rather than just 
+suppressing it overall? 
+
+```{r}
+colnames(binned.expr) <- apply(df, 1, function(x) paste(x, collapse = "-"))
+
+pairs(binned.expr, upper.panel = function(x,y) plot.with.model(x, y, add = TRUE),
+lower.panel = function(x,y) plot.with.model(x, y, add = TRUE, report = "cor.test"))
+
+expr.diff <- binned.expr[,2] - binned.expr[,1]
+pt.col <- rep("#5ab4ac", length(expr.diff)) #blue
+pt.col[which(expr.diff > 0)] <- "#d8b365"
+plot.with.model(binned.expr[has.var,1], binned.expr[has.var,2], report = "cor.test",
+col = pt.col[has.var], xlab = "Expression with lower methylation", 
+ylab = "Expression with higher methylation", 
+main = "Genes with Variation in Methylation at the TSS")
+abline(h = 0, v = 0)
+
+boxplot(binned.expr[has.var,])
+t.test(binned.expr[has.var,1], binned.expr[has.var,2])
+
+get_expr_slope <- function(expr.vals){
+  no.na <- which(!is.na(expr.vals))
+  if(length(no.na) > 1){
+    slope <- instant.slope(1:length(no.na), expr.vals[no.na])
+    return(slope)
+  }else{
+    return(NA)
+  }
+}
+expr.slope <- apply(binned.expr[has.var,], 1, get_expr_slope)
+```
+
+However, if we look at the slope in expression from low methylation to 
+high methylation, it goes both up and down. There's no overall trend 
+toward lower expression with higher methylation.
+
+```{r expr.slope}
+boxplot(unlist(expr.slope), breaks = 100)
+abline(h = 0)
+```
+
+## Gene subsets {.tabset .tabset-fade .tabset-pills}
+
+Below, we looked at subsets of genes that had expression significantly 
+correlated with DNA methylation, either positively, or negatively. 
+
+For both groups of genes, there does appear to be a peak correlation 
+around the TSS, but it's still quite weak.
+
+### Genes for which DNA methylation has a positive correlation with expression
+```{r pos_slope, fig.width = 10, fig.height = 4}
+pos.slope <- which(expr.slope > 0)
+pos.locale <- match(names(pos.slope), names(rrbs.cor.r))
+plot.centered.vals(val.list = rrbs.cor.r[pos.locale], min.representation = 10, 
+plot.label = "Correlation between expression and DNA methylation",
+plot.individual = FALSE, ylim = c(-0.2, 0.4), ylab = "Correlation (r)",
+seq.by = 0.01, merge.by = 1, plot.line = TRUE, plot.hex = FALSE, 
+min.upstream = -2, max.downstream = 2, return.means = FALSE, verbose = FALSE)
+abline(v = c(0,1), h = 0)
+```
+
+### Genes for which DNA methylation has a negative correlation with expression
+```{r neg_slope, fig.width = 10, fig.height = 4}
+neg.slope <- which(expr.slope < 0)
+neg.locale <- match(names(neg.slope), names(rrbs.cor.r))
+if(is.interactive){quartz(width = 10, height = 4)}
+plot.centered.vals(val.list = rrbs.cor.r[neg.locale], min.representation = 10, 
+plot.label = "Correlation between expression and DNA methylation",
+plot.individual = FALSE, ylim = c(-0.4, 0.4), ylab = "Correlation (r)",
+seq.by = 0.01, merge.by = 1, plot.line = TRUE, plot.hex = FALSE, 
+min.upstream = -2, max.downstream = 2, return.means = FALSE, verbose = FALSE)
+abline(v = c(0,1), h = 0)
+```
+
+## Expression on/off
+
+There are no overall correlations between expression and methylation.
+I think that what this is telling us is that no matter which strain you 
+extract hepatocytes from, you always get hepatocytes. 
+
+However, there is one more thing to look at. It is possible that there
+are some genes that are expressed highly in some strains, but not in 
+others in hepatocytes. These genes may be differentially methylated in
+a was that correlates with expression. 
+
+I will look for such genes and their patterns of methylation.
+First we identified genes for which some strains had an average 
+expression below 6, while others had expression above [some val].
+
+```{r on_off}
+on_and_off <- function(gene.expr, off_thresh = 6, on_thresh = 15){
+  off.locale <- which(gene.expr <= off_thresh)
+  on.locale <- which(gene.expr >= on_thresh)
+  if(length(off.locale) > 0 && length(on.locale) > 0){
+    return(TRUE)
+  }else{
+    return(FALSE)
+  }
+}
+off_thresh = 6
+on_thresh = 10
+on.off.expr <- which(sapply(strain.expr, function(x) on_and_off(x, off_thresh, on_thresh)))
+```
+
+There are `r length(on.off.expr)` genes with some strains expressing below
+`r off_thresh` and other expressing above `r on_thresh`.
+
+There is still no overall pattern in DNA methylation across strains for these 
+genes.
+
+```{r}
+on.off.genes <- transcript.info[match(names(on.off.expr), transcript.info[,"ensembl_gene_id"]), "external_gene_name"]
+on.off.locale <- match(on.off.genes, names(rrbs.cor.r))
+rmat <- plot.centered.vals(val.list = rrbs.cor.r[on.off.locale], min.representation = 10, 
+plot.label = "Correlation between expression and DNA methylation",
+plot.individual = FALSE, ylim = c(-0.4, 0.4), ylab = "Correlation (r)",
+seq.by = 0.1, merge.by = 1, plot.line = TRUE, plot.hex = FALSE, 
+min.upstream = -2, max.downstream = 2, return.means = FALSE, verbose = FALSE)
+abline(v = c(0,1), h  = 0)
+
+#pheatmap(rmat, cluster_rows = FALSE, cluster_cols = FALSE)
+boxplot(rmat)
+abline(h = 0)
+```
