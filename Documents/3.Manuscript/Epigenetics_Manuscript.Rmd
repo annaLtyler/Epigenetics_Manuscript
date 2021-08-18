@@ -87,6 +87,19 @@ across the nine inbred founders. We then correlated the proportion of
 each state with the mean gene expression across the founders. We 
 calculated these correlations across all states and all state models.
 
+### Selecting the number of chromatin states
+
+To identify the ChromHMM model that corresponded best with gene 
+expression, we compared the correlation of each state with gene 
+expression across all ChromHMM models (Supp Fig. XXX). 
+Across all models, the correlations between gene expression and 
+chromatin state could be binned roughly into five bins: low, 
+moderately low, no correlation, moderately high correlation, and 
+high correlation. The nine-state model had states in each of these 
+categories with the lowest redundancy. Furthermore, state seven in 
+the nine-state model had the maximum correlation with gene expression. 
+Therefore, we chose the nine-state model for downstream analysis.
+
 ### DNA Methylation
 To correlate percent DNA methylation with gene expression, 
 
@@ -149,18 +162,6 @@ and around the gene body.
 
 ## Chromatin State and Gene Expression
 
-### The nine-state model had the highest correlation with gene expression
-
-To identify the ChromHMM model that corresponded best with gene 
-expression, we compared the correlation of each state with gene 
-expression (Methods) across all ChromHMM models (Supp Fig. XXX). 
-Across all models, the correlations between gene expression and 
-chromatin state could be binned roughly into five bins: low, 
-moderately low, no correlation, moderately high correlation, and 
-high correlation. The nine-state model had states in each of these 
-categories with the lowest redundancy. Furthermore, state seven in 
-the nine-state model had the maximum correlation with gene expression. 
-Therefore, we chose the nine-state model for downstream analysis.
 
 ### Genomic position enrichments aided interpretation of chromatin states
 
@@ -294,6 +295,27 @@ relationship between percent methylation and gene expression across strains.
 
 
 # Discussion
+
+Haplotype and chromatin state represent broader regions of genome than SNPs 
+and DNA methylation, which are measured at the base pair level. The measurements 
+that represent larger regions of the genome are more predictive of local gene 
+expression than the point-wise measurements. 
+
+While local haplotype is the best predictor of gene expression, it has poor 
+resolution. SNPs and DNA methylation have very high resolution, but are 
+relatively poor predictors of gene expression. Chromatin state sits in the 
+middle ground. It is almost as good a predictor of gene expression as haplotype,
+but has resolution down to 200 base pairs, thus offering the potential for
+dissecting mechanisms of local gene expression at a higher resolution than
+is possible with haplotype alone. 
+
+There is clearly a lot going on at the TSS, but there these results show 
+correlations between gene expression 
+
+Perhaps by overlaying all modalities, particularly with measurements of open
+chromatin, we can come up with examples of this kind of inference? Are there 
+any anecdotes that illustrate this?
+
 Local chromatin state was highly correlated with local gene expression in the
 DO/CC founders. This was true across genes within each strain, as well as 
 for individual genes across strains, suggesting that variation in chromatin 
@@ -316,12 +338,6 @@ and state 9 peaked immediately upstream of the TSS.
 
 State 5 was of lower abundance than the other states were concentrated within the gene body.
 
-
-
-Haplotype and chromatin state represent broader regions of genome than SNPs 
-and DNA methylation, which are measured at the base pair level. The measurements 
-that represent larger regions of the genome are more predictive of local gene 
-expression than the point-wise measurements. 
 
 
 # Acknowledgements

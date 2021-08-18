@@ -74,7 +74,7 @@ for each transcript.
 
 ```{r find_max_r2}
 max.snp <- sapply(snp.r2, function(x) if(length(x) > 1){max(x, na.rm = TRUE)}else{NA})
-max.methyl <- sapply(methyl.r2, function(x) if(length(x) > 1){max(x, na.rm = TRUE)}else{NA})
+max.methyl <- sapply(methyl.r2, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
 max.chrom <- sapply(chrom.r2, function(x) if(length(x) > 1){max(x[,1], na.rm = TRUE)}else{NA})
 ```
 
@@ -84,6 +84,7 @@ r2.list <- list("Haplotype" = eqtl.r2[,1], "Chromatin_State" = max.chrom,
     "SNP" = max.snp, "DNA_Methylation" = max.methyl)
 if(is.interactive){quartz()}
 boxplot(r2.list, ylab = "Variance Explained")
+sapply(r2.list, summary)
 ```
 
 The following plot shows the comparison between the maximum SNP r2
@@ -221,13 +222,10 @@ plot_together <- function(gene.id){
         return()
     }
     gene.snp.alleles <- get_snp_alleles(gene.id)
-    if(length(gene.snp.alleles) == 0){
-        layout(matrix(1, 1, 1))
-        plot.text("No SNP variation in this region")
-        return()
+    if(length(gene.snp.alleles) > 0){
+        rownames(gene.snp.alleles) <- strain.table[order.strains(rownames(gene.snp.alleles), 
+        strain.table[,1], strain.table),6]
     }
-    rownames(gene.snp.alleles) <- strain.table[order.strains(rownames(gene.snp.alleles), 
-        LETTERS[1:8], strain.table),6]
 
     gene.chrom.r2 <- get_chrom_scan(gene.id)
     gene.chrom.mat <- get_chrom_mat(gene.id)
@@ -251,9 +249,11 @@ plot_together <- function(gene.id){
     if(length(expr.order) > 1){
         strain.order <- rev(order.strains(rownames(expr.order), 
             colnames(gene.chrom.mat), strain.table))
-        snp.strain.order <- rev(order.strains(rownames(expr.order), 
-        rownames(gene.snp.alleles), strain.table))
-        snp.strain.order <- snp.strain.order[which(!is.na(snp.strain.order))]
+        if(length(gene.snp.alleles) > 0){
+            snp.strain.order <- rev(order.strains(rownames(expr.order), 
+            rownames(gene.snp.alleles), strain.table))
+            snp.strain.order <- snp.strain.order[which(!is.na(snp.strain.order))]
+        }
         methyl.strain.order <- order.strains(rownames(expr.order), 
             rownames(gene.methyl.mat3), strain.table)
     }else{
@@ -276,7 +276,7 @@ plot_together <- function(gene.id){
 
     if(is.interactive){quartz(width = 8, height = 8)}
     layout.mat <- matrix(c(1:5, 0, 0, 6, 6, 0), ncol = 2, byrow = FALSE)
-    layout(layout.mat, heights = c(1,0.5, 1, 1), widths = c(1,0.4))
+    layout(layout.mat, heights = c(1,0.5, 1, 1, 1), widths = c(1,0.4))
     
     par(mar = c(0,4,4,4))
     plot(x = snp.pos, gene.snp.r2, pch = "X", col = "#e41a1c", cex = 1.5,
@@ -306,9 +306,13 @@ plot_together <- function(gene.id){
 
     par(mar = c(2,4,1,4))
 
-    plot.chrom.mat(gene.snp.alleles[snp.strain.order,], num.states = 4, 
+    if(length(gene.snp.alleles) > 0){
+        plot.chrom.mat(gene.snp.alleles[snp.strain.order,], num.states = 4, 
         xlim = c(global.min.pos, global.max.pos), ylab = "SNPs", 
         state.labels = c("A", "C", "G", "T"))
+    }else{
+        plot.text("No SNPs")
+    }
 
     if(length(gene.methyl.mat3) > 0){
     plot.methyl.mat(gene.methyl.mat3[methyl.strain.order,,drop=FALSE], 
@@ -329,6 +333,7 @@ plot_together <- function(gene.id){
 
     mtext(gene.name, side = 3, outer = TRUE, line = -2.5)
 }
+#plot_together(gene.id)
 ```
 
 
@@ -338,6 +343,7 @@ The following plots show examples of genes for which the maximum effect is
 from one of the three non-haplotype modalities.
 
 ```{r max_r2, results = "asis"}
+n.sample = 10
 high.r2 <- which(all.r2[,1] > 0.5)
 max.r2 <- apply(all.r2[high.r2,2:4], 1, function(x) which.max(x))
 max.counts <- lapply(1:3, function(x) which(max.r2 == x))
