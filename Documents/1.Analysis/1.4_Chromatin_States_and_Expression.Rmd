@@ -397,7 +397,7 @@ all.strain.r <- all.strain.p <- matrix(NA, nrow = num.states, ncol = length(stra
 colnames(all.strain.r) <- colnames(all.strain.p) <- names(strain.mean.expr[[1]])
 rownames(all.strain.r) <- rownames(all.strain.p) <- 1:num.states
 
-for(s in 1:9){
+for(s in 1:num.states){
     strain.expr <- sapply(strain.mean.expr[common.expr.locale], function(x) x[s])
     strain.chrom <- sapply(chrom.state.props[common.chrom.locale], function(x) x[,chrom.order[s]])
     strain.chrom.cor <- apply(strain.chrom, 1, function(x) cor.test(x, strain.expr))
@@ -406,6 +406,7 @@ for(s in 1:9){
 }
 pheatmap(all.strain.r, cluster_rows = FALSE, cluster_cols = FALSE, display_numbers = TRUE)
 ```
+
 
 ## Chromatin state and inbred expression
 We also wanted to see if differential expression across strains could be 
@@ -465,6 +466,14 @@ This shows us which marks each of the states in the barplot has.
 ```{r emissions, results = "asis"}
 emissions.file <- file.path(data.dir, paste0("emissions_", num.states, ".png"))
 cat("![](",emissions.file,")")
+```
+
+```{r emissions_fig, eval = FALSE}
+emissions.mat <- read.delim(file.path(data.dir, paste0("emissions_", num.states, ".txt")), 
+row.names = 1)
+pdf("~/Desktop/emissions.pdf", width = 5, height = 2)
+pheatmap(t(emissions.mat), cluster_rows = FALSE, cluster_cols = FALSE)
+dev.off()
 ```
 
 ### Correlation distributions by state
@@ -546,7 +555,7 @@ cat("\n\n")
 
 ## Relative position of chromatin state
 
-We were interseted in whether each state was particularly enriched 
+We were interested in whether each state was particularly enriched 
 at any particular position in the genes. To address this, we 
 
 To address this, we normalized the coordinates of each gene to run from 
@@ -591,7 +600,6 @@ if(!file.exists(binned.chromatin.file)){
 }else{
     binned.chromatin <- readRDS(binned.chromatin.file)
 }
-
 ```
 
 We wanted to look at whether we could discern spatial patterns to the presence
@@ -629,17 +637,26 @@ for(s in 1:length(state.position)){
 
 ```{r states_together, fig.width = 8.5, fig.height = 5}
 if(is.interactive){quartz(width = 8.5, height = 5)}
+#pdf("~/Desktop/chromatin_states.pdf", width = 7, height = 4)
+layout(matrix(c(1,2), ncol = 2), widths = c(1, 0.3))
 plot.new()
-plot.window(xlim = c(-0.5, 1.5), ylim = c(0,1))
+plot.window(xlim = c(-1, 2), ylim = c(0,1))
 if(num.states == 9){state.order = c(4,5,6,1,7,8,3,9)}else{state.order = 1:num.states}
 for(s in state.order){ #ordered for ease of visualization
     plot.state.by.position(state.position[[s]], error.type = "se", 
     plot.label = "", col = state.col[s], add = TRUE, lwd = 3)
 }
-legend("topright", pch = 16, col = state.col, legend = paste("State", 1:num.states))
 axis(1);axis(2)
 mtext("Relative Gene Position", side = 1, line = 2.5)
 mtext("Proportion Genes State Present", side = 2, line = 2.5)
+plot.new()
+par(mar = c(4,0,4,0))
+plot.window(xlim = c(0,1), ylim = c(0,1))
+par(xpd = NA)
+legend(x = 0, y = 1, pch = 16, col = state.col, 
+legend = paste("State", 1:num.states))
+par(xpd = TRUE)
+#dev.off()
 ```
 
 ## How does state position affect correlation with expression?
@@ -736,6 +753,7 @@ cor.min <- min(unlist(cor.means) - unlist(cor.se))
 cor.max <- max(unlist(cor.means) + unlist(cor.se))
 
 if(is.interactive){quartz(height = 8, width = 3)}
+#pdf(here("Documents", "3.Manuscript", "Figures", "chromatin_correlation_by_state.pdf"), height = 8, width = 3)
 par(mfrow = c(num.states, 1), mar = c(0,3,0,4))
 for(i in 1:ncol(state_by_pos)){
     #if(is.interactive){quartz()}
@@ -756,6 +774,10 @@ for(i in 1:ncol(state_by_pos)){
     
     window.mids <- sapply(gene.windows, mean)
     one.state.col <- col2rgb(state.col[i])
+    plot.new()
+    plot.window(xlim = c(min(unlist(gene.windows)), max(unlist(gene.windows))), 
+    ylim = c(cor.min, cor.max))
+
     plot.poly.xy(poly.top.x = window.mids, poly.bottom.x = window.mids, 
     poly.top.y = unlist(state_by_pos[,i]) + unlist(se_by_pos[,i]),
     poly.bottom.y = unlist(state_by_pos[,i]) - unlist(se_by_pos[,i]), 
@@ -763,14 +785,100 @@ for(i in 1:ncol(state_by_pos)){
     #points(window.mids, unlist(state_by_pos[,i]), type = "l", col = state.col[i])
 
     axis(2, cex.axis = 0.7)
-    abline(v = c(0,1), col = "gray", lty = 2)
+    abline(v = c(0,1), col = "darkgray", lty = 2, lwd = 2)
     abline(h = 0)
     par(xpd = TRUE)
     text(x = max(unlist(gene.windows))*1.1, y = 0, labels = paste("State", i), srt = 270,
     cex = 1.5)
     par(xpd = FALSE)
 }
+#dev.off()
 ```
+
+### Correlation by position within-strain {.tabset .tabset-fade .tabset-pills}
+
+We also looked at a position-based correlation of gene expression with
+chromatin state across genes within each strain.
+
+To do this, we collected the position-centered chromatin matrices
+for each strain
+
+```{r center_mats}
+within.strain.file <- here("Results", "ChromHMM", form.states, "Within_Strain_Expression_By_State_and_Position.RDS")
+
+if(!file.exists(within.strain.file)){
+    expr.order <- order.strains(colnames(cent.mats[[1]]), names(strain.mean.expr[[1]]), col.table)
+    all.strain.by.position <- vector(mode = "list", length = 9)
+    names(all.strain.by.position) <- colnames(cent.mats[[1]])
+    #colnames(cent.mats[[1]])
+    #names(strain.mean.expr[[1]])[expr.order]
+    for(m in 1:9){
+        strain.cent <- lapply(cent.mats[common.mat.locale], function(x) if(length(x) > 1){x[,m]}else{NA})
+        strain.cent.mat <- plot.centered.vals(strain.cent, seq.by = 0.1, 
+        ylim = c(1,8), return.means = FALSE)
+        one.strain.expr <- sapply(rownames(strain.cent.mat), function(x) strain.mean.expr[[which(names(strain.mean.expr) == x)]][expr.order[m]])
+        one.strain.scaled <- scale(one.strain.expr)
+        all.state.pos.expr <- vector(mode = "list", length = num.states)
+        names(all.state.pos.expr) <- 1:num.states
+        for(s in 1:num.states){    
+            state.pos.expr <- matrix(NA, nrow = nrow(strain.cent.mat), 
+                ncol = ncol(strain.cent.mat))
+                colnames(state.pos.expr) <- colnames(strain.cent.mat)
+            for(p in 1:ncol(strain.cent.mat)){
+                state.genes <- which(strain.cent.mat[,p] == s)
+                gene.locale <- match(names(state.genes), rownames(strain.cent.mat))
+                gene.expr <- one.strain.scaled[gene.locale]
+                state.pos.expr[gene.locale,p] <- gene.expr
+                }   
+            #quartz()
+            #boxplot(state.pos.expr, main = paste("State", s))
+            #plot.centered.mat(state.pos.expr, ylim = c(-5, 5), plot.label = paste("State", s))
+            #abline(v = c(0,1), h = 0)
+            all.state.pos.expr[[s]] <- state.pos.expr
+        }  
+    all.strain.by.position[[m]] <- all.state.pos.expr
+    }
+saveRDS(all.strain.by.position, within.strain.file)
+}else{
+all.strain.by.position <- readRDS(within.strain.file)
+}
+```
+
+The following plots show the mean expression of genes with the specified
+state at the specified location. Each strain is shown separately, but they
+all show the same relationship between chromatin state, position, and expression.
+All expression was scaled within each strain, such that 0 is the mean expression.
+
+These patterns are also very similar to the across-strain plots shown above.
+
+```{r plot_within_strain, fig.height = 10, fig.width = 3.5, results = "asis"}
+for(s in 1:length(all.strain.by.position)){
+    cat("####", names(all.strain.by.position)[s], "\n")
+    if(is.interactive){quartz(height = 12, width = 3)}
+    par(mfrow = c(num.states, 1), mar = c(0,3,0,4))
+    all.state.pos.expr <- all.strain.by.position[[s]]
+    for(i in 1:num.states){
+        one.state.col <- col2rgb(state.col[i])
+        plot.new()
+        plot.window(xlim = c(-1, 2), ylim = c(-1.5, 1.5))
+        expr.mean <- colMeans(all.state.pos.expr[[i]], na.rm = TRUE)
+        expr.num <- apply(all.state.pos.expr[[i]], 2, function(x) length(which(!is.na(x))))
+        expr.se <- apply(all.state.pos.expr[[i]], 2, function(x) sd(x, na.rm = TRUE))/sqrt(expr.num)
+        rel.pos <- as.numeric(colnames(strain.cent.mat))
+        plot.poly.xy(poly.top.x = rel.pos, poly.bottom.x = rel.pos, 
+        poly.top.y = (expr.mean + expr.se),
+        poly.bottom.y = (expr.mean - expr.se), 
+        col = rgb(one.state.col[1]/256, one.state.col[2]/256, one.state.col[3]/256, alpha = 0.5))
+        abline(v = c(0,1), lwd = 2, lty = 2, col = "darkgray")
+        abline(h = 0)
+        axis(2)
+        mtext(paste("State", i), side = 4, line = 2.5, srt = 270, cex = 1.5)
+    }
+    cat("\n\n")
+}
+```
+
+## Example of one Gene
 
 A nice example shown below is Irf5 (Interferon regulatory factor 5).
 CAST and PWK have very low expression and both have state 3 at the TSS. 

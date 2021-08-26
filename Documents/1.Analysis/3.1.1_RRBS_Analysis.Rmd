@@ -11,7 +11,7 @@ output:
 ---
 
 The purpose of this workflow is to look for correlations between DNA methylation
-and gene expression within a single strain
+and gene expression within-strain, and across-strain.
 
 This workflow uses the output from the RRBS workflow.
 
@@ -221,6 +221,17 @@ if(!file.exists(methyl_dens_file)){
 }
 ```
 
+```{r density_fig, eval = FALSE}
+pdf(here("Documents", "3.Manuscript", "Figures", "methylation_density.pdf"), 
+  width = 5, height = 4)
+  plot.centered.mat(avg_methyl_dist, ylim = c(0, 3500),
+    plot.label = paste("Average Distance to Next Methylation Position"),
+    ylab = "Distance to Next Methylation Position", min.upstream = -1, 
+    max.downstream = 2)
+    abline(v = c(0,1), lty = 2, col = "darkgray", lwd = 2)
+dev.off()
+```
+
 
 ## DNA methylation percentage
 
@@ -249,9 +260,9 @@ if(!file.exists(strain.methyl.file)){
 }
 ```
 
-The following heat map shows all 
 
 ```{r methyl_heat, eval = FALSE}
+#methylation heatmaps ordered by methylation percent at the TSS
 strain.locale <- order.strains(strains, names(strain.expr[[1]]), col.table)
 for(st in 1:length(strain_rrbs_mat)){
   tss.pos <- which(colnames(strain_rrbs_mat[[st]]) == "0")
@@ -270,7 +281,6 @@ The pattern of methylation was the same across all strains.
 The following plot shows the median percent methylation by position.
 
 ```{r avg_methyl_percent}
-
 all_rrbs_med <- t(sapply(strain_rrbs_mat, function(x) apply(x, 2, function(y) median(y, na.rm = TRUE))))
 rel.pos <- as.numeric(colnames(all_rrbs_med))
 
@@ -285,6 +295,16 @@ abline(v = c(0,1))
 mtext(side = 1, text = "Relative Genomic Position", line = 2.5)
 mtext(side = 2, text = "Median Percent DNA Methylation", line = 2.5)
 ```
+
+```{r percent_fig, eval = FALSE}
+pdf(here("Documents", "3.Manuscript", "Figures", "methylation_percentage.pdf"), 
+  width = 5, height = 4)
+  plot.centered.mat(all_rrbs_med, ylim = c(0, 100), 
+  ylab = "Median Percent DNA Methylation", min.upstream = -1, max.downstream = 2)
+  abline(v = c(0,1), lwd = 2, lty = 2, col = "darkgray")
+dev.off()
+```
+
 
 ## Within-Strain Correlation Between Methylation and Expression
 
@@ -348,6 +368,17 @@ legend(0,0.9, col = strain.col, lty = 1, legend = col.table[match(strains, col.t
 #pheatmap(rrbs.expr.cor, cluster_cols = FALSE, cluster_rows = FALSE)
 ```
 
+```{r cor_fig, eval = FALSE}
+pdf(here("Documents", "3.Manuscript", "Figures", "methylation_within_strain_correlation.pdf"), 
+  width = 5, height = 4)
+rel.pos <- as.numeric(colnames(rrbs.expr.cor))
+plot.centered.mat(rrbs.expr.cor, ylim = c(-0.15, 0.15), 
+  plot.label = "Within-strain correlation between gene expression and DNA methylation",
+  min.upstream = -1, max.downstream = 2)
+abline(v = c(0,1), lty = 2, col = "darkgray", lwd = 2)
+abline(h = 0)
+dev.off()
+```
 
 ## Across-strain variation in DNA methylation
 
@@ -399,12 +430,17 @@ if(!file.exists(gene.expr.cor.file)){
 }else{
   gene.expr.cor <- readRDS(gene.expr.cor.file)
 }
+```
 
-if(is.interactive){quartz()}
+```{r across_strain_cor_fig, eval = FALSE}
+pdf(here("Documents", "3.Manuscript", "Figures", "methylation_expr_across_strains.pdf"), 
+  width = 5, height = 4)
 plot.centered.mat(gene.expr.cor, ylim = c(-0.15, 0.15), 
   ylab = "Pearson Correlation r Between DNA Methylation and Gene Expression",
-  plot.label = "")
-abline(v = c(0,1), h = 0)
+  plot.label = "", min.upstream = -1, max.downstream = 2)
+abline(v = c(0,1), lwd = 2, col = "darkgray", lty = 2)
+abline(h = 0)
+dev.off()
 ```
 
 The top figure below shows an example alignment for one gene.
@@ -471,8 +507,8 @@ with low variance in methylation at the TSS, and high methylation with
 low variance toward the TES. All other positions have varying means, but
 also very high variaion in percent methylation.
 
-```{r methyl_var}
-boxplot(methyl_mean)
+```{r methyl_var_box}
+boxplot(methyl_mean, group.names = colnames(methyl_mean))
 ```
 
 
@@ -494,11 +530,13 @@ vary little across strains when it is very high or very low.
 
 ```{r mean_var_box}
 mean.bins <- seq(0, 100, 10)
-var_by_position <- sapply(1:ncol(methyl_mean), function(y) sapply(1:(length(mean.bins) - 1), function(x) mean(methyl_var[intersect(which(methyl_mean[,y] >= mean.bins[x]), which(methyl_mean[,y] <= mean.bins[(x+1)])),y], na.rm = TRUE)))
-rownames(var_by_position) <- apply(cbind(mean.bins[1:10], mean.bins[2:11]),1, function(x) paste0(x[1], "-", x[2]))
-colnames(var_by_position) <- round(as.numeric(colnames(methyl_mean)), 2)
+var_by_percent <- sapply(1:ncol(methyl_mean), function(y) sapply(1:(length(mean.bins) - 1), function(x) mean(methyl_var[intersect(which(methyl_mean[,y] >= mean.bins[x]), which(methyl_mean[,y] <= mean.bins[(x+1)])),y], na.rm = TRUE)))
+rownames(var_by_percent) <- apply(cbind(mean.bins[1:10], mean.bins[2:11]),1, function(x) paste0(x[1], "-", x[2]))
+colnames(var_by_percent) <- round(as.numeric(colnames(methyl_mean)), 2)
 
-boxplot(t(var_by_position), ylab = "Methylation SD", xlab = "Methylation Mean")
+#pdf("~/Desktop/Methyl_variation.pdf", width = 7, height = 5)
+boxplot(t(var_by_percent), ylab = "Methylation SD", xlab = "Methylation Mean")
+#dev.off()
 ```
 
 The following plot again shows the same information as above, but this 
@@ -515,7 +553,7 @@ may be slightly higher upstream of gene bodies, but the effect is
 not very strong.
 
 
-```{r mean_var_heat}
+```{r mean_var_heat, eval = FALSE}
 pheatmap(var_by_position, cluster_rows = FALSE, cluster_cols = FALSE, 
   main = "Methylation Mean and SD by Relative Genomic Position")
 ```
@@ -523,15 +561,17 @@ pheatmap(var_by_position, cluster_rows = FALSE, cluster_cols = FALSE,
 The following plot shows that variaion in DNA methylation is lower 
 at the TSS than at other genomic positions. This is due to the 
 observation that variation is low when average methylation is low,
-and the TSS has the lowest methylation on average.
+and the TSS has the lowest variation in methylation on average.
 
 ```{r var_by_position}
 #quartz();barplot(colMeans(methyl_var, na.rm = TRUE))
 if(is.interactive){quartz(width = 8, height = 5)}
+#pdf("~/Desktop/methylation_var.pdf", width = 5, height = 4)
 plot.centered.mat(methyl_var, ylim = c(0, 10), 
-ylab = "Difference between maximum and minimum methylation",
-plot.label = "Methylation Variation")
-abline(v = c(0,1))
+ylab = "Percent Methylation SD Across Strains",
+plot.label = "Methylation Variation", min.upstream = -1, max.downstream = 2)
+abline(v = c(0,1), lwd = 2, col = "darkgray", lty = 2)
+#dev.off()
 ```
 
 The following plot shows the number of genes that have variation

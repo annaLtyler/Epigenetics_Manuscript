@@ -183,7 +183,7 @@ get_snp_alleles <- function(gene.id){
     #reduce complexity to show only where variants differ from reference (B6)
     has.diff <- which(apply(allele.calls, 2, function(x) length(unique(x))) > 1)
     if(length(has.diff) == 0){return(NULL)}
-    trimmed.alleles <- allele.calls[,has.diff]
+    trimmed.alleles <- allele.calls[,has.diff,drop=FALSE]
     for(p in 1:ncol(trimmed.alleles)){
         trimmed.alleles[which(trimmed.alleles[,p] == unlist(trimmed.alleles[2,p])),p] <- NA
     }
@@ -216,11 +216,6 @@ plot_together <- function(gene.id){
     hap.r2 <- get_haplotype_r2(gene.id)
 
     gene.snp.r2 <- get_snp_scan(gene.id)
-    if(length(gene.snp.r2) <= 1){
-        layout(matrix(1, 1, 1))
-        plot.text("No SNP Scan")
-        return()
-    }
     gene.snp.alleles <- get_snp_alleles(gene.id)
     if(length(gene.snp.alleles) > 0){
         rownames(gene.snp.alleles) <- strain.table[order.strains(rownames(gene.snp.alleles), 
@@ -306,11 +301,18 @@ plot_together <- function(gene.id){
 
     par(mar = c(2,4,1,4))
 
-    if(length(gene.snp.alleles) > 0){
+    if(length(gene.snp.alleles) > 0 && ncol(gene.snp.alleles) > 1){
         plot.chrom.mat(gene.snp.alleles[snp.strain.order,], num.states = 4, 
         xlim = c(global.min.pos, global.max.pos), ylab = "SNPs", 
         state.labels = c("A", "C", "G", "T"))
-    }else{
+    }
+    if(length(gene.snp.alleles) > 0 && ncol(gene.snp.alleles) == 1){
+        barplot(gene.snp.alleles[snp.strain.order,], horiz = TRUE, 
+        las = 2, main = paste(round(as.numeric(colnames(gene.snp.alleles))/1e6, 2), "Mb"))
+        legend.labels = paste0(1:4, "=", c("A", "C", "G", "T"))
+        legend("topleft", legend = legend.labels)
+    }
+    if(length(gene.snp.alleles) == 0){
         plot.text("No SNPs")
     }
 
@@ -342,7 +344,7 @@ plot_together <- function(gene.id){
 The following plots show examples of genes for which the maximum effect is 
 from one of the three non-haplotype modalities.
 
-```{r max_r2, results = "asis"}
+```{r max_r2, results = "asis", fig.width = 10, fig.height = 8}
 n.sample = 10
 high.r2 <- which(all.r2[,1] > 0.5)
 max.r2 <- apply(all.r2[high.r2,2:4], 1, function(x) which.max(x))

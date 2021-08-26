@@ -37,5 +37,29 @@ plot.methyl.mat <- function(methyl.mat, plot.label = "", xlim = NULL, bins = NUL
         par(xpd = FALSE)
         mtext("Methylation", side = 2)
         mtext(plot.label, side = 3)
+    
+        plot.dim <- par("usr")
+        plot.width <- plot.dim[2] - plot.dim[1]
+        plot.height <- plot.dim[4] - plot.dim[3]
+
+        xmin <- plot.dim[2] + plot.width * 0.02
+        xmax <- plot.dim[2] + plot.width * 0.06
+        xmid <- mean(c(xmin, xmax))
+        ymin <- plot.dim[3]
+        ymax <- plot.dim[4]
+        state.cols <- colors.from.values(c(0, 50, 100), use.pheatmap.colors = TRUE)
+        state.labels <- c(0, 50, 100)
+        yseg <- segment.region(ymin, ymax, 4, alignment = "ends")
+        par(xpd = TRUE)
+        for(i in 1:(length(yseg)-1)){
+            draw.rectangle(xmin, xmax, yseg[i], yseg[i+1], fill = state.cols[i], 
+            border.col = line.color)
+            text(x = xmid, y = mean(c(yseg[i], yseg[i+1])), labels = state.labels[i])
+        }
+
+        par(xpd = FALSE)
+
     }
+
+
 }

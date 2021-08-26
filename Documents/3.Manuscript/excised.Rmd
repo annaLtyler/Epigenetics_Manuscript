@@ -1,0 +1,49 @@
+
+The correlation between chromatin state and gene expression, as well as
+positional enrichments around functionally annotated positions in the 
+genome aided annotation of individual chromatin states. For example, 
+chromatin state 5, which was characterized by the co-occurence of H3K27ac 
+and H3K4me1, had enriched representation around known enhancers. 
+Its presence was also positively correlated with gene expression. This
+combination of chromatin modifications has previously been associated with 
+active enhancers [21106759, 21160473, 29273804].
+
+State 7, which was characterized by the presence of three activating
+marks, H3k27ac, H3k4me1, and H3K4me3. It was enriched around 
+transcription start sites (TSS) and promoters and was also positively 
+correlated with gene expression. 
+
+State 3 was characterized by the presence of H3K4me1 and H3k27me3. 
+H3K27me3 is associated with downregulation of transcription and
+poised enhancers. When paired with H3K4me1
+
+also enriched around 
+promoters and TSS, but was most strongly enriched at transcription 
+factor binding sites, 
+
+Table?? Figure?? Supp Figure??
+
+
+
+### Promoter and enhancer states correlated with increased expression
+Chromatin states 5 and 7, which were enriched around enhancers and promoters 
+respectively, were correlated with increased expression. This was true
+both across the liver transcriptome, as well as across strains. That is,
+that within a single strain, genes with higher proportions of states 5 
+or 7 across the gene body were more highly expressed than genes with 
+low proportions of these states. And for individual genes, strains 
+with higher proportions of states 5 and 7 had higher expression than 
+strains with lower proportions of these states (Figure?).
+
+State 6 was also correlated with increased gene expression to a lesser
+degree. This state was also enriched at enhancers, though less so than 
+state 5.
+
+### H3K27me3 and the absence of measured marks correlated with decreased expression
+
+High abundance of states 1, 2, and 3 were correlated with decreased 
+gene expression. State 1 was the absence of all measured chromatin 
+modifications, and states 2 and 3 were the only states with the 
+suppressing modification H3K27me3. State 1 was enriched in intergenic 
+regions and state 3 was enriched around transcription factor binding 
+sites. Positional enrichment of state 2 was not clear.

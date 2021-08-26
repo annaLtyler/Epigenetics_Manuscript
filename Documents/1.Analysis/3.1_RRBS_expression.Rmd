@@ -15,7 +15,7 @@ and gene expression within a single strain
 
 This workflow uses the output from the RRBS workflow.
 
-```{r load_libraries, echo = FALSE}
+```{r load_libraries, echo = FALSE, warning = FALSE, message = FALSE, error = FALSE}
 is.interactive = FALSE
 #is.interactive = TRUE
 needed.packages <- c("here", "pheatmap", "hexbin", "RColorBrewer")
@@ -75,8 +75,8 @@ Get methylation percentages for all genes and all strains.
 strain.gene.methylation <- vector(mode = "list", length = length(strains))
 names(strain.gene.methylation) <- strains
 
-for(st in 1:length(strains)){
-  gene.methyl.file <- here("Results", "RRBS", paste0("All.Gene.Methylation.", strains[st], ".RDS"))
+for(st in 1:nrow(col.table)){
+  gene.methyl.file <- here("Data", "RRBS", paste0("All.Gene.Methylation.", col.table[st,6], ".RDS"))
 
   if(!file.exists(gene.methyl.file)){
     cat("Getting methylation for", strains[st], "\n")
@@ -97,7 +97,6 @@ for(st in 1:length(strains)){
 Calculate average RRBS for each gene across replicates.
 
 ```{r avg_rrbs}
-
 strain_avg_rrbs <- vector(mode = "list", length = length(strains))
 names(strain_avg_rrbs) <- strains
 for(st in 1:length(strains)){

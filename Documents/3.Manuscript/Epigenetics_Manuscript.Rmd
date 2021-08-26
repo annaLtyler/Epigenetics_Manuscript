@@ -40,6 +40,37 @@ chromatin modifications are genetically determined [cite].
 
 ## Mice
 
+### Inbred Founder Mice
+
+### Diversity Outbred mice
+The genomic features we collected from inbred founders: chromatin state,
+percent DNA methylation, and SNPs were imputed into a population of DO
+mice based on local haplotypes. These mice were described previously in 
+(Svenson 2012). The study population included males and females from DO 
+generations four through eleven. Mice were randomly assigned to either a 
+chow diet (6% fat by weight, LabDiet 5K52, LabDiet, Scott Distributing, 
+Hudson, NH), or a high-fat, high-sucrose (HF/HS) diet (45\% fat, 40\% 
+carbohydrates, and 15\% protein) (Envigo Teklad TD.08811, Envigo, Madison, 
+WI). Mice were maintained on this diet for 26 weeks (CITE). 
+
+
+## Genotyping
+
+### Diversity outbred mice
+All DO mice were genotyped as described in Svenson et al. (2012) using the Mouse 
+Universal Genotyping Array (MUGA) (7854 markers), and the MegaMUGA (77,642 markers) 
+(GeneSeek, Lincoln, NE). All animal procedures were approved by the Animal Care 
+and Use Committee at The Jackson Laboratory (Animal Use Summary # 06006). 
+
+
+## Measurement of gene expression
+
+### Inbred Founders
+
+### Diversity outbred mice
+At sacrifice, whole livers were collected and gene expression was measured using 
+RNA-Seq as described in (Chick, Munger et al. 2016, and Tyler et al. 2017)
+
 ## Measurement of Chromatin Modifications
 
 ## Measurement of DNA Methylation
@@ -48,13 +79,71 @@ bisulfite sequencing.
 
 ## Data Processing
 
-##
+## Chromatin modifications
+Annat's stuff to get fastq files to bam files
+bam to bed
+binarize bed files
 
-## Identifying chromatin states
-We used ChromHMM to identify chromatin states corresponding to the 
-presence and absence of the four chromatin modifications. We calculated
+## DNA methylation
+Vivek's stuff to get bed files.
+
+
+## Analysis
+
+## Identification and characterization of chromatin states
+We used ChromHMM [29120462] to identify chromatin states corresponding 
+to the presence and absence of the four chromatin modifications. We calculated
 states for all numbers of states between four and 16, which is the maximum
 number of states possible with four binary chromatin modifications. 
+
+### Selecting the number of chromatin states
+
+To identify the ChromHMM model that corresponded best with gene 
+expression, we compared the correlation of each state with gene 
+expression across all ChromHMM models (Supp Fig. XXX). 
+Across all models, the correlations between gene expression and 
+chromatin state could be binned roughly into five bins: low, 
+moderately low, no correlation, moderately high correlation, and 
+high correlation. The nine-state model had states in each of these 
+categories with the lowest redundancy. Furthermore, state seven in 
+the nine-state model had the maximum correlation with gene expression. 
+Therefore, we chose the nine-state model for downstream analysis.
+
+### Chromatin state composition
+
+Emissions probabilities derived from ChromHMM indicate the contribution
+of each histone modification to each chromatin state (Figure XXX).
+
+### Positional enrichments of chromatin states
+
+We used the ChromHMM function OverlapEnrichment to identify correlations
+between chromatin state position and annotated functional elements of the
+genome. We used functional annotations for the following features:
+
+* **Transcription start sites (TSS)** - Annotations of TSS in the mouse genome
+were provided by RefSeq [26553804] and included with the release of ChromHMM, 
+which we downloaded on December 9, 2019 [29120462].
+* **Transcription end sites (TES)** - Annotations of TES in the mouse genome
+were provided by RefSeq and included with the release of ChromHMM.
+* **Transcription factor binding sites (TFBS)** - We downloaded TFBS coordinates
+from OregAnno [26578589] using the UCSC genome browser [12045153] on May 4, 2021.
+* **Promoters** - We downloaded promoter coordinates provided by the eukaryotic
+promoter database [27899657,25378343], through the UCSC genome browser on April
+26, 2021.
+* **Enhancers** - We downloaded annotated enhancers provided by ChromHMM through
+the UCSC genome browser on April 26, 2021.
+* **Candidates of cis regulatory elements in the mouse genome (cCREs)** - We 
+downloaded cCRE annotations provided by ENCODE [22955616] through the UCSC genome 
+browser on April 26, 2021.
+* **CpG Islands** - Annotations of CpG islands in the mouse genome were included 
+with the release of ChromHMM.
+
+## Downloading SNP data
+We downloaded SNP data for the eight inbred DO/CC founders from 
+the Sanger SNP database [1921910, 21921916] on July 6, 2021.
+We downloaded SNPs ranging from 1kb upstream of the TSS to 
+1kb downstream of the TES for each gene in our expression data 
+set.
 
 ## Aligning positions relative to gene bodies
 For multiple analyses in this paper, we quantified genomic feature 
@@ -76,31 +165,16 @@ To avoid potential contamination from regulatory regions of nearby
 genes, we only included genes that were at least 2kb from their nearest 
 neighbor, for a final set of 14048 genes.
 
-## Correlating genomic features with gene expression in DO founders
+## Correlating genomic features with gene expression in inbred mice
 We correlated both chromatin state and percent DNA methylation with 
-gene expression in the DO founders. 
+gene expression in nine strains of inbred mice which included the DO/CC
+founders and DBA/2J. 
 
-### Chromatin State
 To correlate chromatin state with gene expression, we calculated the
 proportion of the gene body that was assigned to each chromatin state
-across the nine inbred founders. We then correlated the proportion of
-each state with the mean gene expression across the founders. We 
-calculated these correlations across all states and all state models.
+across the nine inbred strains. We then correlated the proportion of
+each state with the mean gene expression across the founders.
 
-### Selecting the number of chromatin states
-
-To identify the ChromHMM model that corresponded best with gene 
-expression, we compared the correlation of each state with gene 
-expression across all ChromHMM models (Supp Fig. XXX). 
-Across all models, the correlations between gene expression and 
-chromatin state could be binned roughly into five bins: low, 
-moderately low, no correlation, moderately high correlation, and 
-high correlation. The nine-state model had states in each of these 
-categories with the lowest redundancy. Furthermore, state seven in 
-the nine-state model had the maximum correlation with gene expression. 
-Therefore, we chose the nine-state model for downstream analysis.
-
-### DNA Methylation
 To correlate percent DNA methylation with gene expression, 
 
 
@@ -119,17 +193,7 @@ with gene expression.
 
 To further investigate the effect of genetic and epigenetic features on 
 local gene expression, we imputed chromatin state, SNPs, and DNA methylation
-into a population of diversity outbred (DO) mice (CITE). These mice, described
-previously in (CITE), included males and females from DO generations four through
-eleven. Mice were randomly assigned to either a chow diet (6% fat by weight, 
-LabDiet 5K52, LabDiet, Scott Distributing, Hudson, NH), or a high-fat, high-sucrose 
-(HF/HS) diet (45% fat, 40% carbohydrates, and 15% protein) (Envigo Teklad TD.08811, 
-Envigo, Madison, WI). Mice were maintained on this diet for 26 weeks (CITE).
-
-All mice were genotyped as described in Svenson et al. (2012) using the Mouse 
-Universal Genotyping Array (MUGA) (7854 markers), and the MegaMUGA (77,642 markers) 
-(GeneSeek, Lincoln, NE). All animal procedures were approved by the Animal Care 
-and Use Committee at The Jackson Laboratory (Animal Use Summary # 06006). 
+into a population of diversity outbred (DO) mice (CITE). 
 
 Each imputation followed the same basic procedure: For each transcript, 
 we identified the haplotype probabilities in the DO mice at the genetic marker 
@@ -160,59 +224,30 @@ and around the gene body.
 
 # Results
 
-## Chromatin State and Gene Expression
+## Chromatin State Description
 
+We identified nine chromatin states corresponding to nine distinct 
+combinations of histone modifications (Figure XXXA). These states
+were differentially distributed near functionally annotated genomic
+elements (Figure XXXB). For example, State 1, which corresponded to 
+the absence of all four histone modifications, found mainly in 
+intergenic regions. State 5 and 9 were enriched near enhancers and 
+TES respectively. Finally, states 3 and 7 were highly enriched near 
+the TSS and other functional elements that also occur near the TSS, 
+such as cis-regulatory regions, transcription factor binding sites, 
+and promoters.
 
-### Genomic position enrichments aided interpretation of chromatin states
+A subset of the chromatin states was also correlated with gene expression
+across strains (Figure XXXC). Across all genes, higher proportions of 
+chromatin states 1, 2, and 3 were correlated with reduced gene expression, 
+and higher proportions of chromatin states 5, 6, and 7 were correlated with 
+increased gene expression.
 
-The correlation between chromatin state and gene expression, as well as
-positional enrichments around functionally annotated positions in the 
-genome aided annotation of individual chromatin states. For example, 
-chromatin state 5, which was characterized by the co-occurence of H3K27ac 
-and H3K4me1, had enriched representation around known enhancers. 
-Its presence was also positively correlated with gene expression. This
-combination of chromatin modifications has previously been associated with 
-active enhancers [21106759, 21160473, 29273804].
+## Spatial distribution of chromatin states and DNA methylation
 
-State 7, which was characterized by the presence of three activating
-marks, H3k27ac, H3k4me1, and H3K4me3. It was enriched around 
-transcription start sites (TSS) and promoters and was also positively 
-correlated with gene expression. 
+We characterized the relative spatial distribution of both 
+chromatin states and DNA methylation around gene bodies (Methods). 
 
-State 3 was characterized by the presence of H3K4me1 and H3k27me3. 
-H3K27me3 is associated with downregulation of transcription and
-poised enhancers. When paired with H3K4me1
-
-also enriched around 
-promoters and TSS, but was most strongly enriched at transcription 
-factor binding sites, 
-
-Table?? Figure?? Supp Figure??
-
-### Promoter and enhancer states correlated with increased expression
-Chromatin states 5 and 7, which were enriched around enhancers and promoters 
-respectively, were correlated with increased expression. This was true
-both across the liver transcriptome, as well as across strains. That is,
-that within a single strain, genes with higher proportions of states 5 
-or 7 across the gene body were more highly expressed than genes with 
-low proportions of these states. And for individual genes, strains 
-with higher proportions of states 5 and 7 had higher expression than 
-strains with lower proportions of these states (Figure?).
-
-State 6 was also correlated with increased gene expression to a lesser
-degree. This state was also enriched at enhancers, though less so than 
-state 5.
-
-### H3K27me3 and the absence of measured marks correlated with decreased expression
-
-High abundance of states 1, 2, and 3 were correlated with decreased 
-gene expression. State 1 was the absence of all measured chromatin 
-modifications, and states 2 and 3 were the only states with the 
-suppressing modification H3K27me3. State 1 was enriched in intergenic 
-regions and state 3 was enriched around transcription factor binding 
-sites. Positional enrichment of state 2 was not clear.
-
-### Differential spatial distribution of states around gene bodies
 Chromatin states were each distributed in a specific pattern 
 across gene bodies (Methods) (Figure XXX). For example, state 1
 was strongly depleted near the TSS, indicating that this region
@@ -324,11 +359,8 @@ modifications may be a major mechanism of local gene expression regulation.
 (Alternatively, chromatin state aligns well with the true local mechanism of
 gene regulation, but is not itself a mechanism.)
 
-The most abundant states were 7 and 1, followed by states 8, 9, and 3.
-States 4, 5, and 6 were the lowest abundant states. Interestingly, 
-despite its low abundance, state 5, which was concentrated within gene
-bodies had a relatively strong positive correlation with gene expression
-when present in this region, indicating that (?)
+## Positional information is interesting
+
 
 We observed interesting spatial patterns of chromatin state distribution and
 correlation with gene expression. States 3 and 7 were particularly abundant
@@ -336,7 +368,10 @@ around transcription start sites (TSS), while all other states were depleted
 at the TSS. State 8 peaked in abundance immediately downstream of the TSS, 
 and state 9 peaked immediately upstream of the TSS. 
 
-State 5 was of lower abundance than the other states were concentrated within the gene body.
+State 5 had relatively low abundance. However, it was concentrated within 
+gene bodies where it had a relatively strong positive correlation with 
+gene expression. This indicates that (?)
+
 
 
 

@@ -229,6 +229,12 @@ for(i in 1:length(enrichment.files)){
 }
 ```
 
+```{r enrich_fig, eval = FALSE}
+pdf(here("Documents", "3.Manuscript", "3.Manuscript", "enrichment.pdf"), width = 5, height = 2.5)
+pheatmap(t(enrichment.map[,c(1, 2,3,4,7,8,10,11,13)]), scale = "row", cluster_cols = FALSE)
+dev.off()
+```
+
 We have selected the 9-state model for this analysis, so I will limit my 
 discussion to that state here. 
 
