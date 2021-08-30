@@ -1,7 +1,8 @@
 #This function plots a methylation matrix with the 
 #marks in their genomic position
 
-plot.methyl.mat <- function(methyl.mat, plot.label = "", xlim = NULL, bins = NULL){
+plot.methyl.mat <- function(methyl.mat, plot.label = "", line.color = "black", 
+xlim = NULL, bins = NULL){
 
     if(all(is.na(methyl.mat))){
         plot.text(paste("No methylation for", plot.label))

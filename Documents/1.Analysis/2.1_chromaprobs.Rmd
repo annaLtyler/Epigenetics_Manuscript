@@ -162,7 +162,7 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
   for(i in start.at:length(common.transcripts)){
     print(i)
     if(is.interactive){report.progress(i, length(common.transcripts))}
-    #gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == "Irf5"),"ensembl_gene_id"][1]
+    #gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == "Atp6ap1"),"ensembl_gene_id"][1]
     #i <- which(common.transcripts == gene.id)
     gene.id <- common.transcripts[i]
     gene.name <- transcript.info[which(transcript.info[,"ensembl_gene_id"] == gene.id),"external_gene_name"][1]
@@ -172,11 +172,15 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
     #chromatin scan
     chrom.geno <- get_one_geno(gene.name, transcript.info, transcript.haplotypes, 
         chrom.states, strain.key, geno_type = "chromatin")
-
+    
+    #chrom.locale <- which(names(chrom.mats) == gene.id)
+    #plot.chrom.mat(t(chrom.mats[[chrom.locale]]), num.states = 9)
+    #test <- Reduce("+", lapply(1:dim(chrom.geno[[1]])[1], function(x) chrom.geno[[1]][x,,]))
+    #quartz();pheatmap(test, cluster_rows = FALSE, cluster_cols = FALSE)
     if(is.na(chrom.geno)){next()}
 
     #check for variation
-    test.var <- apply(chrom.geno[[1]], 3, function(x) apply(x, 2, function(y) var(y)))
+    test.var <- round(apply(chrom.geno[[1]], 3, function(x) apply(x, 2, function(y) var(y))), 2)
     no.var <- length(which(apply(test.var, 1, function(x) length(unique(x))) > 1)) <= 1
     
     if(no.var){next()}
@@ -205,18 +209,28 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
     chrom.coef[[i]] <- chrom.coef.list
 
     #calculate chromatin R2
-    chrom.models.add <- apply(chrom.geno[[1]], 3, function(x) lm(expr[,expr.locale]~covar+x))
+    #adjust expression for covariates first, so we don't include 
+    #the covariates in the variance explained
+    adj.expr <- adjust(expr[,expr.locale,drop=FALSE], covar)
+    #chrom.models.add <- apply(chrom.geno[[1]], 3, function(x) lm(expr[,expr.locale]~covar+x))
+    chrom.models.add <- apply(chrom.geno[[1]], 3, function(x) lm(adj.expr~x))
     ch.add.r2 <- sapply(chrom.models.add, function(x) summary(x)$adj.r.squared)
-    chrom.models.int <- apply(chrom.geno[[1]], 3, function(x) lm(expr[,expr.locale]~covar+x*int.covar))
+    #plot(ch.add.r2, ylim = c(0, max(ch.add.r2)))
+    chrom.models.int <- apply(chrom.geno[[1]], 3, function(x) lm(adj.expr~x*int.covar))
     ch.int.r2 <- sapply(chrom.models.int, function(x) summary(x)$adj.r.squared)
-    chrom.chow.models <- apply(chrom.geno[[1]][chow.locale,,], 3, function(x) lm(expr[chow.locale,expr.locale]~covar[chow.locale,]+x))
+    #plot(ch.int.r2, ylim = c(0, max(ch.int.r2)))
+    chrom.chow.models <- apply(chrom.geno[[1]][chow.locale,,], 3, function(x) lm(adj.expr[chow.locale,]~x))
     ch.chow.r2 <- sapply(chrom.chow.models, function(x) summary(x)$adj.r.squared)
-    chrom.hf.models <- apply(chrom.geno[[1]][hf.locale,,], 3, function(x) lm(expr[hf.locale,expr.locale]~covar[hf.locale,]+x))
+    #plot(ch.chow.r2)
+    chrom.hf.models <- apply(chrom.geno[[1]][hf.locale,,], 3, function(x) lm(adj.expr[hf.locale,]~x))
     ch.hf.r2 <- sapply(chrom.hf.models, function(x) summary(x)$adj.r.squared)
+    #plot(ch.hf.r2)
     chrom.r2.results <- cbind(ch.add.r2, ch.int.r2, ch.chow.r2, ch.hf.r2)
     colnames(chrom.r2.results) <- model.names
     chrom.r2[[i]] <- chrom.r2.results
     #barplot(apply(chrom.r2.results, 2, function(x) max(x, na.rm = TRUE)))
+    #boxplot(chrom.r2.results)
+    #pairs(chrom.r2.results)
 
     #Calculate the same statistics for the genetic model
     geno.geno <- get_one_geno(gene.name, transcript.info, transcript.haplotypes, 
@@ -246,14 +260,14 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
                               c(geno.coef.chow[,LETTERS[1:8]], NA),
                               c(geno.coef.hf[,LETTERS[1:8]], NA))
     rownames(geno.coef.results) <- model.names
-    #pheatmap(geno.coef.results, cluster_rows = FALSE, cluster_cols = FALSE)
+    #quartz();pheatmap(geno.coef.results, cluster_rows = FALSE, cluster_cols = FALSE)
     geno.coef[[i]] <- geno.coef.results
 
     #haplotype coefficients for genetics
-    geno.r2.add <- summary(lm(expr[,expr.locale]~covar+geno.geno[[1]][,,1]))$adj.r.squared
-    geno.r2.int <- summary(lm(expr[,expr.locale]~covar+geno.geno[[1]][,,1]*int.covar))$adj.r.squared
-    geno.r2.chow <- summary(lm(expr[chow.locale,expr.locale]~covar[chow.locale,]+geno.geno[[1]][chow.locale,,1]))$adj.r.squared
-    geno.r2.hf <- summary(lm(expr[hf.locale,expr.locale]~covar[hf.locale,]+geno.geno[[1]][hf.locale,,1]))$adj.r.squared
+    geno.r2.add <- summary(lm(adj.expr~geno.geno[[1]][,,1]))$adj.r.squared
+    geno.r2.int <- summary(lm(adj.expr~geno.geno[[1]][,,1]*int.covar))$adj.r.squared
+    geno.r2.chow <- summary(lm(adj.expr[chow.locale,]~+geno.geno[[1]][chow.locale,,1]))$adj.r.squared
+    geno.r2.hf <- summary(lm(adj.expr[hf.locale,]~geno.geno[[1]][hf.locale,,1]))$adj.r.squared
     geno.r2.results <- c(geno.r2.add, geno.r2.int, geno.r2.chow, geno.r2.hf)
     names(geno.r2.results) <- model.names
     #barplot(geno.r2.results)

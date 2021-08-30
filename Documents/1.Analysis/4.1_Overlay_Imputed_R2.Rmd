@@ -143,7 +143,11 @@ for(i in 1:nrow(r2.pairs)){
 ```{r retrieval_fun}
 get_snp_scan <- function(gene.id){
     snp.idx <- which(names(snp.r2) == gene.id)
-    return(snp.r2[[snp.idx]])
+    if(length(snp.idx) == 0){
+        return(NA)
+    }else{
+        return(snp.r2[[snp.idx]])
+    }
 }
 
 get_chrom_mat <- function(gene.id){
@@ -152,7 +156,10 @@ get_chrom_mat <- function(gene.id){
 }
 
 get_chrom_scan <- function(gene.id){
-    chrom.idx <- which(names(chrom.r2) == gene.id)
+    chrom.idx <- which(names(chrom.r2) == gene.id) 
+    if(length(chrom.idx) == 0){
+    return(matrix(NA, ncol = 1))
+    }
     return(chrom.r2[[chrom.idx]])
 }
 
@@ -177,6 +184,9 @@ get_expr_order <- function(gene.id){
 
 get_snp_alleles <- function(gene.id){
     gene.idx <- which(names(snp.alleles) == gene.id)
+    if(length(gene.idx) == 0){
+        return(NA)
+    }
     snp.array <- snp.alleles[[gene.idx]]
     #flatten to letters by position for each strain
     allele.calls <- apply(snp.array, 1, function(x) apply(x, 1, function(y) which(y > 0)[1]))
@@ -196,10 +206,9 @@ get_haplotype_r2 <- function(gene.id){
 }
 
 plot_together <- function(gene.id){
-    
+        
     gene.info.idx <- which(gene.info[,1] == gene.id)[1]
     if(is.na(gene.info.idx)){
-        plot.text("Cannot find gene ID")
         return(NULL)
     }
 
@@ -215,9 +224,13 @@ plot_together <- function(gene.id){
 
     hap.r2 <- get_haplotype_r2(gene.id)
 
+    if(length(hap.r2) == 0){
+    return(NULL)
+    }
+
     gene.snp.r2 <- get_snp_scan(gene.id)
     gene.snp.alleles <- get_snp_alleles(gene.id)
-    if(length(gene.snp.alleles) > 0){
+    if(length(gene.snp.alleles) > 1){
         rownames(gene.snp.alleles) <- strain.table[order.strains(rownames(gene.snp.alleles), 
         strain.table[,1], strain.table),6]
     }
@@ -244,7 +257,7 @@ plot_together <- function(gene.id){
     if(length(expr.order) > 1){
         strain.order <- rev(order.strains(rownames(expr.order), 
             colnames(gene.chrom.mat), strain.table))
-        if(length(gene.snp.alleles) > 0){
+        if(length(gene.snp.alleles) > 1){
             snp.strain.order <- rev(order.strains(rownames(expr.order), 
             rownames(gene.snp.alleles), strain.table))
             snp.strain.order <- snp.strain.order[which(!is.na(snp.strain.order))]
@@ -257,7 +270,9 @@ plot_together <- function(gene.id){
         methyl.strain.order <- 1:nrow(gene.methyl.mat3)
     }
     
-    snp.pos <- as.numeric(sapply(strsplit(names(gene.snp.r2), "_"), function(x) x[2]))
+    if(length(gene.snp.r2) > 0 && !is.na(gene.snp.r2)){
+        snp.pos <- as.numeric(sapply(strsplit(names(gene.snp.r2), "_"), function(x) x[2]))
+    }
     chrom.pos <- as.numeric(rownames(gene.chrom.r2))
     methyl.pos <- as.numeric(rownames(gene.methyl.r2))
 
@@ -268,6 +283,10 @@ plot_together <- function(gene.id){
     
     global.max.r2 <- max(c(gene.chrom.r2[,1], gene.snp.r2, gene.methyl.r2, 
         hap.r2), na.rm = TRUE)
+
+    if(!is.finite(global.max.r2)){
+        return(NULL)
+    }
 
     if(is.interactive){quartz(width = 8, height = 8)}
     layout.mat <- matrix(c(1:5, 0, 0, 6, 6, 0), ncol = 2, byrow = FALSE)
@@ -386,23 +405,37 @@ pattern. It is not causal.
 
 ```{r rnd_ex, eval = FALSE}
 #head(all.r2)
-gene.name = "Impad1"
+gene.name = "Pkd2"
 gene.id <- gene.info[match(gene.name, gene.info[,"external_gene_name"]),"ensembl_gene_id"]
 plot_together(gene.id)
 
-same.r2 <- intersect(which(apply(all.r2, 1, function(x) x[3] == x[4])), which(all.r2[,3] > 50))
-gene.id <- sample(rownames(all.r2)[same.r2], 1)
-plot_together(gene.id)
+cent_chrom <- readRDS(here("Results", "ChromHMM", "9_states_C", "Chromatin.States.Gene.Coords.RDS"))
 
-snp.over.chrom <- intersect(which(apply(all.r2, 1, function(x) x[3] > x[2])), which(all.r2[,1] > 20))
-length(snp.over.chrom)
-gene.id <- sample(rownames(all.r2)[snp.over.chrom], 1)
-plot_together(gene.id)
+get_state_switch <- function(chrom.mat, state1 = 7, state2 = 3){
+    tss.locale <- get.nearest.pt(as.numeric(rownames(chrom.mat)), 0)
+    has.state1 <- length(which(chrom.mat[tss.locale,] == state1))
+    has.state2 <- length(which(chrom.mat[tss.locale,] == state2))
+    if(has.state1 > 0 && has.state2 > 0){
+        return(1)
+    }else{
+        return(0)
+    }
+}
 
-chrom.over.snp <- intersect(which(apply(all.r2, 1, function(x) x[3] < x[2])), which(all.r2[,1] > 20))
-length(chrom.over.snp)
-gene.id <- sample(rownames(all.r2)[chrom.over.snp], 1)
-plot_together(gene.id)
+example_73 <- sapply(cent_chrom, function(x) if(length(x) > 1){get_state_switch(x, 7, 3)}else{NA})
+
+has.switch <- which(example_73 > 0)
+
+pdf("~/Desktop/examples.pdf")
+for(i in 1:length(has.switch)){
+    print(i)
+    plot_together(gene.id = names(has.switch)[i])
+}
+dev.off()
+
+
+#potential examples: Irf5, Pkd2, Psma8, Gbp7, Lad1, Snhg11, Fam171b, Bmyc, Sorl1, 
+# Rarres1, Mtnr1a, Capg, Adra2b, Kcp, CCnd1
 ```
 
 ## Conclusions
