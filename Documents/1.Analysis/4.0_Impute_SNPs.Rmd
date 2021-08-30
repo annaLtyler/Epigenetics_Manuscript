@@ -230,9 +230,10 @@ if(!file.exists(snp.lod.file)){
             haplotype.matrix = gene.marker[[i]], 
             gene.chr = transcript.info.table[i,"chromosome_name"])
             gene.expr <- expr[,which(colnames(expr) == common.transcripts[i]),drop=FALSE]
-            all.snp.lod[[i]] <- scan1(snp.array, gene.expr)
+            adj.expr <- adjust(gene.expr, covar)
+            all.snp.lod[[i]] <- scan1(snp.array, adj.expr)
             #quartz();plot(all.snp.lod[[i]][,1], type = "h") 
-            regression.models  <- apply(snp.array[[1]], 3, function(x) lm(gene.expr[common.expr.locale,]~x[common.genoprob.locale,]))
+            regression.models  <- apply(snp.array[[1]], 3, function(x) lm(adj.expr[common.expr.locale,]~x[common.genoprob.locale,]))
             all.snp.r2[[i]] <- sapply(regression.models, function(x) if(length(x) > 1){summary(x)$adj.r.squared}else{NA})
         }
     }

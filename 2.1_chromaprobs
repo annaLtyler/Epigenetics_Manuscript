@@ -8,7 +8,7 @@
 #SBATCH -e slurm.%N.%j.err # STDERR
 #SBATCH --mail-user=anna.tyler@jax.org
 #SBATCH --mail-type=END
-# example use: sbatch --export=delete_previous="FALSE",num_states=9 2.1_chromaprobs
+# example use: sbatch --export=delete_previous="TRUE",num_states=9 2.1_chromaprobs
 
 cd $SLURM_SUBMIT_DIR
 

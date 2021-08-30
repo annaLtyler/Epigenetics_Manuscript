@@ -15,3 +15,5 @@ R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '2.1_chromaprobs.R
 
 
 R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '2.2_chromaprobs_analysis.Rmd'))"
+
+R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '4.0_Impute_SNPs.Rmd'))"

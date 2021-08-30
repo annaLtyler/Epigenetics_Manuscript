@@ -177,11 +177,12 @@ if(!file.exists(rrbs.lod.file)){
               if(!is.na(rrbs.array)){
                 gene.expr <- expr[,which(colnames(expr) == methyl.id[i]),drop=FALSE]
                 if(length(gene.expr) > 0){
-                  all.rrbs.lod[[i]] <- scan1(rrbs.array, gene.expr)
+                  adj.expr <- adjust(gene.expr, covar)
+                  all.rrbs.lod[[i]] <- scan1(rrbs.array, adj.expr)
                   #quartz();plot(as.numeric(rownames(all.rrbs.lod[[i]])), all.rrbs.lod[[i]][,1], type  = "h",xlab = "Genomic Position", ylab = "DNA Methylation LOD score")
-                  regression.models <- apply(rrbs.array[[1]][common.genoprob.locale,1,], 2, function(x) if(var(x) > 0){lm(gene.expr[common.expr.locale,]~x)}else{NA})
+                  regression.models <- apply(rrbs.array[[1]][common.genoprob.locale,1,], 2, function(x) if(var(x) > 0){lm(adj.expr[common.expr.locale,]~x)}else{NA})
                   all.rrbs.r2[[i]] <- sapply(regression.models, function(x) if(length(x) > 1){summary(x)$adj.r.squared}else{NA})
-                  #quartz();barplot(r2)
+                  #quartz();barplot(all.rrbs.r2[[i]])
                 }
               }
           }
