@@ -1,4 +1,10 @@
 
+## Gene expression
+The set of genes with the most highly difergent expression were 
+enriched for members of the cytochrome P450 superfamily (32), 
+major urinary proteins (15).
+
+
 The correlation between chromatin state and gene expression, as well as
 positional enrichments around functionally annotated positions in the 
 genome aided annotation of individual chromatin states. For example, 
@@ -47,3 +53,23 @@ modifications, and states 2 and 3 were the only states with the
 suppressing modification H3K27me3. State 1 was enriched in intergenic 
 regions and state 3 was enriched around transcription factor binding 
 sites. Positional enrichment of state 2 was not clear.
+
+
+## Epigenetic features correlated with inbred gene expression
+
+To investigate the relationship between epigenetic modifications and 
+gene expression, we calculated the relationship both chromatin state
+and DNA methylation and transcript abundance (Methods) (Figure XXX).
+Across all genes within individual inbred strains of mice, the percent
+methylation at CpG sites was negatively correlated with transcript 
+abundance primarily at the TSS. 
+
+The correlation of each chromatin state matched that seen in Figure XXXC,
+and the spatial resolution of the relationships added an interesting dimension
+to this observation. For example, state 3, which was overall correlated with
+lower transcript abundance in Figure XXXC, was shown to have this negative
+effect primarily when it was positioned at the TSS. In contrast, state 2,
+was also negatively correlated with transcription overall, but this effect
+was constant throughout the gene body. State 2 is characterized by H3K27me3,
+which has previously been associated with reduced transcription [CITE], but 
+was not enriched near any annotated functional genomic elements. 

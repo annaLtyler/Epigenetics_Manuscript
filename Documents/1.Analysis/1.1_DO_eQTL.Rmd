@@ -75,3 +75,36 @@ eqtl.file <- here("Data", "DOQTL", "eQTL_statistics.RDS")
 save.periodically(scan.one.transcript, max.iter = nrow(mrna.info), 
 filename = eqtl.file, save.every = 100)
 ```
+
+```{r test_divergence, eval = FALSE}
+library(DESeq2)
+library(sva)
+counts <- dataset.mrna$data$raw
+mean.count <- colMeans(counts)
+rna.seq <- counts[,which(mean.count >= 5)]
+cts <- floor(rna.seq)
+norm.counts <- vst(t(cts))
+adj.count <- t(adjust(t(norm.counts), covar))
+all_sd <- apply(adj.count, 1, sd)
+
+#plot.decomp(t(norm.counts))
+#plot.decomp(t(adj.count))
+
+num.chunks <- 15
+chunked.sd <- chunkV(sort(all_sd), num.chunks)
+sd_enrich <- vector(mode = "list", length = num.chunks)
+for(i in 1:length(chunked.sd)){
+    if(is.interactive){report.progress(i, num.chunks)}
+    gene.locale <- match(names(chunked.sd[[i]]), rownames(norm.counts))
+    if(is.interactive){quartz()}
+    sd_enrich[[i]] <- gost(names(chunked.sd[[i]]), organism = "mmusculus", sources = c("GO", "KEGG", "REACTOME"))
+    #quartz();plot.enrichment(sd_enrich[[i]], num.terms = 30)   
+}
+boxplot(chunked.sd)
+
+pdf(paste0("~/Desktop/DO_var_enrich.",num.chunks, ".pdf"), width = 7, height = 14)
+plot.enrichment.group(sd_enrich, max.term.size = 2000, cluster_cols = FALSE, 
+    cluster_rows = FALSE, transformation = sqrt)
+dev.off()
+
+```

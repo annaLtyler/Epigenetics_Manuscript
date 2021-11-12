@@ -19,6 +19,7 @@ This workflow uses the output from the RRBS workflow.
 is.interactive = FALSE
 #is.interactive = TRUE
 seq.by = 0.1 #the density at which to bin methylation across relative gene positions from -2 to 2
+oldPar <- par(no.readonly = TRUE)
 needed.packages <- c("here", "pheatmap", "hexbin", "RColorBrewer", "gprofiler2",
 "knitr")
 for(i in 1:length(needed.packages)){library(needed.packages[i], character.only = TRUE)}
@@ -40,7 +41,9 @@ rrbs.loaded <- as.logical(length(which(all.var == "all.rrbs")))
 if(!rrbs.loaded){
 	all.rrbs <- readRDS(rrbs.file)
 }
+```
 
+```{r transcript_info}
 transcript.info.file <- here("Data", "RNASeq", "RNASeq_gene_info.RData")
 transcript.info <- readRDS(transcript.info.file)
 
@@ -73,6 +76,296 @@ survey.buffer = 5000 #The number of bp to look up and downstream of specified re
 plot.buffer = 2000 #The number of bp around a point to plot
 mean.buffer = 1000 # The number of bp around a point for calculating mean methylation
 ```
+
+## Methylome
+
+The following code creates a single methylome across all control animals.
+We created a matrix for each chromosome containing each unique methylated
+position, and its methylation percent across all individuals. We binned the 
+percent methylation for each position into bins for unmethylated 
+(0%), hemimethylated (50%), and methylated (100%). The goal is to look for 
+general strain patterns in the methylome. Does the methylome have strain-based 
+patterns? 
+
+```{r methylome}
+get_methyl_sites <- function(chr, sites, methyl_list){
+  chr.locale <- which(methyl_list[,1] == chr)
+  chr.table <- methyl_list[chr.locale,]
+  site.locale <- match(sites, chr.table[,2])
+  return(chr.table[site.locale,4])
+} 
+
+methylome_file <- here("Results", "RRBS", "Methylome.RDS")
+if(!file.exists(methylome_file)){
+  c.locale <- which(id.table[,"treat.label"] == "C")
+  all_sites <- vector(mode = "list", length = 19)
+  for(chr in 1:19){
+    if(is.interactive){print(chr)}
+    u_sites <- unique(unlist(lapply(all.rrbs, function(x) x[which(x[,1] == chr),2])))
+    strain_sites <- sapply(all.rrbs, function(x) get_methyl_sites(chr, u_sites, x))
+    rownames(strain_sites) <- u_sites
+    binned_methyl <- apply(strain_sites[,c.locale], 2, function(x) bin.vector(x, c(0, 50, 100)))
+    all_sites[[chr]] <- binned_methyl
+  }
+saveRDS(all_sites, methylome_file)
+}else{
+all_sites <- readRDS(methylome_file)
+}
+
+total.sites <- sum(sapply(all_sites, nrow))
+```
+
+There are `r total.sites` unique sites in this methylome.
+
+### Strain-Specific CpG sites {.tabset .tabset-fade .tabset-pills}
+
+We investigated whether the CpG sites were differentially detected
+across strains. We defined a strain-specific site as any site for
+which methylation values were present for all individuals of some 
+strains, and absent for all individuals of other strains.
+
+```{r strain_spec}
+#This function finds strain-specific CpG sites. These are
+#sites that are present in all individuals of a strain they
+#are present in, and absent in all individuals of a strain
+#they are absent in.
+methyl_by_strain <- function(strain_methyl_mat, strain.idx.list){
+  #chunk into strains
+  if(is.interactive){cat("Checking for strain-specific methylation sites...\n")}
+  chunk.methylome <- lapply(strain.idx.list, function(x) strain_methyl_mat[,x])
+  #look for sites that have all or none for all strains
+  all_or_none <- matrix(NA, nrow = nrow(strain_methyl_mat), ncol = length(chunk.methylome))
+  for(i in 1:length(chunk.methylome)){
+    if(is.interactive){cat("\t", i, "\n")}
+    all_or_none[,i] <- apply(chunk.methylome[[i]], 1, function(x) all(!is.na(x)) || all(is.na(x)))
+  }
+  rows_to_check <- which(rowSums(all_or_none) == ncol(all_or_none))
+  test.methyl <- strain_methyl_mat[rows_to_check,]
+  has.na <- which(is.na(rowSums(test.methyl)))
+  strain.based.presence <- test.methyl[has.na,]
+  #quartz();pheatmap(strain.based.presence[1:1000,], cluster_cols = FALSE, cluster_rows = FALSE)
+  return(strain.based.presence)
+}
+
+char_num <- nchar(colnames(all_sites[[1]]))
+methylome_strains <- substr(colnames(all_sites[[1]]), 1, (char_num-2))
+strain.idx.list <- lapply(col.table[,6], function(x) which(methylome_strains == x))
+names(strain.idx.list) <- col.table[,6]
+methylome.strain.col <- col.table[match(methylome_strains, col.table[,6]), 3]
+
+#get all strain-specific CpG sites
+strain.specific.file <- here("Results", "RRBS", "strain_specific_sites.RDS")
+if(!file.exists(strain.specific.file)){
+  strain.spec.sites <- lapply(all_sites, function(x) methyl_by_strain(x, strain.idx.list))
+  saveRDS(strain.spec.sites, strain.specific.file)
+}else{
+strain.spec.sites <- readRDS(strain.specific.file)
+}
+```
+
+The following plot shows the proportion of sites per chromosome that were 
+differentially detected across the strains. For each chromosome,
+between 15 and 20% of methylated sites were differentially detected across 
+strains.
+
+```{r strain-spec-count, fig.width = 8, fig.height = 5}
+num_strain_spec <- sapply(strain.spec.sites, nrow)
+num_all <- sapply(all_sites, nrow)
+prop_spec <- num_strain_spec/num_all
+names(prop_spec) <- 1:19 #one element per chromosome
+if(is.interactive){quartz()}
+barplot(prop_spec, ylim = c(0, 0.2))
+```
+
+The following plot shows the fold enrichment of strain-specific CpG
+sites compared with annotated genomic features. They are enriched in
+CpG islands, which makes sense, as well as promoters, and features in
+the region of the TSS.
+
+```{r strain_spec_bed}
+#we can look for enrichment of chromatin states around strain-specific
+#CpG sites.
+sites_to_bed <- function(strain.methyl.mat, chr, bp.buffer = 1){
+  site.pos <- as.numeric(rownames(strain.methyl.mat))
+  start.pos <- site.pos - bp.buffer
+  end.pos <- site.pos + bp.buffer
+  chr.text <- rep(paste0("chr", chr), length(site.pos))
+  bed.table <- cbind(chr.text, start.pos, end.pos)
+  return(bed.table)
+}
+
+save_bed <- function(bed.table, filename){
+  gz_file <- paste0(filename, ".gz")
+  if(!file.exists(gz_file)){
+    write.table(bed.table, filename, quote = FALSE, sep = "\t", 
+    col.names = FALSE, row.names = FALSE)
+    system(paste("gzip", filename))
+  }
+  return(gz_file)
+}
+
+strain_bed <- Reduce("rbind", lapply(1:length(strain.spec.sites), 
+  function(x) sites_to_bed(strain.spec.sites[[x]], x, 1)))
+strain_gz_file <- save_bed(strain_bed, here("Data", "RRBS", "Strain_Specific_CpG.bed"))
+
+background.files <- list.files(here("Data", "mm10"), full.names = TRUE)
+
+strain.spec.enrich.file <- here("Data", "RRBS", "strain-specific_site_enrichment.RDS")
+
+if(!file.exists(strain.spec.enrich.file)){
+  strain_spec_CpG_enrich <- rep(NA, length(background.files))
+  names(strain_spec_CpG_enrich) <- gsub(".bed.gz", "", basename(background.files))
+
+  for(i in 1:length(background.files)){
+          if(is.interactive){cat(basename(background.files[i]), "\n")}
+          strain_spec_CpG_enrich[i] <- enrichment_bed(
+          state.bed = strain_gz_file, 
+          annotation.bed = background.files[i], 
+          chrom.size.file = here("Data", "support_files", "mm10.txt"))
+  }
+  saveRDS(strain_spec_CpG_enrich, strain.spec.enrich.file)
+}else{
+  strain_spec_CpG_enrich <- readRDS(strain.spec.enrich.file)
+}
+
+if(is.interactive){quartz()}
+par(mar = c(4, 12, 4, 4))
+barplot(sort(log10(strain_spec_CpG_enrich)), las = 2, xlab = "lo10(Fold Enrichment)", 
+horiz = TRUE, main = "log10 Fold Enrichment for Strain-Specific CpG Sites")
+```
+
+The following plots show PC plots for each chromosome to indicate
+how the strain-specific sites were distributed.
+
+For the most part, CAST and PWK separate from the other strains, as 
+expected. WSB also has strain-specific methylation sites, but not
+quite to the extent that CAST and PWK do. DBA and 129 have some 
+strain-specific sites on chromosome 14.
+
+Are these strain-specific sites real, or is this an artifact
+of the different genome builds and how we localize the sequence
+reads?
+
+```{r methylome_pc, fig.height = 5, fig.width = 5}
+site.distribution <- Reduce("rbind", strain.spec.sites)
+site.distribution[which(!is.na(site.distribution))] <- 1
+site.distribution[which(is.na(site.distribution))] <- 0
+site.decomp.file <- here("Results", "RRBS", "CpG_site_distribution_decomposition.RDS")
+if(!file.exists(site.decomp.file)){
+  site.dist.decomp <- plot.decomp(t(site.distribution), plot.results = FALSE)
+  saveRDS(site.dist.decomp, site.decomp.file)
+}else{
+  site.dist.decomp <- readRDS(site.decomp.file)
+}
+
+rgb.col <- apply(col2rgb(methylome.strain.col), 2, function(x) rgb(x[1]/256, x[2]/256, x[3]/256, 
+  alpha = 0.5))
+
+if(is.interactive){quartz(width = 10, height = 5)}
+plot(site.dist.decomp$u[,1], site.dist.decomp$u[,2], pch = 16,
+cex = 1, col = rgb.col, xlab = "PC1", ylab = "PC2",
+main = "Decomposition of Strain-Specific CpG Site Distribution")
+```
+
+## Strain-Specific Methylation
+
+There may be strain-specific variation in methylation levels at CpG
+sites that are present in all strains. We looked for 
+strain-specificity in percent DNA methylation at sites for which all
+strains had measured methylation. For these PC plots, we binned 
+methylation into 0, 50, and 100%.
+
+
+```{r strain_spec_perc, fig.width = 10, fig.height = 8}
+#subset to sites that are present across all strains
+full_methyl <- lapply(all_sites, function(x) x[which(!is.na(rowSums(x))),])
+#count the number of methylation levels across all sites
+methyl_levels <- lapply(full_methyl, function(x) apply(x, 1, function(y) length(unique(y))))
+
+#plot.decomp(t(full_methyl[[1]]), label.points = TRUE)
+
+non_varying_sites <- lapply(1:length(full_methyl), 
+  function(x) full_methyl[[x]][which(methyl_levels[[x]] == 1),])
+non_varying_bed <- Reduce("rbind", lapply(1:length(non_varying_sites), 
+  function(x) sites_to_bed(non_varying_sites[[x]], x, 1)))
+non_varying_gz <- save_bed(non_varying_bed, here("Data", "RRBS", "non_varying_sites.bed"))
+
+bimodal_sites <- lapply(1:length(full_methyl), 
+  function(x) full_methyl[[x]][which(methyl_levels[[x]] == 2),])
+bimodal_bed <- Reduce("rbind", lapply(1:length(bimodal_sites), 
+  function(x) sites_to_bed(bimodal_sites[[x]], x, 1)))
+bimodal_gz <- save_bed(bimodal_bed, here("Data", "RRBS", "bimodal_sites.bed"))
+
+trimodal_sites <- lapply(1:length(full_methyl), 
+  function(x) full_methyl[[x]][which(methyl_levels[[x]] == 3),])
+trimodal_bed <- Reduce("rbind", lapply(1:length(trimodal_sites), 
+  function(x) sites_to_bed(trimodal_sites[[x]], x, 1)))
+trimodal_gz <- save_bed(trimodal_bed, here("Data", "RRBS", "trimodal_sites.bed"))
+```
+
+The following box plot shows the distribution of proportions of sites on each 
+chromosome that have no variation across strains, have a bimodal distribution
+(methylated/unmethylated), or a trimodal distribution 
+(methylated/hemimethylated/unmethylated).
+
+```{r state_count_box}
+site_counts <- sapply(1:length(non_varying_sites), 
+  function(x) c(nrow(non_varying_sites[[x]]), nrow(bimodal_sites[[x]]), nrow(trimodal_sites[[x]])))
+colnames(site_counts) <- 1:19
+rownames(site_counts) <- c("Non-Varying", "Bimodal", "Trimodal")
+
+site_prop <- apply(site_counts, 2, function(x) x/sum(x))
+type.cols <- c("#e41a1c", "#377eb8", "#4daf4a")
+if(is.interactive){quartz()}
+boxplot(t(site_prop), main = "Proportion of CpG sites", ylab = "Proportion")
+```
+
+The following heat map shows the log10(Fold Enrichment) 
+of each type of CpG site (non-varying, bimodal, or trimodal)
+relative to annotated positions in the genome.
+
+This shows us that non-varying CpG sites are enriched in promoters
+and TSS regions, but depleted in enhancers.
+
+The bimodal and trimodal sites were not particularly enriched
+or depleted anywhere. 
+
+```{r state_enrich, fig.width = 4, fig.height = 7}
+CpG.enrich.mat.file <- here("Results", "RRBS", "CpG.types.enrichment.RDS")
+
+if(!file.exists(CpG.enrich.mat.file)){
+  CpG.enrich.mat <- matrix(NA, length(test.files), nrow = 3)
+  rownames(CpG.enrich.mat) <- c("non_varying", "bimodal", "trimodal")
+  colnames(CpG.enrich.mat) <- gsub(".bed.gz", "", basename(background.files))
+
+  for(i in 1:length(background.files)){
+    print(basename(background.files[i]))
+    CpG.enrich.mat[1,i] <- enrichment_bed(
+          state.bed = non_varying_gz, 
+          annotation.bed = background.files[i], 
+          chrom.size.file = here("Data", "support_files", "mm10.txt"))
+
+    CpG.enrich.mat[2,i] <- enrichment_bed(
+          state.bed = bimodal_gz, 
+          annotation.bed = background.files[i], 
+          chrom.size.file = here("Data", "support_files", "mm10.txt"))
+
+    CpG.enrich.mat[3,i] <- enrichment_bed(
+          state.bed = trimodal_gz, 
+          annotation.bed = background.files[i], 
+          chrom.size.file = here("Data", "support_files", "mm10.txt"))
+  }
+  saveRDS(CpG.enrich.mat, CpG.enrich.mat.file)
+}else{
+  CpG.enrich.mat <- readRDS(CpG.enrich.mat.file)
+}
+
+
+if(is.interactive){quartz(width = 4, height = 7)}
+pheatmap(log10(t(CpG.enrich.mat)))
+```
+
+## Methylation by gene
 
 Get methylation percentages for all genes and all strains given the above bp buffers.
 
@@ -159,6 +452,8 @@ saveRDS(methyl.mats, methyl.mat.file)
 }else{
   methyl.mats <- readRDS(methyl.mat.file)
 }
+
+#quartz();pheatmap(methyl.mats[[1]], cluster_rows = FALSE, cluster_cols = FALSE)
 ```
 
 Normalize gene coordinates to run from 0 to 1 from the TSS to the TES.
@@ -169,10 +464,11 @@ norm.rrbs.file <- here("Results", "RRBS", "RRBS.Normalized.Position.RDS")
 if(!file.exists(norm.rrbs.file)){
   #first center all the coordinates
     norm_rrbs_coord <- lapply_pb(1:length(methyl.mats), 
-        function(x) center.on.feature(gene.name = names(methyl.mats)[x], 
+        function(x) if(length(methyl.mats[[x]]) > 1){center.on.feature(gene.name = names(methyl.mats)[x], 
         gene.info = transcript.info, vals = methyl.mats[[x]][1,], 
-        feature = "full"))
-    #put the normalized coordinates onto the methyl.mats
+        feature = "full")}else{NA})
+
+  #put the normalized coordinates onto the methyl.mats
     norm_rrbs <- methyl.mats
     names(norm_rrbs) <- names(methyl.mats)
     for(i in 1:length(norm_rrbs)){
@@ -182,9 +478,13 @@ if(!file.exists(norm.rrbs.file)){
 }else{
     norm_rrbs <- readRDS(norm.rrbs.file)
 }
+#quartz();pheatmap(norm_rrbs[[1]], cluster_rows = FALSE, cluster_cols = FALSE)
+
+
 ```
 
 ## Methylation density by gene position {.tabset .tabset-fade .tabset-pills}
+
 We looked at where the densest DNA methylation occurred relative to the gene body.
 Methylation is densest at the TSS, and very sparse within gene bodies. 
 
@@ -232,8 +532,7 @@ pdf(here("Documents", "3.Manuscript", "Figures", "methylation_density.pdf"),
 dev.off()
 ```
 
-
-## DNA methylation percentage
+## DNA methylation percentage {.tabset .tabset-fade .tabset-pills}
 
 The following plots show the percent methylation across the gene body. 
 Methylation sites outside gene bodies have 50% 
@@ -247,11 +546,11 @@ if(!file.exists(strain.methyl.file)){
   names(strain_rrbs_mat) <- strains
   for(st in 1:length(strains)){
     cat("###", strains[st], "\n")
-    strain_rrbs <- lapply(norm_rrbs, function(x) x[st,])
-    strain_rrbs_mat[[st]] <- plot.centered.vals(val.list = strain_rrbs, 
+    norm_strain_avg <- lapply(norm_rrbs, function(x) if(length(x) > 1){x[st,]}else{NA}) 
+    strain_rrbs_mat[[st]] <- plot.centered.vals(val.list = norm_strain_avg, 
     return.means = FALSE, seq.by = seq.by, ylim = c(0,100), 
     plot.label = paste("Percent Methylation Across the Gene Body in", strains[st]))
-    abline(v = c(0,1))
+    abline(v = c(0,1), lty = 2, col = "gray", lwd = 2)
     cat("\n\n")
   }
   saveRDS(strain_rrbs_mat, strain.methyl.file)
@@ -261,27 +560,14 @@ if(!file.exists(strain.methyl.file)){
 ```
 
 
-```{r methyl_heat, eval = FALSE}
-#methylation heatmaps ordered by methylation percent at the TSS
-strain.locale <- order.strains(strains, names(strain.expr[[1]]), col.table)
-for(st in 1:length(strain_rrbs_mat)){
-  tss.pos <- which(colnames(strain_rrbs_mat[[st]]) == "0")
-  tss.order <- order(strain_rrbs_mat[[st]][,tss.pos])
-  ordered.id <- transcript.info[match(rownames(strain_rrbs_mat[[st]])[tss.order], transcript.info[,"external_gene_name"]),"ensembl_gene_id"]
-  ordered.expr <- sapply(strain.expr[match(ordered.id, names(strain.expr))], function(x) x[strain.locale[st]])
-  expr.df <- data.frame(ordered.expr)
-  if(is.interactive){quartz()}
-  pheatmap(strain_rrbs_mat[[1]][tss.order,], cluster_rows = FALSE, cluster_cols = FALSE, 
-  show_rownames = FALSE)
-}
-
-```
-
-The pattern of methylation was the same across all strains. 
 The following plot shows the median percent methylation by position.
 
 ```{r avg_methyl_percent}
-all_rrbs_med <- t(sapply(strain_rrbs_mat, function(x) apply(x, 2, function(y) median(y, na.rm = TRUE))))
+all_rrbs_met <- lapply(norm_rrbs, 
+  function(x) if(length(x) > 1){colMeans(apply(x, 2, as.numeric), na.rm = TRUE)}else{NA})
+
+all_rrbs_med <- t(sapply(strain_rrbs_mat, function(x) apply(x, 2, 
+  function(y) median(y, na.rm = TRUE))))
 rel.pos <- as.numeric(colnames(all_rrbs_med))
 
 if(is.interactive){quartz()}
@@ -296,6 +582,17 @@ mtext(side = 1, text = "Relative Genomic Position", line = 2.5)
 mtext(side = 2, text = "Median Percent DNA Methylation", line = 2.5)
 ```
 
+The following plot shows data for all strains together.
+
+```{r perc_all_strains}
+all.strain.mat <- Reduce("rbind", strain_rrbs_mat)
+plot.centered.mat(all.strain.mat, ylim = c(0,100), 
+plot.label = "Percent Methylation Across the Gene Body", 
+show.var = "se", plot.fun = "median")
+abline(v = c(0,1), lty = 2, col = "gray", lwd = 2)
+```
+
+
 ```{r percent_fig, eval = FALSE}
 pdf(here("Documents", "3.Manuscript", "Figures", "methylation_percentage.pdf"), 
   width = 5, height = 4)
@@ -305,30 +602,123 @@ pdf(here("Documents", "3.Manuscript", "Figures", "methylation_percentage.pdf"),
 dev.off()
 ```
 
+## Non-varying, Bimodal, and Trimodal by gene
+
+I wanted to dig a bit deeper into these types of sites to see if they are enriched
+anywhere in the gene body, or in specific sets of genes.
+
+```{r site_type_location}
+type_by_norm_pos <- function(norm.rrbs.mat, n.states = 1, min.strains = 3){
+  binned.rrbs <- apply(norm.rrbs.mat, 2, function(x) bin.vector(x, c(0, 50, 100)))
+  num.strains <- apply(binned.rrbs, 2, function(x) length(which(!is.na(x))))
+  dont.pass <- which(num.strains < min.strains)
+  num.sites <- apply(binned.rrbs, 2, function(x) length(unique(x[which(!is.na(x))])))
+  type.present <- rep(0, ncol(norm.rrbs.mat))
+  type.present[which(num.sites == n.states)] <- 1
+  type.present[dont.pass] <- NA 
+  names(type.present) <- colnames(norm.rrbs.mat)
+  return(type.present)
+}
+
+non.varying.rrbs.file <- here("Results", "RRBS", "site.type.nonvarying.RDS")
+if(!file.exists(non.varying.rrbs.file)){
+  non_varying_rrbs <- lapply_pb(norm_rrbs, 
+    function(x) if(length(x) > 1){type_by_norm_pos(x, 1, 3)}else{NA})
+  saveRDS(non_varying_rrbs, non.varying.rrbs.file)
+}else{
+  non_varying_rrbs <- readRDS(non.varying.rrbs.file)
+}
+
+
+bimodal.rrbs.file <- here("Results", "RRBS", "site.type.bimodal.RDS")
+if(!file.exists(bimodal.rrbs.file)){
+  bimodal_rrbs <- lapply_pb(norm_rrbs, 
+    function(x) if(length(x) > 1){type_by_norm_pos(x, 2, 3)}else{NA})
+  saveRDS(bimodal_rrbs, bimodal.rrbs.file)
+}else{
+  bimodal_rrbs <- readRDS(bimodal.rrbs.file)
+}
+
+trimodal.rrbs.file <- here("Results", "RRBS", "site.type.trimodal.RDS")
+if(!file.exists(trimodal.rrbs.file)){
+  trimodal_rrbs <- lapply_pb(norm_rrbs, 
+    function(x) if(length(x) > 1){type_by_norm_pos(x, 3, 3)}else{NA})
+  saveRDS(trimodal_rrbs, trimodal.rrbs.file)
+}else{
+  trimodal_rrbs <- readRDS(trimodal.rrbs.file)
+}
+```
+
+The following plots show the frequencies of each type of CpG site 
+as they occur along the gene body. 
+
+The majority of sites (60\%) are non-varying everywhere. This increases
+to about 80% at the TSS. The dashed horizongal line markd 50\%.
+
+```{r plot_non_var_freq, message = FALSE}
+
+non_varying_mat <- plot.centered.vals(non_varying_rrbs, seq.by = seq.by, ylim = c(0,1), 
+  return.means = FALSE, plot.label = "Non-Varying")
+#plot.centered.mat(non_varying_mat, ylim = c(0, 1), plot.label = "Non-Varying")
+abline(v = c(0,1))
+abline(h = 0.5, col = "darkgray", lty = 2)
+
+tss_non_var <- lapply(non_varying_rrbs, function(x) x[get.nearest.pt(as.numeric(names(x)), 0)])
+non_var_genes <- which(sapply(tss_non_var, function(x) length(x) > 0 && x == 1))
+non_var_enrich <- gost(names(non_var_genes), organism = "mmusculus")
+par(mfrow = c(1,2))
+plot.enrichment.wordcloud(non_var_enrich)
+```
+
+Around 35\% of sites are bimodal. Around 20\% of TSS sites are bimodal.
+These genes are enriched for response to stimuli.
+
+```{r plot_bimodal}
+par(oldPar)
+bimodal_mat <- plot.centered.vals(bimodal_rrbs, seq.by = seq.by, ylim = c(0,0.6), 
+  return.means = FALSE, plot.label = "Bimodal")
+#plot.centered.mat(bimodal_mat, ylim = c(0, 0.6), plot.label = "Bimodal")
+abline(v = c(0,1))
+abline(h = 0, col = "darkgray", lty = 2)
+
+tss_bimodal <- lapply(bimodal_rrbs, function(x) x[get.nearest.pt(as.numeric(names(x)), 0)])
+bimodal_genes <- which(sapply(tss_bimodal, function(x) length(x) > 0 && x == 1))
+bimodal_enrich <- gost(names(bimodal_genes), organism = "mmusculus")
+par(mfrow = c(1,2))
+plot.enrichment.wordcloud(bimodal_enrich)
+```
+
+Very few sites, roughly 4\% are trimodal in any given position. 
+Just under 3\% are trimodal at the TSS. These genes are not enriched for anything.
+
+```{r plot_trimodal}
+par(oldPar)
+trimodal_mat <- plot.centered.vals(trimodal_rrbs, seq.by = seq.by, ylim = c(0,0.08), 
+  return.means = FALSE, plot.label = "Trimodal")
+#plot.centered.mat(trimodal_mat, ylim = c(0, 0.08), plot.label = "Trimodal")
+abline(v = c(0,1))
+abline(h = 0, col = "darkgray", lty = 2)
+
+tss_trimodal <- lapply(trimodal_rrbs, function(x) x[get.nearest.pt(as.numeric(names(x)), 0)])
+trimodal_genes <- which(sapply(tss_trimodal, function(x) length(x) > 0 && x == 1))
+trimodal_enrich <- gost(names(trimodal_genes), organism = "mmusculus")
+par(mfrow = c(1,2))
+plot.enrichment.wordcloud(trimodal_enrich)
+```
+
 
 ## Within-Strain Correlation Between Methylation and Expression
 
-The following plots show the correlation with gene expression 
-across these normalized positions calculated above within each 
-strain. These plots do not look at variation across strains, 
-only across genes within one strain. 
+The following plot shows the effect of percent DNA methylation
+on gene expression across all strains, normalized by position.
 
-There is a weak negative correlation between DNA methylation 
-and gene expression at the TSS (r = -0.2). There are also two
-weak, but consistent signals of positive correlation between
-DNA methylation and gene expression just upstream of the TSS.
-As weak as these blips are, they are very consistent across the
-strains.
+There is a very weak negative effect of DNA methylation 
+on gene expression near the TSS. Other than that, there
+is no overall effect of DNA methylation.
 
-Even farther upstream of the TSS, there is another negative 
-correlation between DNA methylation and gene expression. This
-correlation may be slightly stronger than the correlation at the
-TSS. 
-
-```{r rrbs_expr_cor, fig.width = 10, fig.height = 5}
-rrbs.expr.cor <- matrix(NA, nrow = length(strains), ncol = ncol(strain_rrbs_mat[[1]]))
-rownames(rrbs.expr.cor) <- strains
-colnames(rrbs.expr.cor) <- colnames(strain_rrbs_mat[[1]])
+```{r rrbs_expr_cor, fig.width = 10, fig.height = 5, warning = FALSE}
+rrbs.expr.effect <- vector(mode = "list", length = length(strains))
+names(rrbs.expr.effect) <- strains
 strain.expr.order <- order.strains(strains,names(strain.expr[[1]]), col.table)
 
 #align gene methylation percentages with expression in this strain.
@@ -342,43 +732,33 @@ colnames(strain.expr.mat) <- rownames(strain.expr[[1]])
 
 for(st in 1:length(strains)){
   strain_mat <- strain_rrbs_mat[[st]][match(common.genes, rownames(strain_rrbs_mat[[st]])),]
-  rrbs.expr.cor[st,] <- apply(strain_mat, 2, function(x) cor(x, strain.expr.mat[,strain.expr.order[st]], use = "pairwise.complete.obs", method = "pearson"))
+  rrbs.expr.effect[[st]] <- apply(strain_mat, 2, 
+    function(x) plot.with.model(x, strain.expr.mat[,strain.expr.order[st]], 
+    confidence = 0.99, plot.results = FALSE))
 }
 
-rel.pos <- as.numeric(colnames(rrbs.expr.cor))
-strain.col <- col.table[match(strains, col.table[,6]),3]
-if(is.interactive){quartz(width = 9, height = 5)}
-layout(matrix(c(1,2), nrow = 1), width = c(1, 0.3))
-par(mar = c(4,4,4,0))
+rel.pos <- as.numeric(colnames(rrbs.expr.effect[[1]]))
+all.fit <- rowMeans(sapply(rrbs.expr.effect, function(x) x[3,]))
+all.lwr <- rowMeans(sapply(rrbs.expr.effect, function(x) x[4,]))
+all.upr <- rowMeans(sapply(rrbs.expr.effect, function(x) x[5,]))
+
+upstream.limit <- -0.5
+downstream.limit <- 1.5
+
+if(is.interactive){quartz(width = 7, height = 5)}
 plot.new()
-plot.window(xlim = c(min(rel.pos), max(rel.pos)), ylim = c(min(rrbs.expr.cor), max(rrbs.expr.cor))) 
-for(st in 1:nrow(rrbs.expr.cor)){
-  points(rel.pos, rrbs.expr.cor[st,], col = strain.col[st], type = "l", lwd = 2)
-}
+plot.window(xlim = c(upstream.limit, downstream.limit), ylim = c(min.fit, max.fit)) 
+plot.poly.xy(rel.pos, all.lwr, rel.pos, all.upr, col = "gray80", border = "gray80")
+points(rel.pos, all.fit, type = "l", col = "gray40", lwd = 2)
 axis(1)
 axis(2)
 mtext(text = "Relative Gene Position", side = 1, line = 2.5)
-mtext(text = "Pearson Correlation Between Expression and Methylation", side = 2, line = 2.5)
-abline(v = c(0,1))
-abline(h = 0, col = "darkgray", lty = 2)
-plot.new()
-plot.window(xlim = c(0,1), ylim = c(0,1))
-par(mar = c(4,0,4,0))
-legend(0,0.9, col = strain.col, lty = 1, legend = col.table[match(strains, col.table[,6]),1], lwd = 3)
+mtext(text = "Effect Size", side = 2, line = 2.5)
+abline(v = c(0,1), lwd = 2, col = "gray60", lty = 2)
+abline(h = 0, col = "gray40", lty = 2)
 #pheatmap(rrbs.expr.cor, cluster_cols = FALSE, cluster_rows = FALSE)
 ```
 
-```{r cor_fig, eval = FALSE}
-pdf(here("Documents", "3.Manuscript", "Figures", "methylation_within_strain_correlation.pdf"), 
-  width = 5, height = 4)
-rel.pos <- as.numeric(colnames(rrbs.expr.cor))
-plot.centered.mat(rrbs.expr.cor, ylim = c(-0.15, 0.15), 
-  plot.label = "Within-strain correlation between gene expression and DNA methylation",
-  min.upstream = -1, max.downstream = 2)
-abline(v = c(0,1), lty = 2, col = "darkgray", lwd = 2)
-abline(h = 0)
-dev.off()
-```
 
 ## Across-strain variation in DNA methylation
 
@@ -389,9 +769,8 @@ We used the aligned DNA methylation values generated above. For
 each gene, we correlated DNA methylation percent with expression 
 across strains. 
 
-Overall, there is an ever-so-slight negative correlation between 
-percent DNA methylation and gene expression across strains. 
-
+There is no correlation between gene expression and DNA methylation
+across strains.
 
 ```{r inter_strain}
 
@@ -405,188 +784,99 @@ if(!file.exists(rrbs.by.gene.file)){
   gene.by.strain <- readRDS(rrbs.by.gene.file)
 }
 
+
 gene.expr.cor.file <- here("Results", "RRBS", "RRBS.Expr.Cor.Across.Strains.RDS")
 if(!file.exists(gene.expr.cor.file)){
-  gene.expr.cor <- matrix(NA, nrow = length(gene.by.strain), ncol = ncol(strain_rrbs_mat[[1]]))
-  colnames(gene.expr.cor) <- colnames(strain_rrbs_mat[[1]])
-  rownames(gene.expr.cor) <- names(gene.by.strain)
-
+  expr.gene.names <- transcript.info[match(names(strain.expr), 
+      transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
+  common.genes <- Reduce("intersect", lapply(strain_rrbs_mat, rownames))
+  scaled.expr.mat <- t(sapply(scaled.expr[match(common.genes, expr.gene.names)], 
+    function(x) if(length(x) > 1){x[expr.order,]}else{rep(NA, 9)}))
   expr.order <- order.strains(strains, names(strain.expr[[1]]), col.table)
-  for(i in 1:length(gene.by.strain)){
-    if(is.interactive){report.progress(i, length(gene.by.strain))}
-    gene.id <- transcript.info[match(names(gene.by.strain)[i], 
-      transcript.info[,"external_gene_name"]),"ensembl_gene_id"]
-    gene.idx <- match(gene.id, names(strain.expr))
-    if(length(scaled.expr[[gene.idx]]) > 1){
-      one.strain.expr <- scaled.expr[[gene.idx]][expr.order,1]
-      methyl.mat <- apply(gene.by.strain[[i]], 2, function(x) bin.vector(x, c(0, 50, 100)))
-      has.all <- which(apply(methyl.mat, 1, function(x) all(!is.na(x))))
-      if(length(has.all) > 0){
-        gene.expr.cor[i,has.all] <- apply(methyl.mat[has.all,,drop=FALSE], 1, function(x) cor(x, one.strain.expr))
-      }
-    }
+
+  stat.mat <- matrix(NA, nrow = ncol(strain_rrbs_mat[[1]]), ncol = 5)
+  colnames(stat.mat) <- c("r.cor", "p", "slope.fit", "slope.lwr", "slope.upr")
+  rownames(stat.mat) <- colnames(strain_rrbs_mat[[1]])
+  
+  for(pos in 1:ncol(strain_rrbs_mat[[1]])){
+    pos.rrbs <- sapply(strain_rrbs_mat, function(x) x[match(common.genes, rownames(x)),pos])
+    stat.mat[pos,] <- plot.with.model(as.vector(pos.rrbs), as.vector(scaled.expr.mat), 
+      report = "cor.test", confidence = 0.95, plot.results = FALSE)
   }
-  saveRDS(gene.expr.cor, gene.expr.cor.file)
+  saveRDS(stat.mat, gene.expr.cor.file)
 }else{
-  gene.expr.cor <- readRDS(gene.expr.cor.file)
+  stat.mat <- readRDS(gene.expr.cor.file)
 }
-```
 
-```{r across_strain_cor_fig, eval = FALSE}
-pdf(here("Documents", "3.Manuscript", "Figures", "methylation_expr_across_strains.pdf"), 
-  width = 5, height = 4)
-plot.centered.mat(gene.expr.cor, ylim = c(-0.15, 0.15), 
-  ylab = "Pearson Correlation r Between DNA Methylation and Gene Expression",
-  plot.label = "", min.upstream = -1, max.downstream = 2)
-abline(v = c(0,1), lwd = 2, col = "darkgray", lty = 2)
-abline(h = 0)
-dev.off()
-```
-
-The top figure below shows an example alignment for one gene.
-The color scale runs from blue to red indicating hypo- to 
-hypermethylation.
-
-The bottom figure shows the correlation between each position
-with methylation, and gene expression in the inbred mice. 
-
-```{r rrbs_example, fig.width = 10, fig.height = 4}
-#gene.name = "Gnai3"
-gene.name <- "Irf5"
-
-gene.locale <- which(names(gene.by.strain) == gene.name)
 if(is.interactive){quartz()}
-methyl.mat <- apply(t(gene.by.strain[[gene.locale]]), 2, function(x) bin.vector(x, c(0, 50, 100)))
-colnames(methyl.mat) <- round(as.numeric(colnames(methyl.mat)), 2)
-pheatmap(methyl.mat, cluster_rows = FALSE, cluster_cols = FALSE,
-main = gene.name)
-#boxplot(methyl.mat)
-if(is.interactive){quartz()}
-plot(as.numeric(colnames(gene.expr.cor)), gene.expr.cor[gene.name,], 
-xlab = "Relative Genomic Position", pch = 16, type = "h", main = gene.name,
-ylab = "Correlation Between DNA Methylation and Gene Expression")
-abline(h = 0)
+plot.new()
+plot.window(xlim = c(-0.5, 1.5), ylim = c(-0.01, 0.01))
+plot.poly.xy(rel.pos, stat.mat[,"slope.lwr"], rel.pos, stat.mat[,"slope.upr"],
+col = "gray80", border = "gray80")
+points(rel.pos, stat.mat[,"slope.fit"], type = "l", col = "gray40", lwd = 2)
+axis(1);axis(2)
+abline(v = c(0,1), lwd = 2, col = "gray60", lty = 2)
+abline(h = 0, col = "gray40", lty = 2)
+mtext("Effect Size", side = 2, line = 2.5)
+mtext("Effect of DNA methylation on Gene Expression Across Strains", side = 3)
 
 ```
 
-## Variation in Percent Methylation Across Strains
+## Gene expression by presence/absence
 
-We looked at the variation across all genes by subtracting the maximum methylation
-percent from the minimum methylation percent across strains at each position.
+So far we have looked at how percent methylation relates to gene
+expression. Our data, and data from other suggest that the percent
+methylation at any given CpG site is not particularly heritable. 
 
-```{r methyl_var}
+However, the presence or absence of a CpG site might be heritable,
+as it might be due to a SNP that either creates or destroys the site.
 
-get_methyl_var <- function(methyl.by.strain.mat){
-  var.v <- rep(NA, nrow(methyl.by.strain.mat))
-  has.vals <- which(apply(methyl.by.strain.mat, 1, function(x) all(!is.na(x))))
-  if(length(has.vals) > 0){
-    #methyl.max <- apply(methyl.by.strain.mat[has.vals,,drop=FALSE], 1, function(x) max(x, na.rm = TRUE))
-    #methyl.min <- apply(methyl.by.strain.mat[has.vals,,drop=FALSE], 1, function(x) min(x, na.rm = TRUE))
-    #var.v[has.vals] <- methyl.max - methyl.min
-    var.v[has.vals] <- apply(methyl.by.strain.mat[has.vals,,drop=FALSE], 1, function(x) sd(x, na.rm = TRUE))
+Therefore, we also want to look at the correlation between site
+presence/absence and gene expression across strains.
+
+```{r presence_absence}
+pres.expr.cor.file <- here("Results", "RRBS", "RRBS.presence.Expr.Cor.Across.Strains.RDS")
+
+if(!file.exists(pres.expr.cor.file)){
+  expr.gene.names <- transcript.info[match(names(strain.expr), 
+      transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
+  common.genes <- Reduce("intersect", lapply(strain_rrbs_mat, rownames))
+  scaled.expr.mat <- t(sapply(scaled.expr[match(common.genes, expr.gene.names)], 
+    function(x) if(length(x) > 1){x[expr.order,]}else{rep(NA, 9)}))
+  expr.order <- order.strains(strains, names(strain.expr[[1]]), col.table)
+
+  stat.mat <- matrix(NA, nrow = ncol(strain_rrbs_mat[[1]]), ncol = 5)
+  colnames(stat.mat) <- c("r.cor", "p", "slope.fit", "slope.lwr", "slope.upr")
+  rownames(stat.mat) <- colnames(strain_rrbs_mat[[1]])
+  
+  for(pos in 1:ncol(strain_rrbs_mat[[1]])){
+    pos.rrbs <- sapply(strain_rrbs_mat, function(x) x[match(common.genes, rownames(x)),pos])
+    has.any <- which(apply(pos.rrbs, 1, function(x) !all(is.na(x))))
+    bin.rrbs <- pos.rrbs
+    bin.rrbs[which(is.na(pos.rrbs))] <- 0
+    bin.rrbs[which(!is.na(pos.rrbs))] <- 1
+    stat.mat[pos,] <- plot.with.model(as.vector(bin.rrbs[has.any,]), 
+      as.vector(scaled.expr.mat[has.any,]), 
+      report = "cor.test", confidence = 0.95, plot.results = FALSE)
   }
-  return(var.v)
+  saveRDS(stat.mat, pres.expr.cor.file)
+}else{
+  stat.mat <- readRDS(pres.expr.cor.file)
 }
 
-get_methyl_mean <- function(methyl.by.strain.mat){
-  mean.v <- rep(NA, nrow(methyl.by.strain.mat))
-  has.vals <- which(apply(methyl.by.strain.mat, 1, function(x) all(!is.na(x))))
-  if(length(has.vals) > 0){
-    mean.v[has.vals] <- apply(methyl.by.strain.mat[has.vals,,drop=FALSE], 1, function(x) mean(x, na.rm = TRUE))
-  }
-  return(mean.v)
-}
-
-methyl_var <- t(sapply(gene.by.strain, get_methyl_var))
-methyl_mean <- t(sapply(gene.by.strain, get_methyl_mean))
-```
-
-The following plot shows distributions of percent methylation by position
-across all genes. This plot makes it obious that there is low methylation
-with low variance in methylation at the TSS, and high methylation with 
-low variance toward the TES. All other positions have varying means, but
-also very high variaion in percent methylation.
-
-```{r methyl_var_box}
-boxplot(methyl_mean, group.names = colnames(methyl_mean))
-```
-
-
-The following plot shows mean methylation plotted against the standard
-deviation of methylation. This plot reiterates the observation that 
-positions with very high or very low methylation are also consistent
-across strains. 
-
-```{r mean_var}
+coords <- as.numeric(colnames(strain_rrbs_mat[[1]]))
 if(is.interactive){quartz()}
-plot(as.vector(methyl_mean), as.vector(methyl_var), xlab = "Methylation Mean",
-  ylab = "Methylation SD")
-colnames(methyl_var) <- colnames(methyl_mean) <- rownames(gene.by.strain[[1]])
+plot.new()
+plot.window(xlim = c(-0.5, 1.5), ylim = c(-0.1, 0.1))
+plot.poly.xy(coords, stat.mat[,"slope.lwr"], coords, stat.mat[,"slope.upr"],
+col = "gray80", border = "gray80")
+points(coords, stat.mat[,"slope.fit"], type = "l", col = "gray40", lwd = 2)
+axis(1);axis(2)
+abline(v = c(0,1), lwd = 2, col = "gray60", lty = 2)
+abline(h = 0, col = "gray40", lty = 2)
+mtext("Effect of CpG Site Presence on Gene Expression", side = 3)
+mtext("Effect Size", side = 2, line = 2.5)
+
 ```
 
-The following plot shows the same data as above, but with the methylation 
-percent binned. In this plot it is easier to see that methylation varies 
-vary little across strains when it is very high or very low.
-
-```{r mean_var_box}
-mean.bins <- seq(0, 100, 10)
-var_by_percent <- sapply(1:ncol(methyl_mean), function(y) sapply(1:(length(mean.bins) - 1), function(x) mean(methyl_var[intersect(which(methyl_mean[,y] >= mean.bins[x]), which(methyl_mean[,y] <= mean.bins[(x+1)])),y], na.rm = TRUE)))
-rownames(var_by_percent) <- apply(cbind(mean.bins[1:10], mean.bins[2:11]),1, function(x) paste0(x[1], "-", x[2]))
-colnames(var_by_percent) <- round(as.numeric(colnames(methyl_mean)), 2)
-
-#pdf("~/Desktop/Methyl_variation.pdf", width = 7, height = 5)
-boxplot(t(var_by_percent), ylab = "Methylation SD", xlab = "Methylation Mean")
-#dev.off()
-```
-
-The following plot again shows the same information as above, but this 
-time split by relative genomic position. The $x$-axis shows the genomic
-position relative to the gene body. The $y$-axis shows binned percent
-methylation mean, and the individual cells show the variation in percent
-methylation for the corresponding methylation mean and gene position.
-
-This plot shows that the low variation seen in positions with high or
-low mean methylation does not depend on position. All positions with 
-high or low percent methylation are stable across strains. Positions 
-with mid-range DNA methylation have higher variance. This variation
-may be slightly higher upstream of gene bodies, but the effect is 
-not very strong.
-
-
-```{r mean_var_heat, eval = FALSE}
-pheatmap(var_by_position, cluster_rows = FALSE, cluster_cols = FALSE, 
-  main = "Methylation Mean and SD by Relative Genomic Position")
-```
-
-The following plot shows that variaion in DNA methylation is lower 
-at the TSS than at other genomic positions. This is due to the 
-observation that variation is low when average methylation is low,
-and the TSS has the lowest variation in methylation on average.
-
-```{r var_by_position}
-#quartz();barplot(colMeans(methyl_var, na.rm = TRUE))
-if(is.interactive){quartz(width = 8, height = 5)}
-#pdf("~/Desktop/methylation_var.pdf", width = 5, height = 4)
-plot.centered.mat(methyl_var, ylim = c(0, 10), 
-ylab = "Percent Methylation SD Across Strains",
-plot.label = "Methylation Variation", min.upstream = -1, max.downstream = 2)
-abline(v = c(0,1), lwd = 2, col = "darkgray", lty = 2)
-#dev.off()
-```
-
-The following plot shows the number of genes that have variation
-in methylation percent at each position. Now I'm confused. There is
-a very high number of genes with variation at the TSS. More than 
-anywhere else. But this variation is of particularly low magnitude?
-
-```{r number_var}
-num.var.genes <- apply(methyl_var, 2, function(x) length(which(x > 0)))
-if(is.interactive){quartz()}
-plot(as.numeric(colnames(methyl_var)), num.var.genes, 
-  xlab = "Relative Gene Position", ylab = "Number of Genes with Variation", type = "l",
-  lwd = 3, col = "darkgray")
-abline(v = c(0,1), lty = 2)
-
-#plot(sort(methyl_var[,21])) #TSS variation
-```
 

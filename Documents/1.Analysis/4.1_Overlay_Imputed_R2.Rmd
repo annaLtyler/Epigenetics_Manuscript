@@ -36,7 +36,7 @@ for(i in 1:length(all.code.dir)){
 ```
 
 ```{r load_other_lib}
-needed.packages <- c("grid", "gprofiler2")
+needed.packages <- c("grid", "gprofiler2", "knitr")
 load_libraries(needed.packages)
 ```
 
@@ -84,7 +84,8 @@ r2.list <- list("Haplotype" = eqtl.r2[,1], "Chromatin_State" = max.chrom,
     "SNP" = max.snp, "DNA_Methylation" = max.methyl)
 if(is.interactive){quartz()}
 boxplot(r2.list, ylab = "Variance Explained")
-sapply(r2.list, summary)
+
+kable(round(sapply(r2.list, summary), 2))
 ```
 
 The following plot shows the comparison between the maximum SNP r2
@@ -385,14 +386,14 @@ for(i in 1:3){
 ```
 
 
-## Irf5
+## Pkd2
 
-The following plot shows data for Irf5, which is has a very clean haplotype 
+The following plot shows data for Pkd2, which is has a very clean haplotype 
 and chromatin story. Interestingly, there are no SNPs that we can attribute
 to the haplotype or chromatin effect.
 
 ```{r test_genes, fig.width = 10, fig.height = 8}
-gene.name <- "Irf5"
+gene.name <- "Pkd2"
 gene.id <- gene.info[which(gene.info[,"external_gene_name"] == gene.name)[1],1]
 plot_together(gene.id)
 ```
@@ -403,39 +404,58 @@ same positions. I gather that this is simply a case of the SNPs
 and the DNA mathylation coincidentally having the same haplotype
 pattern. It is not causal.
 
-```{r rnd_ex, eval = FALSE}
+```{r examples, eval = FALSE}
 #head(all.r2)
 gene.name = "Pkd2"
+#gene.name = "Cyp46a1"
 gene.id <- gene.info[match(gene.name, gene.info[,"external_gene_name"]),"ensembl_gene_id"]
+
+gene.id <- 
+gene.name <- gene.info[match(gene.id, gene.info[,"ensembl_gene_id"]),"external_gene_name"]
+
+
 plot_together(gene.id)
 
 cent_chrom <- readRDS(here("Results", "ChromHMM", "9_states_C", "Chromatin.States.Gene.Coords.RDS"))
 
-get_state_switch <- function(chrom.mat, state1 = 7, state2 = 3){
+get_state_switch <- function(gene.id, state1 = 7, state2 = 3, min.r2 = 0){
+    chrom.mat.locale <- which(names(cent_chrom) == gene.id)
+    if(length(chrom.mat.locale) == 0){return(0)}
+    chrom.r2.locale <- which(names(chrom.r2) == gene.id)
+    if(length(chrom.r2.locale) == 0){return(0)}
+    chrom.mat <- cent_chrom[[chrom.mat.locale]]
+    chrom.r2.mat <- chrom.r2[[chrom.r2.locale]]
     tss.locale <- get.nearest.pt(as.numeric(rownames(chrom.mat)), 0)
-    has.state1 <- length(which(chrom.mat[tss.locale,] == state1))
-    has.state2 <- length(which(chrom.mat[tss.locale,] == state2))
-    if(has.state1 > 0 && has.state2 > 0){
-        return(1)
+    tss.r2 <- chrom.r2.mat[tss.locale]
+    if(length(tss.r2) == 0){return(0)}
+    if(tss.r2 > min.r2){
+        has.state1 <- length(which(chrom.mat[tss.locale,] == state1))
+        has.state2 <- length(which(chrom.mat[tss.locale,] == state2))
+        if(has.state1 > 0 && has.state2 > 0){
+            return(1)
+        }else{
+            return(0)
+        }
     }else{
         return(0)
-    }
+    }    
 }
 
-example_73 <- sapply(cent_chrom, function(x) if(length(x) > 1){get_state_switch(x, 7, 3)}else{NA})
 
-has.switch <- which(example_73 > 0)
+chr_state1 = 7; chr_state2 = 3
+example_switch <- sapply(names(cent_chrom), 
+    function(x) if(length(cent_chrom[[x]]) > 1){get_state_switch(x, chr_state1, chr_state2, 0.1)}else{NA})
 
-pdf("~/Desktop/examples.pdf")
+has.switch <- which(example_switch > 0)
+length(has.switch)
+pdf("~/Desktop/example_state_switch.pdf")
 for(i in 1:length(has.switch)){
     print(i)
     plot_together(gene.id = names(has.switch)[i])
 }
 dev.off()
 
-
-#potential examples: Irf5, Pkd2, Psma8, Gbp7, Lad1, Snhg11, Fam171b, Bmyc, Sorl1, 
-# Rarres1, Mtnr1a, Capg, Adra2b, Kcp, CCnd1
+#potential examples: Irf5, Pkd2, Snhg11, Rarres1, Capg, Kcp, CCnd1
 ```
 
 ## Conclusions

@@ -5,11 +5,14 @@
 #a shortcut to just plotting the values without the 
 #need to align them. 
 
-plot.centered.mat <- function(val.mat, min.representation = 10, plot.label = "Center",
+plot.centered.mat <- function(val.mat, min.representation = 10, 
+plot.fun = c("mean", "median"), plot.label = "Center", show.var = c("se", "sd"),
 plot.individual = FALSE, ylim = c(0, 50), ylab = "Methylation Percent Mean", 
 plot.line = TRUE, plot.hex = FALSE, min.upstream = -2, max.downstream = 2){
   
- 
+  plot.fun <- plot.fun[1]
+  show.var = show.var[1]
+
   all.pos <- as.numeric(colnames(val.mat))
   min.x <- max(c(floor(min(all.pos, na.rm = TRUE)), min.upstream))
   max.x <- min(c(ceiling(max(all.pos, na.rm = TRUE)), max.downstream))
@@ -42,8 +45,20 @@ plot.line = TRUE, plot.hex = FALSE, min.upstream = -2, max.downstream = 2){
     axis(1)
   }
 
-  methyl.means <- colMeans(val.mat, na.rm = TRUE)
-  methyl.var <- apply(val.mat, 2, function(x) sd(x, na.rm = TRUE)/sqrt(length(which(!is.na(x)))))
+  sum.fun <- match.fun(plot.fun)
+  methyl.means <- apply(val.mat, 2, function(x) sum.fun(x, na.rm = TRUE))
+
+  if(show.var == "se"){
+    methyl.var <- apply(val.mat, 2, function(x) sd(x, na.rm = TRUE)/sqrt(length(which(!is.na(x)))))
+  }
+
+  if(show.var == "sd"){
+    methyl.var <- apply(val.mat, 2, function(x) sd(x, na.rm = TRUE))
+  }
+
+  if(show.var == "var"){
+    methyl.var <- apply(val.mat, 2, function(x) var(x, na.rm = TRUE))
+  }
 
   if(plot.line){
     plot.new()

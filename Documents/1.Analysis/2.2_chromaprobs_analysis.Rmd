@@ -25,20 +25,6 @@ library(knitr)
 num.states = 9
 ```
 
-```{r load_biomart}
-all.var <- ls()
-lib.loaded <- as.logical(length(which(all.var == "mus")))
-if(!lib.loaded){
-  mus <- useMart("ENSEMBL_MART_ENSEMBL", dataset = "mmusculus_gene_ensembl", 
-  host = "may2017.archive.ensembl.org")
-}
-
-#att <- listAttributes(mus)
-#fil <- listFilters(mus)
-#query.term <- "island"
-#att[grep(query.term, att[,1]),]
-#fil[grep(query.term, fil[,1]),]
-```
 
 ```{r source_code}
 is.interactive = FALSE
@@ -81,18 +67,27 @@ sep = "\t", stringsAsFactors = FALSE, comment.char = "*")
 ```{r transcript_info}
 transcript.info.file <- here("Data", "RNASeq", "RNASeq_gene_info.RData")
 if(!file.exists(transcript.info.file)){
-    all.genes <- unique(names(chrom.states), colnames(expr))
-    transcript.info <- getBM(attributes = c("ensembl_gene_id", "external_gene_name", 
-    "chromosome_name", "start_position", "end_position", "transcription_start_site", 
-    "exon_chrom_start", "exon_chrom_end", "5_utr_start","5_utr_end","3_utr_start", 
-    "3_utr_end", "strand"), 
-    filters = "ensembl_gene_id", values = all.genes, mart = mus)
-    saveRDS(transcript.info, transcript.info.file)
+  all.var <- ls()
+  lib.loaded <- as.logical(length(which(all.var == "mus")))
+  if(!lib.loaded){
+    mus <- useMart("ENSEMBL_MART_ENSEMBL", dataset = "mmusculus_gene_ensembl", 
+    host = "may2017.archive.ensembl.org")
+  }
+
+  all.genes <- unique(names(chrom.states), colnames(expr))
+  transcript.info <- getBM(attributes = c("ensembl_gene_id", "external_gene_name", 
+  "chromosome_name", "start_position", "end_position", "transcription_start_site", 
+  "exon_chrom_start", "exon_chrom_end", "5_utr_start","5_utr_end","3_utr_start", 
+  "3_utr_end", "strand"), 
+  filters = "ensembl_gene_id", values = all.genes, mart = mus)
+  saveRDS(transcript.info, transcript.info.file)
 }else{
   transcript.info <- readRDS(transcript.info.file)
 }
 gene.names <- transcript.info[match(rownames(e.lod), transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
 ```
+
+
 
 ## Matching genetic eQTLs with chromatin eQTLs
 
@@ -100,32 +95,24 @@ The following plot shows the LOD scores of genetic eQTLs and chromatin eQTLs
 plotted against each other. For the most part, the LOD scores agree with each
 other very well.
 
-```{r set_thresh}
-lod.change.thresh = 2.5
-```
-
 However, there is also a fairly large group of genes for which
-there is a mismatch (a LOD score difference of more than `r lod.change.thresh`),
-between the two associations. These are genes for which there is a cis-eQTL,
-but relatively lower association with the chromatin state.
-The distribution of these differences is shown in the right-hand panel.
+there is a mismatch between the two associations. These are genes 
+for which there is a cis-eQTL, but relatively lower association 
+with the chromatin state. The distribution of these differences 
+is shown in the right-hand panel.
 
 ```{r e.ch.comp, fig.width = 8, fig.height = 4}
 max.ch.lod <- t(sapply(ch.lod, function(x) if(length(x) > 0){apply(x, 2, function(y) max(y, na.rm = TRUE))}else{rep(NA, 4)}))
+if(is.interactive){quartz(width = 8, height = 4)}
 par(mfrow = c(1,2))
 plot(e.lod[,1], max.ch.lod[,1], pch = 16, col = "gray", cex = 0.5,
 xlab = "genetic eQTL LOD score", ylab = "chromatin eQTL LOD score",
 main = "Genetic vs. Chromatin-based eQTL LOD scores")
 abline(0,1, col = "salmon")
-abline(-lod.change.thresh, 1, col = "salmon")
 
 lod.diff <- e.lod[,1] - max.ch.lod[,1]
 hist(lod.diff, breaks = 100, main = "LOD score differences")
 ordered.lod <- sort(lod.diff, decreasing = TRUE)
-abline(v = lod.change.thresh, col = "salmon")
-
-small.change <- which(lod.diff <= lod.change.thresh)
-big.change <- which(lod.diff > lod.change.thresh)
 ```
 
 ## Genetic and Chromatin R2 Comparison
@@ -142,8 +129,8 @@ not explain as much variance as the genetics.
 ```{r r2_comp, fig.width = 8, fig.height = 4}
 max.ch.r2 <- t(sapply(ch.r2, function(x) if(length(x) == 0){return(rep(NA, 4))}else{apply(x, 2, function(y) max(y, na.rm = TRUE))}))
 r2.diff <- e.r2 - max.ch.r2
-large.r2.diff <- 0.01
 
+if(is.interactive){quartz(width = 8, height = 4)}
 par(mfrow = c(1,2))
 #plot.hexbin(e.r2[,1], max.ch.r2[,1], xbins = 50)
 #test <- plot.with.model(e.r2[,1], max.ch.r2[,1], report = "cor.test")
@@ -152,15 +139,16 @@ plot(e.r2[,1], max.ch.r2[,1], pch = 16, col = "gray", cex = 0.7,
 xlab = "R2 Genetic eQTL", ylab = "R2 Chromatin eQTL", 
 main = "Comparison of Chromatin and Genetic R2")
 abline(0,1)
-abline(-large.r2.diff, 1, col = "salmon")
 
+large.r2.diff <- get.percentile(r2.diff, 95)
 hist(r2.diff[,1], breaks = 100, main = "R2 Difference Distribution", 
 xlab = "R2 Difference")
-abline(v = large.r2.diff, col = "salmon")
+abline(v = large.r2.diff)
+
 ```
 
 We defined genes with a big mismatch between the genetic and chromatin 
-eQTL scores as genes with an R2 difference greater than `r large.r2.diff`. 
+eQTL scores as genes in the top 95\% of the difference distribution. 
 
 ```{r define_mismatch}
 r2diff.order <- apply(r2.diff, 2, function(x) order(x, decreasing = TRUE))
@@ -168,193 +156,14 @@ big.diff <- apply(r2.diff, 2, function(x) rownames(r2.diff)[which(x > large.r2.d
 ```
 
 This set of `r length(big.diff[[1]])` genes is highly enriched for
-mitochrondrial and ribosomal genes. 
+RNA and non-coding RNA processing. 
 
 ```{r mismatch_enrich, fig.height = 10, fig.width = 7}
-enrich <- lapply(big.diff, function(x) gost(x, organism = "mmusculus", source = "GO"))
-if(is.interactive){quartz(height = 10, width = 7)}
-if(sum(sapply(enrich, length)) > 2){
-  plot.enrichment.group(enrich, sort.by = "p_value", n.terms = 30, max.term.size = 500)
-}else{
-  plot.text("No enrichment in these genes")
-}
+diff.enrich <- gost(big.diff[[1]], organism = "mmusculus")
+if(is.interactive){quartz(width = 8, height = 4)}
+par(mfrow = c(1,2))
+plot.enrichment.wordcloud(diff.enrich, max.term.size = 2000, max.vertex.cex = 50)
 ```
-
-## Mismatched Gene Characterization
-There are many possibile ways to explain the genes for which there is a 
-large mismatch between the genetic eQTL and the chromatin eQTL. We have 
-no way to investigate most of these hypotheses, but we can look at some.
-
-Chromatin imputation errors:
-  1. Cell type
-  2. Chromatin changes due to high-fat diet
-  3. Age
-
-Epistatic regulatory mechanism encoded in the genetics, but not reflected in chromatin:
-  1. Hyper/Hypomethylated genes 
-  2. Post-transcriptional regulation
-  3. Cell cycle variation (Histone methylation is known to vary across cell cycle)
-
-## Cell type specificity {.tabset .tabset-fade .tabset-pills}
-
-Here we investigate whether the genes that have widely diverging eQTL and
-chromatin eQTL LOD scores are primarily expressed in another cell type.
-
-First we create gene lists for each cell type associated with the Aizarani 
-liver cell type data sets.
-
-```{r msigdb}
-#get cell-type specific gene sets (category C8)
-#see https://www.gsea-msigdb.org/gsea/msigdb/genesets.jsp?
-cell.sets <- msigdbr(species = "Mus musculus", category = "C8", subcategory = "")
-cell.genes <- set_to_list(cell.sets, set.name = "AIZARANI")
-```
-
-Then we used each of these as a gene set in gene set enrichment.
-
-```{r gsea}
-#order the genes by the difference in R2 between the genetic
-#and chromatin eQTLs.
-ordered.genes <- lapply(1:ncol(r2.diff), function(x) r2.diff[r2diff.order[,x],x])
-names(ordered.genes) <- colnames(r2.diff)
-ordered.genes <- lapply(ordered.genes, function(x) x[which(!is.na(x))])
-
-for(i in 1:length(ordered.genes)){
-  ordered.gene.names <- transcript.info[match(names(ordered.genes[[i]]), transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
-  query <- ordered.genes[[i]]
-  names(query) <- ordered.gene.names
-  cell.enrich <- fgsea::fgseaMultilevel(pathways = cell.genes, stats = query, 
-  minSize=15, maxSize=600, gseaParam = 1, scoreType = "pos")
-  namecol <- which(colnames(cell.enrich) == "pathway")
-  path.names <- sapply(strsplit(gsub("AIZARANI_LIVER_", "", cell.enrich[[namecol]]), "_"), function(x) paste(x[2:length(x)], collapse = "_"))
-  if(is.interactive){quartz()}
-  plot.gsea.results(cell.enrich, "padj", path.names, plot.label = colnames(r2.diff)[i])
-  leading.genes <- cell.enrich[[8]][which(cell.enrich[[2]] < 0.05)]
-  names(leading.genes) <- cell.enrich[[1]][which(cell.enrich[[2]] < 0.05)]
-}
-
-```
-
-The numerals in this dataset refer to t-SNE clusters. We also merged 
-these clusters to see if there is a more general cell-type signature.s
-
-There is no longer an enrichment if I merge the cell type clusters.
-
-```{r merge_aizarani, fig.width = 5, fig.height = 7, eval = FALSE}
-cell.types <- sapply(strsplit(path.names, "_"), function(x) paste(x[1:(length(x)-1)], collapse = "_"))
-u_cell.types <- unique(cell.types)
-merged.cell.genes <- vector(mode = "list", length = length(u_cell.types))
-names(merged.cell.genes) <- u_cell.types
-for(i in 1:length(u_cell.types)){
-  type.locale <- which(cell.types == u_cell.types[i])
-  merged.genes <- unique(unlist(cell.genes[type.locale]))
-  merged.cell.genes[[i]] <- merged.genes
-}
-
-for(i in 1:length(ordered.genes)){
-  ordered.gene.names <- transcript.info[match(names(ordered.genes[[i]]), transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
-  query <- ordered.genes[[i]]
-  names(query) <- ordered.gene.names
-  merged.cell.enrich <- fgsea::fgseaMultilevel(pathways = merged.cell.genes, 
-    stats = query, minSize=15, maxSize=600, gseaParam = 1, scoreType = "pos")
-  namecol <- which(colnames(merged.cell.enrich) == "pathway")
-  if(is.interactive){quartz()}
-  plot.gsea.results(merged.cell.enrich, "pval", p.thresh = 0.05, 
-  plot.label = colnames(r2.diff)[i])
-}
-```
-
-## Conclusion
-There is no strong evidence that that the mismatches between genetic
-and chromatin eQTLs are related to cell type. 
-
-## GSEA of mismatched genes for GO terms {.tabset .tabset-fade .tabset-pills}
-
-```{r msigdb_go, results = "asis"}
-#get GO term gene sets
-#see https://www.gsea-msigdb.org/gsea/msigdb/genesets.jsp?
-go.mf <- msigdbr(species = "Mus musculus", category = "C5", subcategory = "GO:MF")
-go.cc <- msigdbr(species = "Mus musculus", category = "C5", subcategory = "GO:CC")
-go.bp <- msigdbr(species = "Mus musculus", category = "C5", subcategory = "GO:BP")
-
-go.mf.genes <- set_to_list(go.mf)
-go.bp.genes <- set_to_list(go.bp)
-go.cc.genes <- set_to_list(go.bp)
-
-ordered.gene.names <- ordered.genes
-for(i in 1:length(ordered.gene.names)){
-  names(ordered.gene.names[[i]]) <- transcript.info[match(names(ordered.genes[[i]]), transcript.info[,"ensembl_gene_id"]), "external_gene_name"]
-}
-
-go.mf.enrich <- fgsea::fgseaMultilevel(pathways = go.mf.genes, 
-  stats = ordered.gene.names[[1]], minSize=15, maxSize=600, gseaParam = 1, 
-  scoreType = "pos")
-
-go.bp.enrich <- fgsea::fgseaMultilevel(pathways = go.bp.genes, 
-  stats = ordered.gene.names[[1]], minSize=15, maxSize=600, gseaParam = 1, 
-  scoreType = "pos")
-
-go.cc.enrich <- fgsea::fgseaMultilevel(pathways = go.cc.genes, 
-  stats = ordered.gene.names[[1]], minSize=15, maxSize=600, gseaParam = 1, 
-  scoreType = "pos")
-```
-
-
-### GO:MF
-```{r gomf_results}
-plot.gsea.results(go.mf.enrich, "padj", p.thresh = 0.05, plot.label = "GO:MF")
-```
-
-### GO:BP
-```{r gobp_results}
-plot.gsea.results(go.bp.enrich, "padj", p.thresh = 0.05, plot.label = "GO:BP")
-```
-
-### GO:CC
-```{r gocc_results}
-plot.gsea.results(go.cc.enrich, "padj", p.thresh = 0.05, plot.label = "GO:CC")
-```
-
-## Conclusion
-There is some weak enrichment for ribosomal genes and genes translocated to the
-ER. Does this suggest the posibility of post-transcriptional regulation not
-captured by the chromatin? I don't think it does, necessarily, but that's
-another possibility to discuss.
-
-## Chromatin changes related to high-fat diet
-
-Chromatin state is modified in response to environmental factors,
-for example high-fat diet. We cannot capture such changes because
-we are imputing the chromatin state from control inbred animals.
-We do not directly measure chromatin state in the DO mice on different diets.
-
-If there are chromatin changes in the HF animals that change transcriptional
-regulation, we would expect that chromatin state would explain 
-gene expression better in the chow animals than in the high-fat diet 
-animals. This was not the case. The figures below show the correlation
-between the genetic and chromatin eQTLs in the chow and HF animals
-independently. 
-
-```{r chow_hf_comp, fig.width = 9, fig.height = 3}
-par(mfrow = c(1,3))
-plot.with.model(e.r2[,"Chow"], max.ch.r2[,"Chow"], xlab = "genetic eQTL R2", 
-ylab = "chromatin eQTL R2", main = "Chow Animals", pch = 16, col = "gray", cex = 0.7)
-abline(0,1)
-
-plot.with.model(e.r2[,"HF"], max.ch.r2[,"HF"], xlab = "genetic eQTL R2", 
-ylab = "chromatin eQTL R2", main = "HF Animals", pch = 16, col = "gray", cex = 0.7)
-abline(0,1)
-
-plot.with.model(r2.diff[,"Chow"], r2.diff[,"HF"], col = "gray",
-xlab = "Chow R2 Difference", ylab = "HF R2 Difference", main = "Chow vs. HF")
-abline(0,1)
-```
-
-## Conclusion 
-We cannot explain variation in expression through chromatin any 
-better in chow animals than in HF animals. Therefore we cannot conclude
-that the mismatches between the genetic eQTLs and chromatin eQTLs are
-related to diet-related changes in chromatin state.
 
 ## Positional Chromatin LOD score
 
@@ -366,20 +175,29 @@ at the TSS, and a peak in average LOD score in the initial part of
 the gene after the TSS.
 
 ```{r norm_lod}
-test.idx <- 1:length(ch.lod)
-#test.idx <- big.diff.locale
 
-norm.ch <- vector(mode = "list", length = length(ch.lod[test.idx]))
-names(norm.ch) <- rownames(e.lod)[test.idx]
-for(x in 1:length(test.idx)){
-  if(is.interactive){report.progress(x, length(test.idx))}
-  if(!is.null(ch.lod[[x]])){
-  norm.ch[[x]] <- center.on.feature(gene.names[x], transcript.info, ch.lod[[x]][,1], 
-  feature = "full")
+centered.lod.file <- here("Results", "chQTL", "centered.LOD.RDS")
+if(!file.exists(centered.lod.file)){
+  test.idx <- 1:length(ch.lod)
+  #test.idx <- big.diff.locale
+
+  norm.ch <- vector(mode = "list", length = length(ch.lod[test.idx]))
+  names(norm.ch) <- rownames(e.lod)[test.idx]
+  for(x in 1:length(test.idx)){
+    if(is.interactive){report.progress(x, length(test.idx))}
+    if(!is.null(ch.lod[[x]])){
+    norm.ch[[x]] <- center.on.feature(gene.names[x], transcript.info, ch.lod[[x]][,1], 
+    feature = "full")
+    }
   }
+saveRDS(norm.ch, centered.lod.file)
+}else{
+norm.ch <- readRDS(centered.lod.file)
 }
 
-lod.by.pos <- plot.centered.vals(norm.ch, seq.by = 0.01, min.representation = 10, 
+
+if(is.interactive){quartz()}
+lod.by.pos <- plot.centered.vals(norm.ch, seq.by = 0.1, min.representation = 10, 
 ylim = c(0, 10), plot.label = "Mean LOD Score by Position", 
 ylab = "Mean LOD Score", return.means = FALSE)
 abline(v = c(0,1))
@@ -404,8 +222,9 @@ var.genes <- names(chrom.mats)[var.locale]
 
 var.gene.locale <- match(var.genes, names(norm.ch))
 
+if(is.interactive){quartz()}
 var.lod.by.pos <- plot.centered.vals(norm.ch[var.gene.locale], 
-seq.by = 0.01, min.representation = 10, 
+seq.by = 0.1, min.representation = 10, 
 ylim = c(0, 10), plot.label = "Mean LOD Score by Position", 
 ylab = "Mean LOD Score", return.means = FALSE)
 abline(v = c(0,1))
@@ -419,30 +238,11 @@ with variation at that point (blue).
 mean.var.lod <- colMeans(var.lod.by.pos, na.rm = TRUE)
 mean.all.lod <- colMeans(lod.by.pos, na.rm = TRUE)
 
+if(is.interactive){quartz()}
 plot(as.numeric(colnames(var.lod.by.pos)), mean.var.lod, type = "l", col = "blue",
-ylab = "Mean LOD score", xlab = "Relative Position")
-points(as.numeric(colnames(lod.by.pos)), mean.all.lod, type = "l")
+ylab = "Mean LOD score", xlab = "Relative Position", lwd = 3)
+points(as.numeric(colnames(lod.by.pos)), mean.all.lod, type = "l", lwd = 3)
 abline(v = c(0,1))
-```
-
-The genes with variation in chromatin state at the TSS are enriched for 
-cell motility and ECM. Could these be related to immune cell migration?
-
-Genes without variation in chromatin state at the TSS are enriched for
-metabolism and biosynthesis.
-
-```{r var_enrich, fig.width = 9, fig.height = 8}
-var.enrich <- gost(var.genes, organism = "mmusculus", 
-sources = c("GO", "KEGG", "REACTOME"))
-plot.enrichment(var.enrich, num.terms = 30,
-plot.label = "Genes with Chromatin State Variation at TSS")
-
-invar.locale <- which(numeric.states == 1)
-invar.genes <- names(chrom.mats)[invar.locale]
-invar.enrich <- gost(invar.genes, organism = "mmusculus", 
-sources = c("GO", "KEGG", "REACTOME"))
-plot.enrichment(invar.enrich, num.terms = 30, 
-plot.label = "Genes with No Variation in Chromatin State at TSS")
 ```
 
 ## Conclusion
@@ -482,7 +282,7 @@ State 4 coefficients were pretty close to 0 everywhere
 State 3 coefficients took a little dip by the TSS
 State 1 and state 2 coefficients were low everywhere, especially near the TSS
 
-```{r norm_coef, results = "asis", fig.width = 10, fig.height = 4}
+```{r norm_coef, results = "asis", fig.width = 6, fig.height = 4}
 norm.ch.coef <- lapply(ch.coef, function(x) x[[1]])
 names(norm.ch.coef) <- rownames(e.lod)
 for(x in 1:length(ch.coef)){
@@ -494,10 +294,11 @@ for(x in 1:length(ch.coef)){
   }
 }
 
+state.col <- colors.from.values(1:num.states, use.pheatmap.colors = TRUE)
 all.state.coef <- vector(mode = "list", length = num.states)
 names(all.state.coef) <- 1:num.states
 for(s in 1:num.states){
-  if(is.interactive){quartz(width = 10, height = 4)}
+  if(is.interactive){quartz(width = 6, height = 4)}
   cat("### State", s, "\n")
   norm.state <- lapply(norm.ch.coef, function(x) x[,s])
   non.missing.state <- norm.state
@@ -507,12 +308,52 @@ for(s in 1:num.states){
       non.missing.state[[i]][zero.locale] <- NA
     }
   }
-  all.state.coef[[s]] <- plot.centered.vals(non.missing.state, seq.by = 0.01, min.representation = 10, 
-  ylim = c(-0.3, 0.3), plot.label = paste("State", s), 
-  ylab = "Mean Non-Zero Coefficient", return.means = FALSE)
+  all.state.coef[[s]] <- plot.centered.vals(non.missing.state, seq.by = 0.1, 
+  min.representation = 15, ylim = c(-0.3, 0.3), plot.label = paste("State", s), 
+  ylab = "Mean Non-Zero Coefficient", return.means = FALSE, min.upstream = -1, 
+  max.downstream = 2)
   abline(h = 0, v = c(0,1))
   cat("\n\n")
 }
+```
+
+```{r state_effect_fig, eval = FALSE}
+plot_poly_mat <- function(state.coef, poly.col = "gray", ylim = c(-1,1), 
+  xlim = c(-1, 2), plot.label = "State"){
+
+  state.mean <- colMeans(state.coef, na.rm = TRUE)
+  state.n <- apply(state.coef, 2, function(x) length(which(!is.na(x))))
+  state.sd <- apply(state.coef, 2, function(x) sd(x, na.rm = TRUE))
+  state.se <- state.sd/sqrt(state.n)
+  state.x <- as.numeric(colnames(state.coef))
+
+  one.state.col <- col2rgb(poly.col)
+  
+  plot.new()
+  plot.window(xlim = xlim, ylim = ylim)
+  plot.poly.xy(poly.top.x = state.x, poly.bottom.x = state.x, 
+    poly.top.y = state.mean+state.se, poly.bottom.y = state.mean - state.se, 
+    col = rgb(one.state.col[1]/256, one.state.col[2]/256, one.state.col[3]/256, alpha = 0.5))
+  axis(2, cex.axis = 0.7)
+  abline(v = c(0,1), col = "darkgray", lty = 2, lwd = 2)
+  abline(h = 0)
+  par(xpd = TRUE)
+  text(x = 2, y = 0, labels = plot.label, srt = 270, cex = 1.5)
+  par(xpd = FALSE)
+}
+
+if(is.interactive){quartz(width = 6, height = 7)}
+layout.mat <- matrix(c(1:9, 0), ncol = 2, byrow = FALSE)
+layout(layout.mat)
+par(mar = c(0,2,0,2))
+for(i in 1:length(all.state.coef)){
+  #quartz(width = 3.5, height = 3)
+  plot_poly_mat(all.state.coef[[i]], poly.col = state.col[i], 
+  ylim = c(-0.3, 0.35), xlim = c(-1, 2),
+  plot.label = paste("State", i))
+  mtext(paste(nrow(all.state.coef[[i]]), "genes"), side = 3, line = -2.5)
+}
+
 ```
 
 ## Effect size of chromatin does not depend on position {.tabset .tabset-fade .tabset-pills}
@@ -544,7 +385,7 @@ for(s in 1:num.states){
       non.missing.state[[i]][zero.locale] <- NA
     }
   }
-  all.state.mag[[s]] <- plot.centered.vals(non.missing.state, seq.by = 0.01, 
+  all.state.mag[[s]] <- plot.centered.vals(non.missing.state, seq.by = 0.1, 
   min.representation = 10, ylim = c(0, 0.5), plot.label = paste("State", s), 
   ylab = "Mean Non-Zero Coefficient Magnitude", return.means = FALSE)
   abline(h = 0, v = c(0,1))

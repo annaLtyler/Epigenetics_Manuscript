@@ -9,6 +9,10 @@ order.by = c("gprofiler", "p_value", "overlap_size", "term_size"),
 decreasing = FALSE, plot.label = "Enrichment", highlight.terms = NULL, 
 highlight.col = "#1f78b4", mar = c(5,20,4,4), max.term.size = NULL){
 	
+	oldPar <- par(no.readonly = TRUE)
+	on.exit(oldPar)
+
+
 	if(class(enrichment) == "list"){
 		enrichment <- enrichment[[1]]
 	}

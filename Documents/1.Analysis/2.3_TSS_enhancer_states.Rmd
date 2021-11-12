@@ -17,14 +17,29 @@ differential states across strains at the TSS.
 
 Here we look at which states are represented at the TSS, and 
 which genes have variation there.
+
+We look for genes for which all strains have a single state at
+the TSS, and genes for which two states are represented across 
+the strains. 
+
+We count the number of genes with each state combination at the TSS.
+We calculate functional enrichments for each group of genes.
+And we look at expression patterns for each group of genes.
   
 ```{r load_libraries, message = FALSE, warning = FALSE, error = FALSE}
 library(here);library(gprofiler2);library(pheatmap);library(fgsea)
 ```
 
-```{r source_code}
+```{r set_param}
+num.states = 9
 is.interactive = FALSE
 #is.interactive = TRUE
+form.states <- paste0(num.states, "_states_C")
+data.dir <- here("Data", "ChromHMM", form.states)
+results.dir <- here("Results", "ChromHMM", form.states)
+```
+
+```{r load_code}
 all.code.dir <- list.files(here("Code"), full.names = TRUE)
 for(i in 1:length(all.code.dir)){
 	all.fun <- list.files(all.code.dir[i], full.names = TRUE)
@@ -36,8 +51,19 @@ for(i in 1:length(all.code.dir)){
 
 ```{r load_data}
 transcript.info <- readRDS(here("Data", "RNASeq", "RNASeq_gene_info.RData"))
-chrom.mats <- readRDS(here("Results", "ChromHMM", "008_states_C", "Chromatin.States.Gene.Coords.RDS"))
-ch.coef <- readRDS(here("Results", "chQTL", "chQTL.coef.RDS"))
+chrom.mats <- readRDS(file.path(results.dir, "Chromatin.States.Gene.Coords.RDS"))
+#chrom.mats <- readRDS(file.path(results.dir, "Chromatin_States_9_full_gene_1000.RData"))
+```
+
+```{r load_expression}
+transformed.data.file <- here("Data", "RNASeq", "StrainsEffCts9_vst.RDS")
+#expr <- readRDS(transformed.data.file)
+expr <- readRDS(here("Data","RNASeq", "Strain_Mean_C_Expression.RData"))
+
+transcript.info.file <- here("Data", "RNASeq", "RNASeq_gene_info.RData")
+transcript.info <- readRDS(transcript.info.file)
+col.table <- as.matrix(read.table(here("Data", "support_files", "strain.color.table.txt"), 
+    sep = "\t", comment.char = "%", stringsAsFactors = FALSE))
 ```
 
 Find the states at the TSS of each transcript
@@ -45,20 +71,51 @@ Find the states at the TSS of each transcript
 ```{r tss_states}
 get_tss_states <- function(chrom.mat){
     if(length(chrom.mat) == 1){return(rep(NA, 9))}
-    tss.pos <- get.nearest.pt(as.numeric(rownames(chrom.mat)), 0)
-    return(chrom.mat[tss.pos,,drop=FALSE])
+    tss.idx <- get.nearest.pt(as.numeric(rownames(chrom.mat)), 0)
+    return(chrom.mat[tss.idx,,drop=FALSE])
 }
 
-#get all the states right at the TSS
 tss.states <- t(sapply(chrom.mats, get_tss_states))
+colnames(tss.states) <- colnames(chrom.mats[[1]])
 
 #tally which states are present there
-state.counts <- t(apply(tss.states, 1, function(y) sapply(1:8, function(x) length(which(y == x)))))
-colnames(state.counts) <- 1:8
+state.counts <- t(apply(tss.states, 1, 
+    function(y) sapply(1:num.states, function(x) length(which(y == x)))))
+colnames(state.counts) <- 1:num.states
 
 #find all the genes with variation
 var.genes <- which(apply(state.counts, 1, function(x) length(which(x != 0)) > 1))
 ```
+
+## Enrichment of state genes across strains {.tabset .tabset-fade .tabset-pills}
+
+```{r state_strain_enrich, results = "asis", fig.height = 6, fig.width = 6}
+#this code looks at functional enrichment for genes marked with each
+#state across the strains
+state.enrich.file <- file.path(results.dir, "Enrichment.by.State.and.Strain.RDS")
+if(!file.exists(state.enrich.file)){
+st.enrich <- vector(mode = "list", length = ncol(tss.states))
+names(st.enrich) <- 1:num.states
+    for(st in 1:num.states){
+        if(is.interactive){print(st)}
+        st.genes <- apply(tss.states, 2, function(x) which(x == st))
+        st.enrich[[st]] <- lapply(st.genes, function(x) gost(names(x), organism = "mmusculus",
+        sources = c("GO", "REACTOME", "KEGG")))
+    }
+    saveRDS(st.enrich, state.enrich.file)
+}else{
+    st.enrich <- readRDS(state.enrich.file)
+    for(st in 1:num.states){
+        cat("### State", st, "\n")
+        plot.enrichment.group(st.enrich[[st]], max.term.size = 2000,
+        sort.by = "p_value")
+        cat("\n\n")
+    }
+}
+
+```
+
+## State counts
 
 There are `r length(var.genes)` out of `r nrow(state.counts)` total genes
 with variation at the TSS. The figure below shows genes in rows and states
@@ -68,8 +125,7 @@ even for genes with variation at this position. State 1 is the next most
 abundant.
 
 ```{r tss_var, fig.width = 6, fig.height = 7}
-var.mat <- state.counts[var.genes,]
-pheatmap(var.mat, show_rownames = FALSE)
+pheatmap(state.counts, show_rownames = FALSE)
 ```
 
 The figure below shows which states tend to co-occur at the 
@@ -81,37 +137,129 @@ States 1, 2, and 3, all negative states, tend to co-occur,
 and states 4 and 5 tend to co-occur.
 
 ```{r state_pairs, fig.width = 6, fig.height = 6}
-cor.mat <- var.mat
-cor.mat[which(var.mat > 0)] <- 1
-state.cor <- cor(cor.mat)
-diag(state.cor) <- NA
-imageWithText(state.cor, split.at.vals = TRUE, col.scale = c("blue", "brown"),
-grad.dir = "ends")
-```
+cor.mat <- state.counts
+cor.mat[which(state.counts > 0)] <- 1
+state_pairs <- pair.matrix(1:num.states, self.pairs = TRUE)
+pair.names <- apply(state_pairs, 1, function(x) paste(x, collapse = "_"))
 
-```{r decomp, eval = FALSE}
-state.decomp <- plot.decomp(cor.mat, pc = 8, mean.center = FALSE)
+all.pair.co.occur <- vector(mode = "list", length = nrow(state_pairs))
+names(all.pair.co.occur) <- pair.names
+pair.cor <- matrix(NA, nrow = num.states, ncol = num.states)
+rownames(pair.cor) <- colnames(pair.cor) <- 1:num.states
+paired.tss.expr <- vector(mode = "list", length = nrow(state_pairs))
+names(paired.tss.expr) <- pair.names
+for(i in 1:nrow(state_pairs)){
+    state1 <- state_pairs[i,1]
+    state2 <- state_pairs[i,2]
+    
+    if(state1 == state2){
+        state1.locale <- state2.locale <- which(state.counts[,state1] == ncol(state.counts))
+    }else{
+        state1.locale <- which(cor.mat[,state1] > 0)
+        state2.locale <- which(cor.mat[,state2] > 0)
+    }
+    both.together <- intersect(state1.locale, state2.locale)
+    group.genes <- rownames(cor.mat)[both.together]
+    all.pair.co.occur[[i]] <- group.genes
+    
+    #get expression for these genes
+    expr.locale <- match(group.genes, names(expr))
+    has.expr <- which(sapply(expr[expr.locale], length) == 9)
+    group.expr <- Reduce("rbind", expr[expr.locale[has.expr]])
+    rownames(group.expr) <- group.genes[has.expr]
+    #divide expression based on TSS state
+    group.tss <- tss.states[c(match(rownames(group.expr), rownames(tss.states))),]
+    
+    #plot(as.vector(group.expr)~as.factor(as.vector(group.tss)), xlab = "State", ylab = "Expression", main = paste("State", state1, "and State", state2))
 
-plot(state.decomp$v[,1:2], pch = 16, 
-col = colors.from.values(1:8, use.pheatmap.colors = TRUE), xlab = "PC1", ylab = "PC2")
-text(state.decomp$v[,1], state.decomp$v[,2], 1:8, pos = 4)
-
-pairs(state.decomp$u[,1:5])
-```
-
-```{r classify_var, fig.height = 10, fig.width = 4}
-state.pairs <- pair.matrix(1:8)
-state.pair.names <- apply(state.pairs, 1, function(x) paste(x, collapse = "_"))
-has_pair  <- function(state.mat, state1, state2){
-    return(which(apply(state.mat, 1, function(x) x[state1] > 0 && x[state2] > 0)))
+    paired.tss.expr[[i]] <- list("TSS_states" = group.tss, "Group_Expr" = group.expr)
+        
+    #calculate correlation of two states
+    state1.freq <- length(state1.locale)/nrow(cor.mat)
+    state2.freq <- length(state2.locale)/nrow(cor.mat)
+    if(state1 != state2){
+        both.freq <- length(both.together)/nrow(cor.mat)
+        cof.rate <- both.freq - (state1.freq*state2.freq)
+        pair.cor[state1, state2] <- cof.rate
+        pair.cor[state2, state1] <- cof.rate
+    }else{
+        pair.cor[state1, state2] <- state1.freq
+    }
 }
 
-with_state_pair <- apply(state.pairs, 1, function(x) has_pair(var.mat, x[1], x[2]))
-names(with_state_pair) <- state.pair.names
-state.pair.count <- sapply(with_state_pair, length)
+if(is.interactive){quartz()}
+#with individual state frequencies
+imageWithText(signif(pair.cor,2), split.at.vals = TRUE, 
+    col.scale = c("blue", "brown"), grad.dir = "ends")
+
+#save all.pair.co.occur so we can acess it elsewhere
+saveRDS(all.pair.co.occur, file.path(results.dir, "TSS_State_Pairs.RDS"))
+
+#Without individual frequencies
+diag(pair.cor) <- NA
+imageWithText(signif(pair.cor,2), split.at.vals = TRUE, 
+    col.scale = c("blue", "brown"), grad.dir = "ends", col.text.rotation = 0)
+```
+
+
+```{r classify_var, fig.height = 10, fig.width = 4}
+state.pair.count <- sapply(all.pair.co.occur, length)
 pair.count.order <- order(state.pair.count)
+if(is.interactive){quartz()}
 barplot(state.pair.count[pair.count.order], las = 2, horiz = TRUE, cex.names = 1)
 ```
+
+## Chromatin State at TSS and Gene Expression {.tabset .tabset-fade .tabset-pills}
+
+We looked at the effect of the chromatin state right at the TSS and gene
+expression. This is a littl different than the other effects of gene
+expression we've looked at. Here we first identified the genes for which
+different strains had either of two states at the TSS. We then divided
+the expression for the strains with the first state at the TSS, and the
+strains with the second state at the TSS. The boxplots show overall 
+differences in expression for the strains with each given state at the 
+TSS.
+
+The figure below shows the expression of all genes across all strains
+based on the state present at the TSS. Genes with state 7 at the TSS
+have the highest expression overall.
+
+```{r expr_overall}
+matched.expr <- expr[match(rownames(tss.states), names(expr))]
+has.expr <- which(sapply(matched.expr, length) == 9)
+sub.expr <- Reduce("rbind", matched.expr[has.expr])
+rownames(sub.expr) <- names(matched.expr)[has.expr]
+sub.tss <- tss.states[match(rownames(sub.expr), rownames(tss.states)),]
+expr.vector <- unlist(sub.expr)
+tss.vector <- unlist(sub.tss)
+expr.by.tss <- lapply(1:9, function(x) expr.vector[which(tss.vector == x)])
+if(is.interactive){quartz()}
+boxplot(expr.by.tss)
+```
+
+
+
+```{r plot_expr, results = "asis"}
+
+for(i in 1:length(paired.tss.expr)){
+    if(is.interactive){quartz()}
+    cat("###", names(paired.tss.expr[i]), "\n")
+    box.col <- rep("gray", num.states)
+    box.col[state_pairs[i,]] <- "red"
+    plot(as.vector(paired.tss.expr[[i]][[2]])~as.factor(as.vector(paired.tss.expr[[i]][[1]])), 
+         main = paste("State", unique(state_pairs[i,])), xlab = "State", ylab = "Expression",
+        col = box.col)
+    cat("\n\n")
+}
+
+cat("### All Single States\n")
+single.locale <- which(apply(state_pairs, 1, function(x) length(unique(x))) == 1)
+if(is.interactive){quartz()}
+boxplot(lapply(paired.tss.expr[single.locale], function(x) x[[2]]))
+abline(h = median(unlist(paired.tss.expr[single.locale])))
+cat("\n\n")
+```
+
 
 ## Chromatin State Enrichment {.tabset .tabset-fade .tabset-pills}
 
@@ -122,14 +270,35 @@ Some of these genes have more than two states at the TSS, so the
 groups are overlapping somewhat, but using more categories was 
 a bit too disorganized.
 
-```{r state_effects, results = "asis", fig.width = 8, fig.height = 6}
+Creyghton et al. 2010 found that although H3K4me1 marks cell type-specific
+enhancers, it marks all enhancers whether they are poised or active. They
+showed that the presence of H3K27ac distinguishes active enhancers 
+(H3K27ac present) from poised (H3K27ac absent). They suggested that the pattern
+of these enhancer states could give us clues as to the developmental potential 
+of a cell, or its potential to respond to stimuli.
+
+Can we use this information to look at enhancer patterns across the strains
+to see which strains could potentially respond to, or are responding to a stimulus,
+with inflammation, for example?
+
+Let's think about a case study gene: Irf5. This gene is associated with cytokine
+response. CAST and PWK have marks of a poised enhancer at the TSS, while the 
+other strains have marks associated with active enhancers. Does this mean that
+Irf5 has the potential to be expressed in CAST and PWK with the right stimulus,
+but currently is not, whereas the other strains are all expressing that gene without
+any stimulus?
+
+What are the enrichments of genes for which some strains have poised enhancers (3, 4, 8),
+and others have active enhancers (5,6,7) at the TSS?
+
+```{r state_enrichment}
 enrich.file <- here("Results", "chQTL", "State_Pair_Enrichment.RDS")
 
 if(!file.exists(enrich.file)){
-    state_enrich <- vector(mode = "list", length = length(state.pair.count))
-    names(state_enrich) <- names(state.pair.count)
-    for(i in 1:length(with_state_pair)){
-        enrichment <- gost(names(with_state_pair[[i]]), organism = "mmusculus", sources = "GO")
+    state_enrich <- vector(mode = "list", length = length(all.pair.co.occur))
+    names(state_enrich) <- names(all.pair.co.occur)
+    for(i in 1:length(all.pair.co.occur)){
+        enrichment <- gost(all.pair.co.occur[[i]], organism = "mmusculus", sources = "GO")
         if(!is.null(enrichment)){
             state_enrich[[i]] <- enrichment
         }
@@ -138,35 +307,135 @@ if(!file.exists(enrich.file)){
 }else{
     state_enrich <- readRDS(enrich.file)
 }
-
-for(i in 1:length(state_enrich)){
-    cat("###", state.pair.names[i], "\n")
-    plot.enrichment(state_enrich[[i]], 20, plot.label = state.pair.names[i],
-    order.by = "p_value", max.term.size = 500)
-    cat("\n\n")
-}
-
-state_gene_names <- lapply(with_state_pair, function(x) transcript.info[match(names(x), transcript.info[,"ensembl_gene_id"]),"external_gene_name"])
 ```
 
-We looked to see if any of the genes with particular state combinations
-at the TSS were enriched in the mismatched genes. None of the groups
-were enriched.
 
-```{r mismatches}
-ch.lod <- readRDS(here("Results", "chQTL", "chQTL.lod.RDS"))
-e.lod <- readRDS(here("Results", "eQTL", "eQTL.lod.RDS"))
+```{r plot_enrichment, results = "asis", warning = FALSE, message = FALSE, fig.width = 8, fig.height = 6}
+for(i in 1:length(state_enrich)){
+    if(length(state_enrich[[i]]) > 0){
+        if(is.interactive){quartz()}
+        cat("###", names(state_enrich[i]), "\n")
+        #plot.enrichment(state_enrich[[i]], 30, plot.label = paste(names(state_enrich)[i], length(all.pair.co.occur[[i]]), "genes"))
+        par(mfrow = c(1,2))
+        plot.enrichment.wordcloud(enrichment = state_enrich[[i]], 10,
+         max.term.size = 2000)
+        mtext(paste0("State ", names(all.pair.co.occur)[i], ": ", 
+        length(all.pair.co.occur[[i]]), " genes"), side = 3, outer = TRUE,
+        line = -2.5)
+        cat("\n\n")
+    }
+}
 
-max.ch.lod <- t(sapply(ch.lod, function(x) if(length(x) > 0){apply(x, 2, function(y) max(y, na.rm = TRUE))}else{rep(NA, 4)}))
-rownames(max.ch.lod) <- rownames(e.lod)
+state_gene_names <- lapply(all.pair.co.occur, 
+    function(x) transcript.info[match(x, 
+    transcript.info[,"ensembl_gene_id"]),"external_gene_name"])
+```
 
-lod.diff <- e.lod - max.ch.lod
+## Group Enrichment
 
-ordered.genes <- sort(lod.diff[,1], decreasing = TRUE)
-plot(ordered.genes)
+```{r group_enrich}
+#pdf("~/Desktop/group_enrich.pdf", width = 9, height = 12)
+test <- plot.enrichment.group(state_enrich, transformation = "sqrt")
+#dev.off()
 
-state_gene_list <- lapply(with_state_pair, function(x) names(x))
-lod.diff.enrich <- fgsea::fgseaMultilevel(pathways = state_gene_list, 
-  stats = ordered.genes, minSize=15, maxSize=600, gseaParam = 1)
-plot.gsea.results(lod.diff.enrich)
+pdf(file.path(results.dir, "TSS_Enrichment_Projections.pdf"), height = 15, width = 15)
+plot_bipartite(test)
+dev.off()
+```
+
+```{r test, eval = FALSE}
+state_gene_names$"2_5"
+
+
+states <- "3_7"
+states <- "7_7"
+
+if(is.interactive){quartz()}
+pair.locale <- which(names(state_enrich) == states)
+plot.enrichment(state_enrich[[pair.locale]], 30, 
+    plot.label = paste(names(state_enrich)[pair.locale], 
+    length(all.pair.co.occur[[pair.locale]]), "genes"),
+    max.term.size = 2000)
+
+par(mfrow = c(1,2))
+plot.enrichment.wordcloud(enrichment = state_enrich[[i]], 10)
+
+gene.name = "Rdh16f1"
+id <- transcript.info[which(transcript.info[,"external_gene_name"] == gene.name)[1],"ensembl_gene_id"]
+id.locale <- which(names(chrom.mats) == id)
+get_tss_states(chrom.mats[[id.locale]])
+```
+
+
+Use the shiny chromatin viewer to see examples.
+
+
+## Intragenic states {.tabset .tabset-fade .tabset-pills}
+
+Most of the states (1, 2, 3, 7, 8, and 9) have their strongest effects
+at the TSS, which is easy to isolate. However, states, 4, 5, and 6 
+have their primary effects in the intragenic region. It would be 
+interesting to look at genes that specifically have these states intragenically,
+but I'm not sure how to do that. I am going to test some code here.
+
+```{r intragenic, results = "asis", fig.height = 8, fig.width = 7, eval = FALSE}
+get_intragenic_state_count <- function(chrom.mat, state){
+    if(length(chrom.mat) == 1){return(rep(NA, 9))}
+    intragenic.idx <- intersect(which(as.numeric(rownames(chrom.mat)) > 0), which(as.numeric(rownames(chrom.mat)) < 1))
+    intra.chrom <- chrom.mat[intragenic.idx,,drop=FALSE]
+    state.idx <- lapply(1:ncol(intra.chrom), function(x) which(intra.chrom[,x] == state))
+    state.count <- sapply(state.idx, length)/nrow(intra.chrom)
+    return(state.count)
+}
+
+min.prop <- 0.1
+
+for(state in 4:6){
+    cat(paste("### State", state, "Intragenic Enrichment\n"))
+    intragenic.prop <- t(sapply(chrom.mats, function(x) get_intragenic_state_count(x, state)))
+    colnames(intragenic.prop) <- colnames(chrom.mats[[1]])
+
+    no.state <- lapply(1:ncol(intragenic.prop), function(x) which(intragenic.prop[,x] == 0))
+    names(no.state) <- colnames(intragenic.prop)
+    some.state <- lapply(1:ncol(intragenic.prop), function(x) which(intragenic.prop[,x] > min.prop))
+    names(some.state) <- colnames(intragenic.prop)
+
+    state.no.enrich.file <- file.path(results.dir, paste0("State_", state, "_intragenic_enrichment_none.RDS"))
+    if(!file.exists(state.no.enrich.file)){
+        no.enrich <- lapply(no.state, 
+            function(x) gost(rownames(intragenic.prop)[x], organism = "mmusculus", 
+            sources = c("GO", "KEGG", "REACTOME")))
+        saveRDS(no.enrich, state.no.enrich.file)
+    }else{
+    no.enrich <- readRDS(state.no.enrich.file)
+    }
+
+    state.some.enrich.file <- file.path(results.dir, paste0("State_", state, "_intragenic_enrichment_some.RDS"))
+    if(!file.exists(state.some.enrich.file)){
+        some.enrich <- lapply(some.state, 
+            function(x) gost(rownames(intragenic.prop)[x], organism = "mmusculus", 
+            sources = c("GO", "KEGG", "REACTOME")))
+        saveRDS(some.enrich, state.some.enrich.file)
+    }else{
+    some.enrich <- readRDS(state.some.enrich.file)
+    }
+
+    if(is.interactive){quartz()}
+    plot.enrichment.group(some.enrich, max.term.size = 2000, n.terms = 30, 
+    plot.label = paste("Enrichment of genes with some intragenic state", state))
+
+    if(is.interactive){quartz()}
+    plot.enrichment.group(no.enrich, max.term.size = 2000, n.terms = 30,
+    plot.label = paste("Enrichment of genes with no intragenic state", state))
+
+    some.strains <- which(apply(intragenic.prop, 1, function(x) length(which(x == 0)) > 0 && length(which(x > 0)) > 0))
+    enrich <- gost(rownames(intragenic.prop)[some.strains], organism = "mmusculus",
+    sources = c("GO", "KEGG", "REACTOME"))
+    if(is.interactive){quartz()}
+    par(mfrow = c(1,2))
+    plot.enrichment.wordcloud(enrich, num.terms = 30)
+    mtext(paste("Enrichment of genes with state", state, "in some strains and not others"),
+    side = 3, outer = TRUE, line = -2.5)
+    cat("\n\n")
+}
 ```

@@ -59,46 +59,84 @@ Identify the covariates
 ind.name <- colnames(rna.seq)
 ind.label <- sapply(strsplit(ind.name, ""), function(x) paste(tail(x, 2), collapse = ""))
 treat.label <- substr(ind.label, 1, 1)
+```
+
+## Remove Treatment Group
+
+We are only using the controls in this analysis. Here we 
+remove the treatment animals.
+
+```{r remove_treat}
+c.locale <- which(treat.label == "C")
+rna.seq <- rna.seq[,c.locale]
+
+#make an ID table
+ind.name <- colnames(rna.seq)
+ind.label <- sapply(strsplit(ind.name, ""), function(x) paste(tail(x, 2), collapse = ""))
+treat.label <- substr(ind.label, 1, 1)
 ind <- substr(ind.label, 2,2)
 strain <- mapply(function(x,y) gsub(x, "", y), ind.label, ind.name)
 u_strain <- unique(strain)
 id.table <- cbind(strain, treat.label, ind)
-covar.f <- data.frame(as.factor(treat.label))
-colnames(covar.f) <- "treatment"
-```
 
-## Perform the variance stabilization transformation
-
-Floor the raw counts. The count data should have individuals in *columns*.
-
-```{r raw_expr}
-cts <- t(floor(rna.seq))
-```
-
-```{r plot.decomp, fig.height = 5, fig.width = 10}
+#make strain color vector
 col.table <- read.table(here("Data", "support_files", "strain.color.table.txt"), 
 sep = "\t", comment.char = "!", stringsAsFactors = FALSE)
-
-strain.col <- col.table[match(id.table[,1], col.table[,4]),3]
-treat.col <- rep("black", nrow(id.table))
-treat.col[which(treat.label == "T")] <- "red"
-
-par(mfrow = c(1,2))
-plot.decomp(t(cts), cols = strain.col, main = "Colored By Strain")
-plot.decomp(t(cts), cols = treat.col, main = "Colored By Treatment")
+full.col <- col.table[match(id.table[,1], col.table[,4]),3]
+u_strain.col <- col.table[match(u_strain, col.table[,4]),3]
 ```
+
+## Floor counts
+
+There are many counts that are between 0 and 1. Round all count values
+to the next lower integer. The count data should have individuals in *columns*.
+
+```{r raw_expr}
+cts <- floor(rna.seq)
+```
+
 
 Apply the VST using treatment as a covariate.
 
-```{r vst, fig.height = 5, fig.width = 10}
-dds <- DESeqDataSetFromMatrix(countData = t(cts), colData = covar.f, design = ~treatment)
-vsd <- vst(dds, blind = FALSE)
+```{r vst, fig.height = 10, fig.width = 10}
+strain.df <- data.frame(as.factor(strain))
+rownames(strain.df) <- colnames(cts) 
+colnames(strain.df) <- "strain"
+dds <- DESeqDataSetFromMatrix(cts, colData = DataFrame(strain.df), design = ~ strain)
 
-par(mfrow = c(1,2))
-plot.decomp(t(assay(vsd)), cols = strain.col, main = "Colored By Strain")
-plot.decomp(t(assay(vsd)), cols = treat.col, main = "Colored By Treatment")
+vsd <- vst(dds, blind = FALSE)
+vsd.blind <- vst(cts)
+
+lgd <- log2(cts+1)
+
+par(mfrow = c(2,2))
+plot.decomp(t(cts), cols = full.col, main = "Raw Counts")
+plot.decomp(t(assay(vsd)), cols = full.col, main = "VST")
+plot.decomp(t(vsd.blind), cols = full.col, main = "Blind VST")
+plot.decomp(t(lgd), cols = full.col, main = "Log2")
 ```
 
+## Within-strain correlations {.tabset .tabset-fade .tabset-pills}
+
+The following figures show the correlations in log10 expression between 
+individuals of a single strain.
+
+These look reasonable overall, although some genes had quite a bit of 
+variability from individual to individual. 
+
+Since we are interested in genetic regulation of gene expression, we
+should select genes whose inter-individual variance is small compared
+to the inter-strain variance.
+
+```{r individual_correlations, results = "asis"}
+for(i in 1:length(u_strain)){
+  cat("###", u_strain[i], "\n")
+  strain.locale <- which(strain == u_strain[i])
+  if(is.interactive){quartz()}
+  pairs(assay(vsd)[,strain.locale])
+  cat("\n\n")
+}
+```
 
 ```{r save_data}
 transformed.data.file <- here("Data", "RNASeq", "StrainsEffCts9_vst.RDS")
@@ -110,7 +148,7 @@ We also create a rank Z normalized form of the data for mapping.
 ```{r rankz, fig.height = 5, fig.width = 5}
 z.expr <- apply(t(assay(vsd)), 1, rankZ)
 boxplot(z.expr[,1:10])
-plot.decomp(t(z.expr), cols = strain.col, main = "RankZ Normalized Data Colored by Strain")
+plot.decomp(t(z.expr), cols = full.col, main = "RankZ Normalized Data Colored by Strain")
 norm.data.file <- here("Data", "RNASeq", "StrainsEffCts9_norm.RDS")
 saveRDS(z.expr, norm.data.file)
 ```

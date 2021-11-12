@@ -103,6 +103,7 @@ cis location to calculate eQTL LOD scores and coefficients.
 chrom.lod.file <- here("Results", "chQTL", "chQTL.lod.RDS")
 chrom.coef.file <- here("Results", "chQTL", "chQTL.coef.RDS")
 chrom.r2.file <- here("Results", "chQTL", "chQTL.R2.RDS")
+chrom.effect.file <- here("Results", "chQTL", "chromatin_state_effect.RDS")
 
 geno.lod.file <- here("Results", "eQTL", "eQTL.lod.RDS")
 geno.coef.file <- here("Results", "eQTL", "eQTL.coef.RDS")
@@ -112,6 +113,7 @@ if(delete.previous){
   unlink(chrom.lod.file)
   unlink(chrom.coef.file)
   unlink(chrom.r2.file)
+  unlink(chrom.effect.file)
   unlink(geno.lod.file)
   unlink(geno.coef.file)
   unlink(geno.r2.file)
@@ -128,6 +130,7 @@ if(file.exists(chrom.coef.file)){
   geno.lod <- readRDS(geno.lod.file)
   geno.coef <- readRDS(geno.coef.file)
   geno.r2 <- readRDS(geno.r2.file)
+  chrom.effect <- readRDS(chrom.effect.file)
 
   #figure out where we left off.
   not.na <- which(!is.na(geno.lod[,1]))  
@@ -143,8 +146,8 @@ if(file.exists(chrom.coef.file)){
 
   #make space for the full set of chromaprob coefficients for
   #each transcript.
-  chrom.coef <- chrom.lod <- chrom.r2 <- vector(mode = "list", length = length(common.transcripts))
-  names(chrom.coef) <- names(chrom.coef) <- names(chrom.r2) <- common.transcripts
+  chrom.coef <- chrom.lod <- chrom.r2 <- chrom.effect <- vector(mode = "list", length = length(common.transcripts))
+  names(chrom.coef) <- names(chrom.coef) <- names(chrom.r2) <- names(chrom.effect) <- common.transcripts
   
   #there is only one lod score per transcript for the haplotypes
   geno.lod <- geno.r2 <- matrix(NA, ncol = length(model.names), nrow = length(common.transcripts))
@@ -162,7 +165,7 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
   for(i in start.at:length(common.transcripts)){
     print(i)
     if(is.interactive){report.progress(i, length(common.transcripts))}
-    #gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == "Atp6ap1"),"ensembl_gene_id"][1]
+    #gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == "Pkd2"),"ensembl_gene_id"][1]
     #i <- which(common.transcripts == gene.id)
     gene.id <- common.transcripts[i]
     gene.name <- transcript.info[which(transcript.info[,"ensembl_gene_id"] == gene.id),"external_gene_name"][1]
@@ -185,6 +188,15 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
     
     if(no.var){next()}
    
+    #calculate proportion of each state
+    prop.state <- lapply(1:num.states, function(x) rowMeans(chrom.geno[[1]][,x,]))
+    prop.effect <- sapply(1:num.states, function(x) if(var(prop.state[[x]]) > 0){plot.with.model(prop.state[[x]], 
+    expr[,expr.locale], confidence = 0.95, plot.results = FALSE)}else{rep(NA, 5)})
+    chrom.effect[[i]] <- prop.effect
+    #barplot(t(prop.effect["slope.fit",]), names = 1:num.states)
+    #boxplot(t(prop.effect))
+  }
+
     #calculate chromatin LOD scores
     chrom.lod.add <- scan1(chrom.geno, expr[,expr.locale], addcovar = covar)
     chrom.lod.int <- scan1(chrom.geno, expr[,expr.locale], addcovar = covar, intcovar = covar[,2,drop=FALSE])
@@ -300,3 +312,22 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
 sink(NULL)
 ```
 
+## Bulk State Effects
+
+We can also look at the overall effects of each state on gene expression
+in the DO, as we did in the inbred strains. To do this, we aggregate 
+all genes with a given state at each position, and fit a model to explain
+gene expression using chromatin state. 
+
+Actually, maybe we can't. I've been calculating genoprobs for each gene
+individually because there isn't enough memory anywhere to calculate them
+all at once. We also have more data here than n the inbreds so we should 
+be able to get a pretty good estimate of the effects using one gene
+at a time...
+
+```{r bulk_fit}
+#adjust all expression for covariates
+adj.expr <- adjust(expr, covar)
+
+
+```

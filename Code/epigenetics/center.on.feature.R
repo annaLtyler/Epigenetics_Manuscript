@@ -9,6 +9,8 @@
 
 center.on.feature <- function(gene.name, gene.info, vals, 
 feature = c("tss", "tes", "1stexon", "promoter", "full")){
+  
+  if(length(vals) <= 1){return(NA)}
 
   if(is.na(gene.name)){return(NA)}
 

@@ -16,8 +16,8 @@
 plot.centered.vals <- function(val.list, min.representation = 10, plot.label = "Center",
 plot.individual = FALSE, ylim = c(0, 50), ylab = "Methylation Percent Mean",
 sum.fun = c("mean", "median"), seq.by = 1, merge.by = 1, plot.line = TRUE, 
-plot.hex = FALSE, min.upstream = -2, max.downstream = 2, return.means = TRUE, 
-verbose = FALSE){
+plot.hex = FALSE, min.upstream = -2, max.downstream = 2, poly.col = "#9ecae1", 
+return.means = TRUE, verbose = FALSE){
   
   not.null <- which(sapply(val.list, function(x) !all(is.na(x))))
   if(length(not.null) == 0){
@@ -112,7 +112,7 @@ verbose = FALSE){
     plot.window(xlim = c(min.x, max.x), ylim = ylim)
     pos <- as.numeric(colnames(sub.bulk.mat))
     plot.poly.xy(pos, methyl.means+methyl.var, pos, methyl.means-methyl.var,
-    col = "#9ecae1", border = NA, new.plot = FALSE)
+    col = poly.col, border = NA, new.plot = FALSE)
     points(as.numeric(colnames(sub.bulk.mat)), methyl.means, type = "l")
     axis(1);axis(2)
     mtext(ylab, side = 2, line = 2)

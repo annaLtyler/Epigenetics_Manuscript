@@ -314,3 +314,125 @@ abline(v = c(0,1), h  = 0)
 boxplot(rmat)
 abline(h = 0)
 ```
+
+## Variation in Percent Methylation Across Strains
+
+We looked at the variation across all genes by subtracting the maximum methylation
+percent from the minimum methylation percent across strains at each position.
+
+```{r methyl_var}
+
+get_methyl_var <- function(methyl.by.strain.mat){
+  var.v <- rep(NA, nrow(methyl.by.strain.mat))
+  has.vals <- which(apply(methyl.by.strain.mat, 1, function(x) all(!is.na(x))))
+  if(length(has.vals) > 0){
+    #methyl.max <- apply(methyl.by.strain.mat[has.vals,,drop=FALSE], 1, function(x) max(x, na.rm = TRUE))
+    #methyl.min <- apply(methyl.by.strain.mat[has.vals,,drop=FALSE], 1, function(x) min(x, na.rm = TRUE))
+    #var.v[has.vals] <- methyl.max - methyl.min
+    var.v[has.vals] <- apply(methyl.by.strain.mat[has.vals,,drop=FALSE], 1, function(x) sd(x, na.rm = TRUE))
+  }
+  return(var.v)
+}
+
+get_methyl_mean <- function(methyl.by.strain.mat){
+  mean.v <- rep(NA, nrow(methyl.by.strain.mat))
+  has.vals <- which(apply(methyl.by.strain.mat, 1, function(x) all(!is.na(x))))
+  if(length(has.vals) > 0){
+    mean.v[has.vals] <- apply(methyl.by.strain.mat[has.vals,,drop=FALSE], 1, function(x) mean(x, na.rm = TRUE))
+  }
+  return(mean.v)
+}
+
+methyl_var <- t(sapply(gene.by.strain, get_methyl_var))
+methyl_mean <- t(sapply(gene.by.strain, get_methyl_mean))
+```
+
+The following plot shows distributions of percent methylation by position
+across all genes. This plot makes it obious that there is low methylation
+with low variance in methylation at the TSS, and high methylation with 
+low variance toward the TES. All other positions have varying means, but
+also very high variaion in percent methylation.
+
+```{r methyl_var_box}
+boxplot(methyl_mean, group.names = colnames(methyl_mean))
+```
+
+
+The following plot shows mean methylation plotted against the standard
+deviation of methylation. This plot reiterates the observation that 
+positions with very high or very low methylation are also consistent
+across strains. 
+
+```{r mean_var}
+if(is.interactive){quartz()}
+plot(as.vector(methyl_mean), as.vector(methyl_var), xlab = "Methylation Mean",
+  ylab = "Methylation SD")
+colnames(methyl_var) <- colnames(methyl_mean) <- rownames(gene.by.strain[[1]])
+```
+
+The following plot shows the same data as above, but with the methylation 
+percent binned. In this plot it is easier to see that methylation varies 
+vary little across strains when it is very high or very low.
+
+```{r mean_var_box}
+mean.bins <- seq(0, 100, 10)
+var_by_percent <- sapply(1:ncol(methyl_mean), function(y) sapply(1:(length(mean.bins) - 1), function(x) mean(methyl_var[intersect(which(methyl_mean[,y] >= mean.bins[x]), which(methyl_mean[,y] <= mean.bins[(x+1)])),y], na.rm = TRUE)))
+rownames(var_by_percent) <- apply(cbind(mean.bins[1:10], mean.bins[2:11]),1, function(x) paste0(x[1], "-", x[2]))
+colnames(var_by_percent) <- round(as.numeric(colnames(methyl_mean)), 2)
+
+#pdf("~/Desktop/Methyl_variation.pdf", width = 7, height = 5)
+boxplot(t(var_by_percent), ylab = "Methylation SD", xlab = "Methylation Mean")
+#dev.off()
+```
+
+The following plot again shows the same information as above, but this 
+time split by relative genomic position. The $x$-axis shows the genomic
+position relative to the gene body. The $y$-axis shows binned percent
+methylation mean, and the individual cells show the variation in percent
+methylation for the corresponding methylation mean and gene position.
+
+This plot shows that the low variation seen in positions with high or
+low mean methylation does not depend on position. All positions with 
+high or low percent methylation are stable across strains. Positions 
+with mid-range DNA methylation have higher variance. This variation
+may be slightly higher upstream of gene bodies, but the effect is 
+not very strong.
+
+
+```{r mean_var_heat, eval = FALSE}
+pheatmap(var_by_position, cluster_rows = FALSE, cluster_cols = FALSE, 
+  main = "Methylation Mean and SD by Relative Genomic Position")
+```
+
+The following plot shows that variaion in DNA methylation is lower 
+at the TSS than at other genomic positions. This is due to the 
+observation that variation is low when average methylation is low,
+and the TSS has the lowest variation in methylation on average.
+
+```{r var_by_position}
+#quartz();barplot(colMeans(methyl_var, na.rm = TRUE))
+if(is.interactive){quartz(width = 8, height = 5)}
+#pdf("~/Desktop/methylation_var.pdf", width = 5, height = 4)
+plot.centered.mat(methyl_var, ylim = c(0, 10), 
+ylab = "Percent Methylation SD Across Strains",
+plot.label = "Methylation Variation", min.upstream = -1, max.downstream = 2)
+abline(v = c(0,1), lwd = 2, col = "darkgray", lty = 2)
+#dev.off()
+```
+
+The following plot shows the number of genes that have variation
+in methylation percent at each position. Now I'm confused. There is
+a very high number of genes with variation at the TSS. More than 
+anywhere else. But this variation is of particularly low magnitude?
+
+```{r number_var}
+num.var.genes <- apply(methyl_var, 2, function(x) length(which(x > 0)))
+if(is.interactive){quartz()}
+plot(as.numeric(colnames(methyl_var)), num.var.genes, 
+  xlab = "Relative Gene Position", ylab = "Number of Genes with Variation", type = "l",
+  lwd = 3, col = "darkgray")
+abline(v = c(0,1), lty = 2)
+
+#plot(sort(methyl_var[,21])) #TSS variation
+```
+

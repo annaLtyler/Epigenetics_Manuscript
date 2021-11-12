@@ -97,7 +97,6 @@ load_libraries(needed.packages)
 Set the number of states to be analyzed, and the mark, if relevant.
 
 ```{r state_num}
-sig.val = 0.01
 selected.mark <- NULL #set to null to use all marks
 #selected.mark <- "H3K4me1"
 #selected.mark <- "H3K4me3"
@@ -174,15 +173,12 @@ All animals are female, so we do not need to do a correction for sex.
 ```{r load_expression, fig.width = 7, fig.height = 7}
 rna.seq.file <- here("Data", "RNASeq", "StrainsEffCts9_vst.RDS")
 rna.seq <- readRDS(rna.seq.file)
-boxplot(rna.seq, las = 2)
+#boxplot(rna.seq, las = 2)
 
 col.order <- match.order(substr(colnames(rna.seq), 1, 2), col.table[,1], col.table)
+if(is.interactive){quartz()}
 expr.decomp <- plot.decomp(t(rna.seq), cols = col.table[col.order,3], pc = 5)
-
-#This plot shows how the strains separate along a given pc
-#pc = 3
-#boxplot(expr.decomp$u[,pc]~as.factor(col.table[col.order,1]), col = col.table[,3])
-
+#quartz();plot.decomp(t(rna.seq), cols = col.table[col.order,3])
 ```
 
 ```{r gene_info}
@@ -254,6 +250,8 @@ var.lim = 0.3
 zero.expr <- rep(NA, 9)
 names(zero.expr) <- names(strain.mean.expr[[1]])
 strain.var <- sapply(strain.mean.expr, function(x) max(x) - min(x))
+strain.sd <- sapply(strain.mean.expr, function(x) sd(x))
+if(is.interactive){quartz()}
 hist(strain.var, breaks = 100)
 abline(v = var.lim, col = "red", lwd = 2)
 
@@ -270,30 +268,6 @@ still.used <- length(which(sapply(strain.mean.expr, function(x) !all(is.na(x))))
 We removed `r length(low.var)` genes with across-strain variance lower than
 `r var.lim`. This leaves a total of `r still.used` transcripts for analysis.
 
-
-## DO eQTL data
-We want to compare histone effects on expression with genetic effects. To identify
-genetic effects we use the DO478. These data were collected from whole DO mouse liver. 
-
-
-```{r do_QTL}
-do.eqtl.info.file <- here("Data", "DOQTL", "mRNA_Info.csv")
-do.eqtl.info <- read.csv(do.eqtl.info.file, header = TRUE, stringsAsFactors = FALSE)
-
-#A file containing the cis eQTL coefficients for each haplotype and each transcript
-do.qtl.file <- here("Data", "DOQTL", "eQTL_statistics.RDS")
-do.eqtl.loaded <- as.logical(length(which(all.var == "do.eqtl")))
-if(!do.eqtl.loaded){
-    do.eqtl <- readRDS(do.qtl.file)
-    names(do.eqtl) <- qtl.ids <- do.eqtl.info[,"gene.id"]
-}
-
-qtl.viewer.loaded <- as.logical(length(which(all.var == "dataset.mrna")))
-if(!qtl.viewer.loaded){
-    load(here("Data", "DOQTL", "Svenson_DO850_for_eQTL_viewer_v9.RData"))
-}
-
-```
 
 ## ChromHMM Output Processing
 We analyzed the chromatin states based on states output by ChromHMM. 
@@ -380,9 +354,11 @@ if(!file.exists(chrom.mds.file)){
 We looked across genes within strain to see if individual states were
 associated with highly expressed genes and lowly expressed genes.
 
-The following heatmap shows the correlations between the proportion of each
-state and gene expression across genes. Presence of states 7 and 5 is correlated
-with highly expressed genes, whereas the presence of states 1 and 2 is correlated
+The following plot shows the overall correlations between TPM and proportion
+of chromatin state across the gene within each strain.
+
+Presence of states 7 and 5 is correlated with highly expressed genes,
+whereas the presence of states 1 and 2 is correlated
 with lowly expressed genes.
 
 ```{r within_strain}
@@ -393,69 +369,157 @@ common.expr.locale <- match(common.genes, names(strain.mean.expr))
 common.chrom.locale <- match(common.genes, names(chrom.state.props))
 chrom.order <- match.order(names(strain.mean.expr[[1]]), colnames(chrom.state.props[[1]]), col.table)
 
-all.strain.r <- all.strain.p <- matrix(NA, nrow = num.states, ncol = length(strain.mean.expr[[1]]))
-colnames(all.strain.r) <- colnames(all.strain.p) <- names(strain.mean.expr[[1]])
-rownames(all.strain.r) <- rownames(all.strain.p) <- 1:num.states
+all.state.conf <- matrix(NA, nrow = num.states, ncol = 5)
+colnames(all.state.conf) <- c("r", "p.value", "slope.fit", "slope.lwr", "slope.upr")
+rownames(all.state.conf) <- 1:num.states
 
-for(s in 1:num.states){
-    strain.expr <- sapply(strain.mean.expr[common.expr.locale], function(x) x[s])
-    strain.chrom <- sapply(chrom.state.props[common.chrom.locale], function(x) x[,chrom.order[s]])
-    strain.chrom.cor <- apply(strain.chrom, 1, function(x) cor.test(x, strain.expr))
-    all.strain.r[,s] <- sapply(strain.chrom.cor, function(x) x$estimate)
-    all.strain.p[,s] <- sapply(strain.chrom.cor, function(x) x$p.value)
+strain.expr.mat <- t(sapply(strain.mean.expr[common.expr.locale], function(x) x))
+
+for(state in 1:num.states){    
+    strain.chrom.mat <- t(sapply(chrom.state.props[common.chrom.locale], 
+    function(x) x[state,chrom.order]))
+    conf.by.strain <- sapply(1:ncol(strain.chrom.mat), 
+        function(x) plot.with.model(rankZ(strain.chrom.mat[,x]), 
+        rankZ(strain.expr.mat[,x]), confidence = 0.95, plot.result = FALSE))
+    all.state.conf[state,] <- rowMeans(conf.by.strain)
 }
-pheatmap(all.strain.r, cluster_rows = FALSE, cluster_cols = FALSE, display_numbers = TRUE)
+
+ymin <- -0.6;ymax = 0.6
+state.col <- colors.from.values(1:num.states, use.pheatmap.colors = TRUE)
+state.col[3:5] <- darken(state.col[3:5], factor = 1.1) #darken the middle colors. they are very light!
+#state.col <- rep("gray40", num.states)
+conf.lwr <- min(all.state.conf[,"slope.lwr"])
+conf.upr <- max(all.state.conf[,"slope.upr"])
+if(is.interactive){quartz(width = 7, height = 5)}
+plot.new()
+plot.window(xlim = c(1, num.states), ylim = c(ymin, ymax))
+#add grid lines
+abline(v = 1:num.states, h = seq(-0.6, 0.6, 0.2), col = "gray80")
+for(state in 1:num.states){
+    line.col <- state.col[state]
+    points(state, all.state.conf[state,"slope.fit"], pch = 16, col = line.col, cex = 1.5)
+    segments(x0 = state-0.2, x1 = state+0.2, y0 = all.state.conf[state,"slope.lwr"],
+        col = line.col, lwd = 4) #lower confidence interval
+    segments(x0 = state-0.2, x1 = state+0.2, y0 = all.state.conf[state,"slope.upr"],
+        col = line.col, lwd = 4) #upper confidence interval
+    segments(x0 = state, y0 = all.state.conf[state,"slope.lwr"], 
+        y1 = all.state.conf[state,"slope.upr"], col = line.col, lwd = 4) #vertical bar
+}
+abline(h = 0)
+axis(2, at = round(seq(ymin, ymax, 0.2), 1))
+par(xpd = TRUE)
+text(x = 1:num.states, y = rep((ymin*1.1), num.states), labels = 1:num.states)
+par(xpd = FALSE)
+mtext(side = 2, "Effect", line = 2.5)
+mtext(side = 3, "Within-Strain State Effects with 95% Confidence Intervals", line = 2.5)
 ```
 
+```{r within_effect_fig, eval = FALSE}
+y.coord = num.states:1
+pdf("~/Desktop/within_strain_effects.pdf", width = 6, height = 4)
+plot.new()
+plot.window(ylim = c(1, num.states), xlim = c(ymin, ymax))
+#add grid lines
+abline(h = 1:num.states, v = seq(-0.6, 0.6, 0.2), col = "gray80")
+for(state in 1:num.states){
+    line.col <- state.col[state]
+    #points(y = y.coord[state], x = all.state.conf[state,"slope.fit"], pch = 16, 
+    #    col = line.col, cex = 1.5)
+    segments(y0 = y.coord[state]-0.2, y1 = y.coord[state]+0.2, 
+        x0 = all.state.conf[state,"slope.lwr"], col = line.col, lwd = 4) #lower confidence interval
+    segments(y0 = y.coord[state]-0.2, y1 = y.coord[state]+0.2, 
+        x0 = all.state.conf[state,"slope.upr"],
+        col = line.col, lwd = 4) #upper confidence interval
+    segments(y0 = y.coord[state], x0 = all.state.conf[state,"slope.lwr"], 
+        x1 = all.state.conf[state,"slope.upr"], col = line.col, lwd = 4) #vertical bar
+}
+abline(v = 0)
+#axis(1, at = round(seq(ymin, ymax, 0.2), 1))
+dev.off()
+```
 
 ## Chromatin state and inbred expression
-We also wanted to see if differential expression across strains could be 
-partly explained by chromatin state. 
+We also wanted to see if differential expression across strains 
+could be explained, at least in part, by chromatin state. 
 
-For each transcript, we correlated the mean inbred expression with the proportion of 
-the chromatin state in the sampled region.
+To investigate this, we scaled the expression of all transcripts
+across strains. We then correlated the proportion of each state
+with expression across all transcripts. 
 
-This gives us a matrix with transcripts in rows and chromatin states in columns.
+The figure below shows the 95\% confidence intervals around the 
+effect size of each state.
 
 ```{r states_and_expression}
-#file containing r and p values indicating 
-#correlation between state proportions and 
-#expression values. Expression values are
-#scaled within each gene.
-states.expression.file <- file.path(results.dir,
-paste0("State_", num.states, "_Prop_Expression_Cor_", gene.text, "_", buffer.text, ".RData"))
-
-if(!file.exists(states.expression.file)){
-    cor.prop.results <- state.prop.expression(chrom.state.prop = chrom.state.props, 
-    group.mean.expr = strain.mean.expr, strain.key = col.table, verbose = is.interactive)
-    
-    all.prop.p <- Reduce("rbind", lapply(cor.prop.results, function(x) x$p))
-    rownames(all.prop.p) <- names(strain.mean.expr)
-    all.prop.r <- Reduce("rbind", lapply(cor.prop.results, function(x) x$r))
-    rownames(all.prop.r) <- names(strain.mean.expr)
-    saveRDS(list("all.p" = all.prop.p, "all.r" = all.prop.r), states.expression.file)
-}else{
-    cor.prop.results <- readRDS(states.expression.file)
-    all.prop.p <- cor.prop.results$all.p
-    all.prop.r <- cor.prop.results$all.r
+expr.mat <- t(sapply(strain.mean.expr, function(x) if(length(x) > 1){scale(x)}else{rep(NA, 9)}))
+colnames(expr.mat) <- names(strain.mean.expr[[1]])
+full.state.prop.cor <- matrix(NA, nrow = num.states, ncol = 5)
+colnames(full.state.prop.cor) <- c("r", "p.value", "slope.fit", "slope.lwr", "slope.upr")
+for(state in 1:num.states){
+    strain.state.prop <- t(sapply(chrom.state.props, 
+    function(x) if(length(x) > 1){x[state,chrom.order]}else{rep(NA, 9)}))
+    full.state.prop.cor[state,] <- plot.with.model(rankZ(as.vector(strain.state.prop)), 
+        rankZ(as.vector(expr.mat)), confidence = 0.95, plot.results = FALSE)
 }
 
-#do the same for the matrices scaled with mds
-state.mds.expression.file <- file.path(results.dir,
-paste0("State_", num.states, "_MDS_Expression_Cor_", gene.text, "_", buffer.text, ".RData"))
+ymin <- -0.05; ymax = 0.06
+plot.new()
+plot.window(xlim = c(1,num.states), ylim = c(ymin, ymax))
+for(state in 1:nrow(full.state.prop.cor)){
 
-if(!file.exists(state.mds.expression.file)){
-    cor.mds.results <- state.scaled.expression(scaled.chrom = chrom.mds, 
-    group.mean.expr = scaled.mean.expr, strain.key = col.table, 
-    verbose = is.interactive)
-    all.mds.p <- sapply(cor.mds.results, function(x) x[2])
-    all.mds.r <- sapply(cor.mds.results, function(x) x[1])
-    saveRDS(list("all.p" = all.mds.p, "all.r" = all.mds.r), state.mds.expression.file)
-}else{
-    cor.mds.results <- readRDS(state.mds.expression.file)
-    all.mds.p <- cor.mds.results$all.p
-    all.mds.r <- cor.mds.results$all.r
+    line.col <- state.col[state]
+
+    points(x = state, y = full.state.prop.cor[state,"slope.fit"],
+    col = line.col, cex = 1.5, pch = 16)
+
+    segments(x0 = state, y0 = full.state.prop.cor[state,"slope.lwr"],
+    y1 = full.state.prop.cor[state, "slope.upr"], lwd = 4, 
+    col = line.col) #full range
+
+    segments(x0 = state-0.2, x1 = state + 0.2, 
+    y0 = full.state.prop.cor[state,"slope.upr"], lwd = 4, 
+    col = line.col) #upper bound
+
+    segments(x0 = state-0.2, x1 = state + 0.2, 
+    y0 = full.state.prop.cor[state,"slope.lwr"], lwd = 4, 
+    col = line.col) #lower bound
+
     }
+abline(h = 0)
+axis(2, at = round(seq(ymin, ymax, 0.02), 2))
+par(xpd = TRUE)
+text(x = 1:num.states, y = rep((ymin*1.1), num.states), labels = 1:num.states)
+par(xpd = FALSE)
+mtext(side = 2, "Effect", line = 2.5)
+mtext(side = 3, "Across-Strain State Effects with 95% Confidence Intervals", line = 2.5)
+```
+
+```{r effect_fig, eval = FALSE}
+quartz(width = 7, height = 5)
+plot.new()
+plot.window(ylim = c(1,num.states), xlim = c(ymin, ymax))
+for(state in 1:nrow(full.state.prop.cor)){
+
+    line.col <- state.col[state]
+
+    points(y = state, x = full.state.prop.cor[state,"slope.fit"],
+    col = line.col, cex = 1.5, pch = 16)
+
+    segments(y0 = state, x0 = full.state.prop.cor[state,"slope.lwr"],
+    x1 = full.state.prop.cor[state, "slope.upr"], lwd = 4, 
+    col = line.col) #full range
+
+    segments(y0 = state-0.2, y1 = state + 0.2, 
+    x0 = full.state.prop.cor[state,"slope.upr"], lwd = 4, 
+    col = line.col) #upper bound
+
+    segments(y0 = state-0.2, y1 = state + 0.2, 
+    x0 = full.state.prop.cor[state,"slope.lwr"], lwd = 4, 
+    col = line.col) #lower bound
+
+    }
+abline(v = 0)
+axis(1, at = round(seq(-0.6, 0.6, 0.02), 2))
+
 ```
 
 ## State Annotations
@@ -475,83 +539,6 @@ pdf("~/Desktop/emissions.pdf", width = 5, height = 2)
 pheatmap(t(emissions.mat), cluster_rows = FALSE, cluster_cols = FALSE)
 dev.off()
 ```
-
-### Correlation distributions by state
-
-The plot below shows all values of Pearson's r for each state and each transcript.
-For each gene we calculated the correlation between the proportion of each state
-and gene expression across strains.
-
-Points are colored based on the -log of the p value of the correlation. This gives
-an idea of how many correlations were able to be calculated for each state (i.e. the 
-state had some variation across strains), the range of correlations, and whether the 
-significant correlations were predominantly positive or negative.
-
-```{r state.effect}
-if(is.interactive){quartz()}
-plot.new()
-plot.window(xlim = c(0,(ncol(all.prop.r)+1)), ylim = c(-1, 1))
-for(i in 1:ncol(all.prop.r)){
-    p.col <- colors.from.values(-log10(all.prop.p[,i]), use.pheatmap.colors = TRUE)
-    not.na <- which(!is.na(all.prop.r[,i]))
-    points(x = jitter(rep(i, nrow(all.prop.r))), y = all.prop.r[,i], col = p.col, 
-    pch = 16, cex = 0.5)
-    boxplot(all.prop.r[not.na,i], at = i, col = "lightgray", add = TRUE)
-    }
-axis(2);mtext(side = 2, "Correlation Coefficient", line = 2.5)
-abline(h = 0)
-par(xpd = TRUE)
-text(x = 1:ncol(all.prop.r), y = -1.1, labels = paste0("State", 1:ncol(all.prop.r)), 
-srt = 90, adj = 1)
-par(xpd = FALSE)
-```
-
-The following boxplot shows the correlations between the proportion of each state
-and gene expression across strains, only for the correlations that were significant
-at a nominal $p$ value of `r sig.val`. The numbers across the top show the number of
-genes in each group.
-
-
-```{r sig_r}
-sig.r <- all.prop.r
-sig.r[which(all.prop.p > sig.val)] <- NA
-sig.r.list <- lapply(1:ncol(sig.r), function(x) sig.r[,x])
-a <- boxplot(sig.r.list, main = 'Nominally Significant Correlations')
-par(xpd = TRUE)
-text(x = 1:length(sig.r.list), y = rep(1.15, length(sig.r.list)), labels = a$n)
-```
-
-## Functional enrichment of state-responsive genes {.tabset .tabset-fade .tabset-pills}
-
-We looked for functional enrichment in these groups of genes. The
-results are shown below. Each set of genes is a set whose differential
-expression across strains is correlated with one of the chromatin states.
-
-
-```{r state_enrichment, results = "asis", fig.width = 9, fig.height  = 8}
-state.enrichment.file <- here("Results", "ChromHMM", form.states, "enrichment.by.state.RData")
-if(!file.exists(state.enrichment.file)){
-    state.enrich <- lapply(sig.r.list, function(x) gost(names(x)[which(!is.na(x))], 
-    organism = "mmusculus", evcodes = TRUE, sources = c("GO", "KEGG", "REACTOME")))
-    names(state.enrich) <- 1:num.states
-    saveRDS(state.enrich, state.enrichment.file)
-}else{
-    state.enrich <- readRDS(state.enrichment.file)
-}
-
-for(i in 1:length(state.enrich)){
-    cat("### State", i, "\n")
-    if(is.interactive){quartz(width = 8, height = 8)}
-    plot.enrichment(state.enrich[[i]], order.by = "p_value",
-    num.terms = 20, plot.label = paste("State", i))
-    cat("\n\n")
-}
-
-cat("### Overall")
-plot.enrichment.group(state.enrich, n.terms = 10)
-cat("\n\n")
-```
-
 
 ## Relative position of chromatin state
 
@@ -623,28 +610,59 @@ if(!file.exists(far.position.file)){
     state.position <- readRDS(far.position.file)
 }
 
-state.col <- colors.from.values(1:num.states, use.pheatmap.colors = TRUE, 
-	global.color.scale = TRUE, global.min = 1, global.max = num.states)
+#pdf("~/Desktop/chromatin_states_individual.pdf", width = 3, height = 9)
 par(mfrow = c(num.states, 1), mar = c(2,2,2,2))
 for(s in 1:length(state.position)){
     if(s == num.states){x.axis = TRUE}else{x.axis = FALSE}
     plot.state.by.position(state.position[[s]], error.type = "se", 
     plot.label = paste("State", s), col = state.col[s], x.axis = x.axis,
-    xlim = c(-0.5, 1.5), ylim = NULL)
+    xlim = c(-0.5, 1.5), ylim = NULL, idx = 2:length(state.position[[s]][[1]]), lwd = 4)
     abline(h = 0, col = "gray")
 }
+#dev.off()
+
+```
+
+```{r abundance_fig, eval = FALSE}
+pdf("~/Desktop/chromatin_state_abundance.pdf", width = 3, height = 10)
+par(mfrow = c(num.states, 1), mar = c(0.5,3,0.5,2))
+for(s in 1:length(state.position)){
+    state.abundance <- state.position[[s]]$state.avg
+    state.pos <- state.position[[s]]$position
+    
+    #trim
+    idx <- intersect(which(state.pos >= -0.5), which(state.pos <= 1.5))
+    state.abundance <- state.abundance[idx]
+    state.pos <- state.pos[idx]
+
+    max.abundance <- max(state.abundance, na.rm = TRUE)
+    min.abundance <- min(state.abundance, na.rm = TRUE)
+    abundance.range <- max.abundance - min.abundance
+
+    ymin <- (min.abundance-(abundance.range*0.08))
+    ymax <- (max.abundance + (abundance.range*0.08))
+
+    plot(state.pos, state.abundance, type = "l", ylim = c(ymin, ymax), 
+        col = state.col[s], xlim = c(-0.5, 1.5), lwd = 4, axes = FALSE)
+    
+    draw.rectangle(-0.57, 1.57, ymin, ymax, border.col = "gray80", lwd = 2)
+    #axis(2)
+    abline(v = c(0,1), col = "darkgray", lty = 2, lwd = 2)
+    mtext(side = 2, paste("State", s), cex = 1.5, line = 0.5)
+}
+dev.off()
 ```
 
 ```{r states_together, fig.width = 8.5, fig.height = 5}
-if(is.interactive){quartz(width = 8.5, height = 5)}
 #pdf("~/Desktop/chromatin_states.pdf", width = 7, height = 4)
 layout(matrix(c(1,2), ncol = 2), widths = c(1, 0.3))
 plot.new()
-plot.window(xlim = c(-1, 2), ylim = c(0,1))
+plot.window(xlim = c(-0.5, 1.5), ylim = c(0,1))
 if(num.states == 9){state.order = c(4,5,6,1,7,8,3,9)}else{state.order = 1:num.states}
 for(s in state.order){ #ordered for ease of visualization
     plot.state.by.position(state.position[[s]], error.type = "se", 
-    plot.label = "", col = state.col[s], add = TRUE, lwd = 3)
+    plot.label = "", col = state.col[s], add = TRUE, lwd = 4,
+    idx = 2:length(state.position[[s]][[1]]))
 }
 axis(1);axis(2)
 mtext("Relative Gene Position", side = 1, line = 2.5)
@@ -659,7 +677,24 @@ par(xpd = TRUE)
 #dev.off()
 ```
 
-## How does state position affect correlation with expression?
+```{r together_fig, eval = FALSE}
+pdf("~/Desktop/chromatin_states_together.pdf", width = 7, height = 5.5)
+plot.new()
+plot.window(xlim = c(-0.5, 1.5), ylim = c(0,0.8))
+if(num.states == 9){state.order = c(4,5,6,1,7,8,3,9)}else{state.order = 1:num.states}
+for(s in state.order){ #ordered for ease of visualization
+    plot.state.by.position(state.position[[s]], error.type = "se", 
+    plot.label = "", col = state.col[s], add = TRUE, lwd = 4,
+    idx = 2:length(state.position[[s]][[1]]), x.axis = FALSE)
+}
+axis(1, cex.axis = 1.5);axis(2, cex.axis = 1.5)
+mtext("Relative Gene Position", side = 1, line = 2.5, cex = 1.5)
+mtext("Proportion Genes State Present", side = 2, line = 2.5, cex = 1.5)
+dev.off()
+```
+
+
+## Does relative position change the effect of chromatin state on expression?
 
 We looked at correlations between expression and state abundance in a sliding
 window along the gene body. 
@@ -688,111 +723,99 @@ differential expression.
 Overall there is very little effect of any state on expression near the TES 
 specifically.
 
-```{r gene_coord_expr, fig.height = 10, fig.width = 3.5}
-
-window.cor.file <- file.path(results.dir, "State.Expr.Cor.r.by.Window.RDS")
-window.p.file <- file.path(results.dir, "State.Expr.Cor.p.by.Window.RDS")
-
+```{r gene_coord_expr, fig.height = 9, fig.width = 9}
 common.genes <- intersect(names(cent.mats), names(scaled.mean.expr))
-gene.windows <- sliding.window.el(seq.int(-1, 2, length.out = 100), 10, 5)
+#generate sliding windows each containing five normalized positions, 
+#and overlapping by one position.
+gene.windows <- sliding.window.el(seq(-0.15, 1.15, 0.015), 5, 2, plot.results = FALSE)
+#length(gene.windows)
+#sapply(gene.windows, mean)
+#abline(v = c(0, 1))
 
-if(!file.exists(window.cor.file)){
+#fit effects with 95% confidence interval
+get_chromatin_window_prop <- function(chrom.mat, window.coord){
+    if(length(chrom.mat) == 1){return(NA)}
+    window.idx <- intersect(which(as.numeric(rownames(chrom.mat)) >= min(window.coord)),
+    which(as.numeric(rownames(chrom.mat)) <= max(window.coord)))
+    if(length(window.idx) == 0){return(NA)}
+    sub.mat <- chrom.mat[window.idx,,drop=FALSE]
+    prop.window <- apply(sub.mat, 2, function(x) sapply(1:num.states, function(state) length(which(x == state))/length(x)))
+    rownames(prop.window) <- 1:num.states
+    return(prop.window)
+}
 
-    state.expr.window.r <- state.expr.window.p <- vector(mode = "list", length = length(gene.windows))
-    names(state.expr.window.r) <- names(state.expr.window.p) <- sapply(gene.windows, 
-        function(x) paste0(signif(min(x), 2), "__", signif(max(x), 2)))
+mean.expr.mat <- t(sapply(strain.mean.expr, 
+    function(x) if(length(x) > 1){x}else{rep(NA, ncol(cent.mats[[1]]))}))
+scaled.expr.mat <- t(sapply(scaled.mean.expr, 
+    function(x) if(length(x) > 1){x}else{rep(NA, ncol(cent.mats[[1]]))}))
+colnames(scaled.expr.mat) <- rownames(scaled.mean.expr[[1]])
+
+across.strain.window.state.file <- file.path(results.dir, "State.Window.Effects.Across.Strains.RDS")
+within.strain.window.state.file <- file.path(results.dir, "State.Window.Effects.Within.Strains.RDS")
+
+
+if(!file.exists(across.strain.window.state.file)){
+    across.strain.window.results <- vector(mode = "list", length = length(gene.windows))
+    within.strain.window.results <- vector(mode = "list", length = length(gene.windows))
 
     for(w in 1:length(gene.windows)){
-        window.min <- min(gene.windows[[w]])
-        window.max <- max(gene.windows[[w]])
-        if(is.interactive){cat(signif(window.min, 2), "to", signif(window.max, 2), "\n")}
+        if(is.interactive){cat("window", w, "\n")}
+        #calculate the proportion of each state in the window
+        chrom.window.prop <- lapply(cent.mats, 
+            function(x) if(length(x) > 1){get_chromatin_window_prop(x[,chrom.order], 
+            gene.windows[[w]])}else{NA})
+
+        across.strain.state.effect <- within.strain.state.effect <- matrix(NA, nrow = num.states, ncol = 5)
+        rownames(across.strain.state.effect) <- rownames(within.strain.state.effect) <- 1:num.states
+        colnames(across.strain.state.effect) <- colnames(within.strain.state.effect) <- c("r", "p.value", "slope.fit", "slope.lwr", "slope.upr")
+
+        all.within.strain.state.effects <- vector(mode = "list", length = num.states)
+
+        #look at the effect of each chromatin state in this window on 
+        #gene expression across strains.
+        for(state in 1:num.states){
+            if(is.interactive){cat("\tState", state, "\n")}
+            window.state.mat <- t(sapply(chrom.window.prop, 
+            function(x) if(length(x) > 1){x[state,]}else{rep(NA, ncol(cent.mats[[1]]))}))
+           
+            across.strain.state.effect[state,] <- plot.with.model(rankZ(as.vector(window.state.mat)), 
+                rankZ(as.vector(scaled.expr.mat)), confidence = 0.95, plot.results = FALSE)
     
-        all.gene.body.cor <- vector(mode = "list", length = length(common.genes))
-        names(all.gene.body.cor) <- common.genes
-        for(i in 1:length(common.genes)){
-            if(is.interactive){report.progress(i, length(common.genes))}
-            gene.name <- common.genes[i]
-            chrom.locale <- which(names(cent.mats) == common.genes[i])
-            expr.locale <- which(names(scaled.mean.expr) == common.genes[i])
-            all.gene.body.cor[[i]] <- binned.state.expr.cor(cent.chrom = cent.mats[[chrom.locale]], 
-            gene.expr = scaled.mean.expr[[expr.locale]], col.table = col.table, 
-            bin.min = window.min, bin.max = window.max, num.states = num.states)    
+            within.strain.state.effect[state,] <- rowMeans(sapply(1:ncol(window.state.mat), 
+                function(x) plot.with.model(rankZ(window.state.mat[,x]), 
+                rankZ(mean.expr.mat[,x]), confidence = 0.95, plot.results = FALSE)))
         }
-
-        one.window.r <- sapply(all.gene.body.cor, function(x) x$r)
-        one.window.p <- sapply(all.gene.body.cor, function(x) x$p)
-
-        state.expr.window.r[[w]] <- one.window.r
-        state.expr.window.p[[w]] <- one.window.p
-        #boxplot(t(one.window.r), main = paste(signif(window.min, 2), "to", signif(window.max, 2)))
-        #abline(h = 0)
-        if(is.interactive){cat("\n")}
-    }
-    saveRDS(state.expr.window.r, window.cor.file)
-    saveRDS(state.expr.window.p, window.p.file)
-}else{
-    state.expr.window.r <- readRDS(window.cor.file)
-    state.expr.window.p <- readRDS(window.p.file)
-}
-
-
-cor.list <- lapply(state.expr.window.r, t)
-cor.means <- lapply(cor.list, function(x) colMeans(x, na.rm = TRUE))
-cor.var <- lapply(cor.list, function(x) apply(x, 2, function(y) var(y, na.rm = TRUE)))
-cor.n <- lapply(cor.list, function(x) apply(x, 2, function(y) length(which(!is.na(y)))))
-cor.sd <- lapply(1:length(cor.var), function(x) sqrt(cor.var[[x]]))
-cor.se <- lapply(1:length(cor.var), function(x) sqrt(cor.var[[x]])/sqrt(cor.n[[x]]))
-
-state_by_pos <- sapply(1:num.states, function(x) lapply(cor.means, function(y) y[x]))
-colnames(state_by_pos) <- 1:num.states
-n_by_pos <- sapply(1:num.states, function(x) lapply(cor.n, function(y) y[x]))
-se_by_pos <- sapply(1:num.states, function(x) lapply(cor.se, function(y) y[x]))
-sd_by_pos <- sapply(1:num.states, function(x) lapply(cor.sd, function(y) y[x]))
-
-cor.min <- min(unlist(cor.means) - unlist(cor.se))
-cor.max <- max(unlist(cor.means) + unlist(cor.se))
-
-if(is.interactive){quartz(height = 8, width = 3)}
-#pdf(here("Documents", "3.Manuscript", "Figures", "chromatin_correlation_by_state.pdf"), height = 8, width = 3)
-par(mfrow = c(num.states, 1), mar = c(0,3,0,4))
-for(i in 1:ncol(state_by_pos)){
-    #if(is.interactive){quartz()}
-    plot.new()
-    plot.window(xlim = c(min(unlist(gene.windows)), max(unlist(gene.windows))), 
-    ylim = c(cor.min, cor.max))
-
-    #for(w in 1:length(gene.windows)){
-    #    state_window_cor <- state_by_pos[w,i][[1]]
-    #    if(state_window_cor > 0){
-    #        draw.rectangle(min(gene.windows[[w]]), max(gene.windows[[w]]), 0, state_window_cor,
-    #        fill = state.col[i], border.col = NA)
-    #    }else{
-    #        draw.rectangle(min(gene.windows[[w]]), max(gene.windows[[w]]), state_window_cor, 0,
-    #        fill = state.col[i], border.col = NA)
-    #    }
-    #}
     
-    window.mids <- sapply(gene.windows, mean)
-    one.state.col <- col2rgb(state.col[i])
-    plot.new()
-    plot.window(xlim = c(min(unlist(gene.windows)), max(unlist(gene.windows))), 
-    ylim = c(cor.min, cor.max))
+        across.strain.window.results[[w]] <- across.strain.state.effect
+        within.strain.window.results[[w]] <- within.strain.state.effect
 
-    plot.poly.xy(poly.top.x = window.mids, poly.bottom.x = window.mids, 
-    poly.top.y = unlist(state_by_pos[,i]) + unlist(se_by_pos[,i]),
-    poly.bottom.y = unlist(state_by_pos[,i]) - unlist(se_by_pos[,i]), 
-    col = rgb(one.state.col[1]/256, one.state.col[2]/256, one.state.col[3]/256, alpha = 0.5))
-    #points(window.mids, unlist(state_by_pos[,i]), type = "l", col = state.col[i])
-
-    axis(2, cex.axis = 0.7)
-    abline(v = c(0,1), col = "darkgray", lty = 2, lwd = 2)
-    abline(h = 0)
-    par(xpd = TRUE)
-    text(x = max(unlist(gene.windows))*1.1, y = 0, labels = paste("State", i), srt = 270,
-    cex = 1.5)
-    par(xpd = FALSE)
+    }
+    saveRDS(across.strain.window.results, across.strain.window.state.file)
+    saveRDS(within.strain.window.results, within.strain.window.state.file)
+}else{
+    across.strain.window.results <- readRDS(across.strain.window.state.file)
+    within.strain.window.results  <- readRDS(within.strain.window.state.file)
 }
-#dev.off()
+
+#plot the across-strain effects
+window.mids <- sapply(gene.windows, max)
+if(is.interactive){quartz(width = 9, height = 9)}
+par(mfrow = c(3,3))
+for(state in 1:num.states){
+    state.effects <- sapply(across.strain.window.results, function(x) x[state,])
+    min.effect <- min(state.effects["slope.lwr",])
+    max.effect <- max(state.effects["slope.upr",])
+    plot.new()
+    plot.window(xlim = c(-0.1, 1.1), ylim = c(-0.1, 0.1))
+    points(window.mids, state.effects["slope.fit",], col = state.col[state], type = "l")
+    plot.poly.xy(window.mids, state.effects["slope.lwr",],
+    window.mids, state.effects["slope.upr",], col = state.col[state])
+    abline(h = 0)
+    axis(1);axis(2)
+    mtext(side = 2, "Effect", line = 2.5)
+    mtext(side = 3, paste("State", state), line = 2.5)
+    abline(v = c(0,1), lty = 2, col = "darkgray")
+}
 ```
 
 ### Correlation by position within-strain {.tabset .tabset-fade .tabset-pills}
@@ -800,83 +823,30 @@ for(i in 1:ncol(state_by_pos)){
 We also looked at a position-based correlation of gene expression with
 chromatin state across genes within each strain.
 
-To do this, we collected the position-centered chromatin matrices
-for each strain
+```{r plot_within_strain, fig.width = 9, fig.height = 9}
 
-```{r center_mats}
-within.strain.file <- here("Results", "ChromHMM", form.states, "Within_Strain_Expression_By_State_and_Position.RDS")
-
-if(!file.exists(within.strain.file)){
-    expr.order <- order.strains(colnames(cent.mats[[1]]), names(strain.mean.expr[[1]]), col.table)
-    all.strain.by.position <- vector(mode = "list", length = 9)
-    names(all.strain.by.position) <- colnames(cent.mats[[1]])
-    #colnames(cent.mats[[1]])
-    #names(strain.mean.expr[[1]])[expr.order]
-    for(m in 1:9){
-        strain.cent <- lapply(cent.mats[common.mat.locale], function(x) if(length(x) > 1){x[,m]}else{NA})
-        strain.cent.mat <- plot.centered.vals(strain.cent, seq.by = 0.1, 
-        ylim = c(1,8), return.means = FALSE)
-        one.strain.expr <- sapply(rownames(strain.cent.mat), function(x) strain.mean.expr[[which(names(strain.mean.expr) == x)]][expr.order[m]])
-        one.strain.scaled <- scale(one.strain.expr)
-        all.state.pos.expr <- vector(mode = "list", length = num.states)
-        names(all.state.pos.expr) <- 1:num.states
-        for(s in 1:num.states){    
-            state.pos.expr <- matrix(NA, nrow = nrow(strain.cent.mat), 
-                ncol = ncol(strain.cent.mat))
-                colnames(state.pos.expr) <- colnames(strain.cent.mat)
-            for(p in 1:ncol(strain.cent.mat)){
-                state.genes <- which(strain.cent.mat[,p] == s)
-                gene.locale <- match(names(state.genes), rownames(strain.cent.mat))
-                gene.expr <- one.strain.scaled[gene.locale]
-                state.pos.expr[gene.locale,p] <- gene.expr
-                }   
-            #quartz()
-            #boxplot(state.pos.expr, main = paste("State", s))
-            #plot.centered.mat(state.pos.expr, ylim = c(-5, 5), plot.label = paste("State", s))
-            #abline(v = c(0,1), h = 0)
-            all.state.pos.expr[[s]] <- state.pos.expr
-        }  
-    all.strain.by.position[[m]] <- all.state.pos.expr
-    }
-saveRDS(all.strain.by.position, within.strain.file)
-}else{
-all.strain.by.position <- readRDS(within.strain.file)
+#plot the across-strain effects
+window.mids <- sapply(gene.windows, max)
+if(is.interactive){quartz(width = 9, height = 9)}
+par(mfrow = c(3,3))
+for(state in 1:num.states){
+    state.effects <- sapply(within.strain.window.results, function(x) x[state,])
+    min.effect <- min(state.effects["slope.lwr",which(is.finite(state.effects["slope.lwr",]))])
+    max.effect <- max(state.effects["slope.upr",which(is.finite(state.effects["slope.upr",]))])
+    plot.new()
+    plot.window(xlim = c(-0.1, 1.1), ylim = c(-0.8, 0.8))
+    points(window.mids, state.effects["slope.fit",], col = state.col[state], type = "l")
+    plot.poly.xy(window.mids, state.effects["slope.lwr",],
+    window.mids, state.effects["slope.upr",], col = state.col[state])
+    abline(h = 0)
+    axis(1);axis(2)
+    mtext(side = 2, "Effect", line = 2.5)
+    mtext(side = 3, paste("State", state), line = 2.5)
+    abline(v = c(0,1), lty = 2, col = "darkgray")
 }
+
 ```
 
-The following plots show the mean expression of genes with the specified
-state at the specified location. Each strain is shown separately, but they
-all show the same relationship between chromatin state, position, and expression.
-All expression was scaled within each strain, such that 0 is the mean expression.
-
-These patterns are also very similar to the across-strain plots shown above.
-
-```{r plot_within_strain, fig.height = 10, fig.width = 3.5, results = "asis"}
-for(s in 1:length(all.strain.by.position)){
-    cat("####", names(all.strain.by.position)[s], "\n")
-    if(is.interactive){quartz(height = 12, width = 3)}
-    par(mfrow = c(num.states, 1), mar = c(0,3,0,4))
-    all.state.pos.expr <- all.strain.by.position[[s]]
-    for(i in 1:num.states){
-        one.state.col <- col2rgb(state.col[i])
-        plot.new()
-        plot.window(xlim = c(-1, 2), ylim = c(-1.5, 1.5))
-        expr.mean <- colMeans(all.state.pos.expr[[i]], na.rm = TRUE)
-        expr.num <- apply(all.state.pos.expr[[i]], 2, function(x) length(which(!is.na(x))))
-        expr.se <- apply(all.state.pos.expr[[i]], 2, function(x) sd(x, na.rm = TRUE))/sqrt(expr.num)
-        rel.pos <- as.numeric(colnames(strain.cent.mat))
-        plot.poly.xy(poly.top.x = rel.pos, poly.bottom.x = rel.pos, 
-        poly.top.y = (expr.mean + expr.se),
-        poly.bottom.y = (expr.mean - expr.se), 
-        col = rgb(one.state.col[1]/256, one.state.col[2]/256, one.state.col[3]/256, alpha = 0.5))
-        abline(v = c(0,1), lwd = 2, lty = 2, col = "darkgray")
-        abline(h = 0)
-        axis(2)
-        mtext(paste("State", i), side = 4, line = 2.5, srt = 270, cex = 1.5)
-    }
-    cat("\n\n")
-}
-```
 
 ## Example of one Gene
 
@@ -885,29 +855,27 @@ CAST and PWK have very low expression and both have state 3 at the TSS.
 The other strains have much higher expression and all have state 7 at the 
 TSS. State 7 elsewhere in the gene is also correlated with expression. 
 
-```{r examples, fig.width = 7, fig.height = 8, eval = FALSE}
-#find example genes with significant correlations at specified
-#positions
-find_example_cor <- function(window.p, sig.val, state, pos){
-    window.lim <- t(sapply(strsplit(names(window.p), "__"), as.numeric))
-    window.which <- intersect(which(window.lim[,1] <= pos), which(window.lim[,2] >= pos))
-    search.window <- window.p[window.which]
-    sig.cor <- lapply(search.window, function(x) x[state, which(x[state,] <= sig.val),drop=FALSE])
-    u_genes <- unique(unlist(sapply(sig.cor, colnames)))
-    return(u_genes)
+```{r state_abundance, fig.width = 7, fig.height = 8, eval = FALSE}
+
+chrom.mats <- readRDS(here("Results", "ChromHMM", "9_states_C", 
+    "Chromatin_States_9_full_gene_1000.RData"))
+
+#state ammount by strain
+state.totals <- state.sd <- matrix(NA, nrow = 9, ncol = 9)
+rownames(state.totals) <- 1:9
+colnames(state.totals) <- colnames(chrom.mats[[1]])
+for(st in 1:9){
+    print(st)
+    state.counts <- t(sapply(chrom.mats, function(x) if(length(x) > 1){apply(x, 2, function(y) length(which(y == st)))}else{rep(NA, 9)}))
+    state.totals[st,] <- colSums(state.counts, na.rm = TRUE)
+    state.totals[st,] <- state.totals[st,]/max(state.totals[st,])
 }
 
-#get genes that have significant correlations with both states 3 and 7 at the TSS
-tss.example.genes <- Reduce("intersect", lapply(c(3,7), 
-function(x) find_example_cor(state.expr.window.p, sig.val, x, 0)))
-tss.example.names <- rnaseq.gene.info[match(tss.example.genes, rnaseq.gene.info[,"ensembl_gene_id"]),"external_gene_name"]
-#gene.name <- sample(tss.example.names, 1)
 
-plot.one.gene.chromatin(do.eqtl, rnaseq.gene.info, rna.seq, all.bed, col.table, 
-gene.name = "Irf5", T.or.C, start.feature, end.feature, upstream.buffer, 
-downstream.buffer, separate.windows = is.interactive, dim.rd = "state.prop", 
-state = 7, total.states = num.states, show.state.numbers = FALSE)
+for(st in 1:nrow(state.totals)){
+    barplot(state.totals[st,], main = paste("Relative Abundance of State", st),
+    col = col.table[match(colnames(state.totals), col.table[,6]),3])
+}
 
-plot.one.gene.genetic(gene.name = "Irf5", rnaseq.gene.info, genoprobs, map, 
-pheno = dataset.mrna$data$rz)
+
 ```

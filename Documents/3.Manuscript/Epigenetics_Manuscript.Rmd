@@ -28,6 +28,46 @@ csl: plos.csl
 
 # Introduction
 
+GWAS hits tend to be in non-coding regions of the genome
+estimated that most common disease variants work by altering gene expression
+rather than protein function
+
+These disease-associated SNPs likely fall into functional regions of the
+genome 
+
+eQTLs - what are we measuring when we measure eQTL?
+
+
+
+The identity of a hepatocyte is deterimined through patterns of gene 
+expression. Patterns of gene expression are determined in part through 
+patterns of genotype, DNA methylation, and chromatin modifications. 
+
+Within a given cell type, how do variations in local genetics and 
+epigenetics influence gene expression?
+
+Across mouse strains, gene expression in hepatocytes is largely
+similar. For the most part, genes that are highly expressed in one
+strain are highly expressed in another. However, there are subtle 
+variations in gene expression that are based on strain background. 
+
+This variation in gene expression across strains is related to 
+genetic and epigenetic factors. Here we explore how local genotype,
+chromatin modifications, and DNA methylation influence strain
+differences in gene expression. 
+
+patterns of chromatin state in hepatocytes varied across strains
+patterns of DNA methylation in hepatocytes varied across strains
+patterns of gene expression in hepatocytes varied across strains
+
+major axes of variation were similar in all cases, i.e. PWK and CAST were 
+  most divergent, while other strains clustered together
+
+Each of these epigenetic-expression patterns represent functioning 
+hepatocytes these are "good enough" solutions to make hepatocytes 
+[22859671]
+
+
 
 ```{r read_results, echo = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 library(here)
@@ -53,7 +93,6 @@ Hudson, NH), or a high-fat, high-sucrose (HF/HS) diet (45\% fat, 40\%
 carbohydrates, and 15\% protein) (Envigo Teklad TD.08811, Envigo, Madison, 
 WI). Mice were maintained on this diet for 26 weeks (CITE). 
 
-
 ## Genotyping
 
 ### Diversity outbred mice
@@ -62,14 +101,16 @@ Universal Genotyping Array (MUGA) (7854 markers), and the MegaMUGA (77,642 marke
 (GeneSeek, Lincoln, NE). All animal procedures were approved by the Animal Care 
 and Use Committee at The Jackson Laboratory (Animal Use Summary # 06006). 
 
-
 ## Measurement of gene expression
 
 ### Inbred Founders
 
 ### Diversity outbred mice
 At sacrifice, whole livers were collected and gene expression was measured using 
-RNA-Seq as described in (Chick, Munger et al. 2016, and Tyler et al. 2017)
+RNA-Seq as described in (Chick, Munger et al. 2016, and Tyler et al. 2017). 
+The primary axes of variation in global gene expression grouped individuals 
+from inbred strains together (Supplemental Figure XXX), indicating high 
+replicability of gene expression measurements within each strain, and 
 
 ## Measurement of Chromatin Modifications
 
@@ -78,6 +119,19 @@ Percent DNA methylation was measured using reduced representation
 bisulfite sequencing. 
 
 ## Data Processing
+
+## Normalization of RNA-Seq data
+
+We remove transcripts with extremely low read counts, we 
+filtered to those with a mean read count of at least five 
+across all individuals. 
+
+We then used the R package sva [sva] to perform a variance stabilizing 
+transformation (vst) on the RNA-Seq read counts from both inbred
+and outbred mice. In the inbred mice we used a blind transformation,
+while in the outbred mice, we included DO wave and sex in the model.
+For eQTL mapping, we performed rankZ normalization on the RNA-Seq read 
+counts across transcripts from the outbred mice.
 
 ## Chromatin modifications
 Annat's stuff to get fastq files to bam files
@@ -89,6 +143,20 @@ Vivek's stuff to get bed files.
 
 
 ## Analysis
+
+## Characterizing the landscape of gene expression across inbred strains
+Using the variance-stabilized read counts in the inbred strains, we
+calculated the standard deviation in expression across strains. We then
+binned the genes into 15 bins with increasing standard deviation. We used
+the R package gprofiler [CITE] to identify functional enrichments for each
+bin. We defined the divergence in expression across strains as the F statistic
+from an ANOVA testing the effect of strain on mean expression.
+
+
+For each group of genes binned by standard deviation,
+we performed singular value decomposition on the mean-centered expression
+matrix. We then calculated the separation of the strains in the two-dimensional
+space defined by the first two principle components. 
 
 ## Identification and characterization of chromatin states
 We used ChromHMM [29120462] to identify chromatin states corresponding 
@@ -252,10 +320,60 @@ and around the gene body.
 
 # Results
 
-## Description of Chromatin States
+## The landscape of gene expression was strain-dependent
+
+Across the inbred strains, the landscape of variation in gene expression 
+was highly strain-dependent (Figure XXX). Principal components analysis
+Expression in the wild-derived CAST and PWK strains diverged most strongly 
+from the overall mean expression, and expression within each strain was 
+highly replicable.
+
+There was also a wide range of strain-specificity across individual 
+transcripts (Figure XXX). Gene expression ranged from being highly
+conserved across strains to highly divergent (Figure XXX). Transcripts
+with the lowest variation across strains were enriched for basic cellular 
+processes: RNA processing, chromatin modification, and chromosome organization.
+Transcripts with the greatest variation across strains were enriched in 
+hepatocyte-specific functions: steroid metabolism, small molecule biosynthesis, 
+and lipid metabolism (Fig. XXX?)
+
+
+## Nine chromatin states correspond to known functional elements
 
 We identified nine chromatin states corresponding to nine distinct 
-combinations of histone modifications (Figure XXXA). These states
+combinations of histone modifications (Figure XXXA). To annotate these
+states to functional elements, we combined the following layers of information:
+
+1. Histone mark combinations and previous findings in the literature.
+2. Enrichments in functionally annotated regions in the mouse genome.
+3. Effect on gene expression.
+
+
+## Gene transcription start sites were hypomethylated
+
+
+## Chromatin state effects variation in gene expression across strains
+
+Although individual chromatin states had large effects on gene expression
+within each strain, it was not known whether these states contribute 
+to variation in gene expression across strains. 
+
+To investigate this, we normalized gene expression across strains and 
+fit a linear model to identify the effect of each chromatin state at 
+each position along the gene body to expression variation across strains.
+
+Remarkably, each chromatin state had similar effects on across-strain 
+gene expression as within-strain gene expression, suggesting that 
+variation in chromatin state 
+
+## Variation in expression in an outbred population maps to imputed chromatin state
+
+To further investigate whether chromatin state contributes to transcriptional
+variation across strains, we imputed local chromatin state into a population 
+of diversity outbred mice (REF). 
+
+
+These states
 were differentially distributed near functionally annotated genomic
 elements (Figure XXXB). For example, State 1, which corresponded to 
 the absence of all four histone modifications, found mainly in 
@@ -265,11 +383,11 @@ the TSS and other functional elements that also occur near the TSS,
 such as cis-regulatory regions (cCREs), transcription factor binding 
 sites (TFBS), and promoters.
 
-A subset of the chromatin states was also correlated with gene expression
-across strains (Figure XXXC) in a manner that concorded with both their
+A subset of the chromatin states was correlated with gene expression
+across genes (Figure XXXC) in a manner that concorded with both their
 histone modification profiles and their enrichments near functional genomic 
 elements. For example, the histone modification H3K27me3 has been previously
-shown to be associated with reduced transcription [CITE]. We found this
+shown to be associated with lower transcript abundance [CITE]. We found this
 modification in both states 2 and 3 (Figure XXXA), which were both correlated 
 with reduced transcription (Figure XXXC). State 3, furthermore, was enriched
 near the TSS, promoters, TFBS, and other regulatory elements supporting a
@@ -288,7 +406,7 @@ State 6 was modestly enriched in enhancers, while state 7 was enriched
 not only in enhancers, but also stongly near the TSS and other associated
 functional elements (Figure XXXB).
 
-## Spatial distribution of chromatin states and DNA methylation
+## Chromatin states and DNA methylation were differentially enriched around gene bodies
 
 In addition to looking for enrichment of chromatin states near 
 annotated functional elements, we also characterized the relative 
@@ -322,26 +440,7 @@ near TSS were consistently hypomethylated relative to the median
 CpG site in intergenic regions. CpG sites within the gene body 
 were slightly hypermethylated compared to intergenic CpGs (Figure XXXD).
 
-## Within-strain correlation of epigenetic features and gene expression
-
-To investigate the relationship between epigenetic modifications and 
-gene expression, we calculated the relationship both chromatin state
-and DNA methylation and transcript abundance (Methods) (Figure XXX).
-Across all genes within individual inbred strains of mice, the percent
-methylation at CpG sites was negatively correlated with transcript 
-abundance primarily at the TSS. 
-
-The correlation of each chromatin state matched that seen in Figure XXXC,
-and the spatial resolution of the relationships added an interesting dimension
-to this observation. For example, state 3, which was overall correlated with
-lower transcript abundance in Figure XXXC, was shown to have this negative
-effect primarily when it was positioned at the TSS. In contrast, state 2,
-was also negatively correlated with transcription overall, but this effect
-was constant throughout the gene body. State 2 is characterized by H3K27me3,
-which has previously been associated with reduced transcription [CITE], but 
-was not enriched near any annotated functional genomic elements. 
-
-## Across-strain correlation of epigenetic features and gene expression
+## Chromatin state but not DNA methylation correlated with gene expression across strains
 
 To investigate whether the previously identified relationships between
 epigenetic features and gene expression were related to local genotype,
@@ -350,9 +449,9 @@ features for each transcript across all inbred strains. That is, for
 any given transcript, did variation in chromatin state or DNA methylation
 across strains correlate with gene expression?
 
-Interestingly, the relationship between gene expression and chromatin state 
+The relationship between gene expression and chromatin state 
 across strains was nearly identical to the relationship within-strain, 
-although positional effects were perhaps even more pronounced. States 3 and
+including the positional effects. States 3 and
 9 had negative correlations with gene expression across strains that were
 localized to the TSS. States 5 and 7 had strong positive correlations with
 gene expression throughout the gene body, and states 1 and 2 had strong
@@ -369,7 +468,7 @@ The variation dips even lower, to around 4% at the TSS, indicating that for
 the most part that DNA methylation does not vary across strains and is not 
 contributing to strain difference in gene expression.  
 
-## Imputed genomic features and gene expression in DO mice
+## Imputed chromatin state was correlated with gene expression in DO mice
 
 To further investigate the relationship between genotype, epigenetic 
 features, and gene expression, we imputed chromatin state, DNA methylation,
@@ -463,6 +562,11 @@ relationship between percent methylation and gene expression across strains.
 
 # Discussion
 
+imputation gives us a way to do a very limited, gene-based GWAS?
+not good wording, but we can potentially increase the resolution 
+right around gene bodies
+
+
 The 
 enrichment of these states in regulatory regions indicates the 
 possibility that these states are used for regulating expression 
@@ -497,10 +601,27 @@ modifications may be a major mechanism of local gene expression regulation.
 (Alternatively, chromatin state aligns well with the true local mechanism of
 gene regulation, but is not itself a mechanism.)
 
+RRBS discussion - In humans estimates of heritability of DNA methylation are 
+relatively low (0.1 to 0.3). It is estimated that around 10% of methylation 
+sites are highly heritable. heritability estimates are age- and 
+population-specific.
+
+Even if there are inherited patterns of DNA methylation, do they have any
+effect on gene expression? Keep in mind that we are only looking at local
+effects.
+
+human studies have shown that trimodal sites (0, 0.5, 1) have relatively 
+high heritability (0.8), and almost half were associated with eQTLs.
+
+no evidence for trans-generational inheritance of DNA methylation in 
+humans.
+
+
 ## Positional information is interesting
 
 
 We observed interesting spatial patterns of chromatin state distribution and
+
 correlation with gene expression. States 3 and 7 were particularly abundant
 around transcription start sites (TSS), while all other states were depleted 
 at the TSS. State 8 peaked in abundance immediately downstream of the TSS, 
