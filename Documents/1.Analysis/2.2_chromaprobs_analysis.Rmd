@@ -295,6 +295,7 @@ for(x in 1:length(ch.coef)){
 }
 
 state.col <- colors.from.values(1:num.states, use.pheatmap.colors = TRUE)
+state.col[4:6] <- darken(state.col[4:6], factor = 1.1)
 all.state.coef <- vector(mode = "list", length = num.states)
 names(all.state.coef) <- 1:num.states
 for(s in 1:num.states){
@@ -317,43 +318,30 @@ for(s in 1:num.states){
 }
 ```
 
+
 ```{r state_effect_fig, eval = FALSE}
-plot_poly_mat <- function(state.coef, poly.col = "gray", ylim = c(-1,1), 
-  xlim = c(-1, 2), plot.label = "State"){
 
-  state.mean <- colMeans(state.coef, na.rm = TRUE)
-  state.n <- apply(state.coef, 2, function(x) length(which(!is.na(x))))
-  state.sd <- apply(state.coef, 2, function(x) sd(x, na.rm = TRUE))
-  state.se <- state.sd/sqrt(state.n)
-  state.x <- as.numeric(colnames(state.coef))
+pdf(here("Documents", "3.Manuscript", "Figures", "DO_chromatin_effects.pdf"), width = 3, height = 10)
+xmin = -0.2;xmax = 1.2;ymin = -0.25; ymax = 0.25
+par(mfrow = c(num.states, 1), mar = c(0.5,3,0.5,2))
+#plot the across-strain effects
+for(state in 1:num.states){
+    state.effects <- all.state.coef[[state]]
+    coords <- as.numeric(colnames(state.effects))
 
-  one.state.col <- col2rgb(poly.col)
-  
-  plot.new()
-  plot.window(xlim = xlim, ylim = ylim)
-  plot.poly.xy(poly.top.x = state.x, poly.bottom.x = state.x, 
-    poly.top.y = state.mean+state.se, poly.bottom.y = state.mean - state.se, 
-    col = rgb(one.state.col[1]/256, one.state.col[2]/256, one.state.col[3]/256, alpha = 0.5))
-  axis(2, cex.axis = 0.7)
-  abline(v = c(0,1), col = "darkgray", lty = 2, lwd = 2)
-  abline(h = 0)
-  par(xpd = TRUE)
-  text(x = 2, y = 0, labels = plot.label, srt = 270, cex = 1.5)
-  par(xpd = FALSE)
+    mean.effects <- apply(state.effects, 2, function(x) mean(x, na.rm = TRUE))
+    effect.sd <- apply(state.effects, 2, function(x) sd(x, na.rm = TRUE)/sqrt(length(which(!is.na(x)))))
+    
+    plot.new()
+    plot.window(xlim = c(xmin, xmax), ylim = c(ymin, ymax))
+    plot.poly.xy(coords, mean.effects+effect.sd, coords, mean.effects-effect.sd, 
+    col = state.col[state])
+    segments(xmin, 0, xmax, col = "gray40", lwd = 2)
+    mtext(side = 2, paste("State", state), cex = 1.5)
+    abline(v = c(0,1), lty = 2, col = "darkgray", lwd = 2)
+    draw.rectangle(xmin, xmax, ymin, ymax, border.col = "gray80", lwd = 2)
 }
-
-if(is.interactive){quartz(width = 6, height = 7)}
-layout.mat <- matrix(c(1:9, 0), ncol = 2, byrow = FALSE)
-layout(layout.mat)
-par(mar = c(0,2,0,2))
-for(i in 1:length(all.state.coef)){
-  #quartz(width = 3.5, height = 3)
-  plot_poly_mat(all.state.coef[[i]], poly.col = state.col[i], 
-  ylim = c(-0.3, 0.35), xlim = c(-1, 2),
-  plot.label = paste("State", i))
-  mtext(paste(nrow(all.state.coef[[i]]), "genes"), side = 3, line = -2.5)
-}
-
+dev.off()
 ```
 
 ## Effect size of chromatin does not depend on position {.tabset .tabset-fade .tabset-pills}

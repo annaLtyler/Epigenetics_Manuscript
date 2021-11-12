@@ -26,7 +26,56 @@ output: rticles::plos_article
 csl: plos.csl
 ---
 
+# Abstract
+It is well known that epigenetic modifications, such as histone modifications,
+and DNA methylation are a major mode of regulating gene transcription.
+
+It is not well known how variation in epigenetic modifications across
+genetically distinct individuals contributes to heritable variation
+in gene expression. 
+
+When we map an eQTL, how much of the effect of the eQTL is mediated
+through epigenetic modifications?
+
+We investigated this question in genetically diverse mice. 
+
+local imputed histone modifications matched eQTL extremely well, suggesting
+that a large portion of variation in gene expression mapped to local genotype 
+is mediated through histone modifications.
+
+In contrast percent DNA methylation is not determined by local genetics, 
+and does not contribute to eQTLs.
+
+
 # Introduction
+
+It is well known that epigenetic modifications, such as histone modifications,
+and DNA methylation are a major mode of regulating gene transcription.
+
+It is not well known how variation in epigenetic modifications across
+genetically distinct individuals contributes to heritable variation
+in gene expression. 
+
+When we map an eQTL, how much of the effect of the eQTL is mediated
+through epigenetic modifications?
+
+We investigated this question in genetically diverse mice. 
+
+We conducted a survey of four histone modifications known to be correlated
+with gene transcription across nine inbred strains of mice. We also 
+surveyed DNA methylation in these strains. 
+
+We looked at how both histone modifications and DNA methylation were 
+associated with transcription variation across strains. We further 
+imputed epigenetic states in a population of diversity outbred mice
+to more directly investigate the extent to which eQTLs are driven by
+variation in epigenetic modifications
+
+histone modifications, at least early in life, are determined by local
+genotype.
+
+
+
 
 GWAS hits tend to be in non-coding regions of the genome
 estimated that most common disease variants work by altering gene expression
@@ -36,8 +85,6 @@ These disease-associated SNPs likely fall into functional regions of the
 genome 
 
 eQTLs - what are we measuring when we measure eQTL?
-
-
 
 The identity of a hepatocyte is deterimined through patterns of gene 
 expression. Patterns of gene expression are determined in part through 

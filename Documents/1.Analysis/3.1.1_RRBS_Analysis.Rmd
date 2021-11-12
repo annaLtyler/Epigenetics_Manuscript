@@ -523,12 +523,16 @@ if(!file.exists(methyl_dens_file)){
 
 ```{r density_fig, eval = FALSE}
 pdf(here("Documents", "3.Manuscript", "Figures", "methylation_density.pdf"), 
-  width = 5, height = 4)
-  plot.centered.mat(avg_methyl_dist, ylim = c(0, 3500),
-    plot.label = paste("Average Distance to Next Methylation Position"),
-    ylab = "Distance to Next Methylation Position", min.upstream = -1, 
-    max.downstream = 2)
-    abline(v = c(0,1), lty = 2, col = "darkgray", lwd = 2)
+  width = 7, height = 5)
+  med_dist <- apply(avg_methyl_dist, 2, function(x) median(x, na.rm = TRUE))
+  dist_se <- apply(avg_methyl_dist, 2, function(x) sd(x, na.rm = TRUE)/sqrt(length(which(!is.na(x)))))
+  plot.new()
+  plot.window(xlim = c(-0.5, 1.5), ylim = c(0, 550))
+  plot.poly.xy(as.numeric(names(med_dist)), med_dist+dist_se, as.numeric(names(med_dist)), 
+    med_dist-dist_se, col = "lightblue", border = NA)
+  points(as.numeric(names(med_dist)), med_dist, type = "l", col = "gray40", lwd = 4)
+abline(v = c(0, 1), lty = 2, col = "darkgray", lwd = 4)
+axis(2, cex.axis = 2) 
 dev.off()
 ```
 
@@ -588,8 +592,24 @@ The following plot shows data for all strains together.
 all.strain.mat <- Reduce("rbind", strain_rrbs_mat)
 plot.centered.mat(all.strain.mat, ylim = c(0,100), 
 plot.label = "Percent Methylation Across the Gene Body", 
-show.var = "se", plot.fun = "median")
+show.var = "se", plot.fun = "median", min.upstream = -0.5,
+max.downstream = 1.5)
 abline(v = c(0,1), lty = 2, col = "gray", lwd = 2)
+```
+
+```{r methyl_med_fig, eval = FALSE}
+pdf(here("Documents", "3.Manuscript", "Figures", "methylation_percent.pdf"), 
+  width = 7, height = 5)
+percent_se <- apply(all.strain.mat, 2, function(x) sd(x, na.rm = TRUE)/sqrt(length(which(!is.na(x)))))
+plot.new()
+plot.window(xlim = c(-0.5, 1.5), ylim = c(0, 100))
+methyl.med <- apply(all.strain.mat, 2, function(x) median(x, na.rm = TRUE))
+plot.poly.xy(as.numeric(names(methyl.med)), methyl.med+percent_se, 
+  as.numeric(names(methyl.med)), methyl.med-percent_se, col = "lightblue", border = NA)
+points(as.numeric(names(methyl.med)), methyl.med, type = "l", col = "gray40", lwd = 4)
+abline(v = c(0,1), lty = 2, col = "darkgray", lwd = 4)
+axis(2, cex.axis = 2)
+dev.off()
 ```
 
 
@@ -707,7 +727,7 @@ plot.enrichment.wordcloud(trimodal_enrich)
 ```
 
 
-## Within-Strain Correlation Between Methylation and Expression
+## Within-Strain Effect of DNA Methylation on Expression
 
 The following plot shows the effect of percent DNA methylation
 on gene expression across all strains, normalized by position.
@@ -716,7 +736,7 @@ There is a very weak negative effect of DNA methylation
 on gene expression near the TSS. Other than that, there
 is no overall effect of DNA methylation.
 
-```{r rrbs_expr_cor, fig.width = 10, fig.height = 5, warning = FALSE}
+```{r rrbs_expr_cor, fig.width = 7, fig.height = 5, warning = FALSE}
 rrbs.expr.effect <- vector(mode = "list", length = length(strains))
 names(rrbs.expr.effect) <- strains
 strain.expr.order <- order.strains(strains,names(strain.expr[[1]]), col.table)
@@ -744,6 +764,8 @@ all.upr <- rowMeans(sapply(rrbs.expr.effect, function(x) x[5,]))
 
 upstream.limit <- -0.5
 downstream.limit <- 1.5
+min.fit = -0.02
+max.fit = 0.02
 
 if(is.interactive){quartz(width = 7, height = 5)}
 plot.new()
@@ -759,6 +781,28 @@ abline(h = 0, col = "gray40", lty = 2)
 #pheatmap(rrbs.expr.cor, cluster_cols = FALSE, cluster_rows = FALSE)
 ```
 
+```{r within_strain_methyl_fig, eval = FALSE}
+upstream.limit <- -0.5
+downstream.limit <- 1.5
+min.fit = -0.01
+max.fit = 0.01
+
+idx <- intersect(which(rel.pos >= upstream.limit), which(rel.pos <= downstream.limit))
+
+pdf(here("Documents", "3.Manuscript", "Figures", "DNA_methylation_within_strain.pdf"), 
+  height = 5, width = 6)
+plot.new()
+plot.window(xlim = c(upstream.limit, downstream.limit), ylim = c(min.fit, max.fit)) 
+plot.poly.xy(rel.pos[idx], all.lwr[idx], rel.pos[idx], all.upr[idx], col = "gray80", 
+  border = "gray80")
+points(rel.pos[idx], all.fit[idx], type = "l", col = "gray40", lwd = 2)
+abline(v = c(0,1), lwd = 4, col = "gray60", lty = 2)
+abline(h = 0, col = "gray40", lty = 1, lwd = 4)
+#mtext(side = 2, "Effect", cex = 2, line = 0.5)
+draw.rectangle(upstream.limit, downstream.limit, min.fit, max.fit, 
+  border.col = "gray80", lwd = 2)
+dev.off()
+```
 
 ## Across-strain variation in DNA methylation
 
@@ -821,6 +865,31 @@ mtext("Effect Size", side = 2, line = 2.5)
 mtext("Effect of DNA methylation on Gene Expression Across Strains", side = 3)
 
 ```
+
+
+```{r across_strain_methyl_fig, eval = FALSE}
+upstream.limit <- -0.5
+downstream.limit <- 1.5
+min.fit = -0.01
+max.fit = 0.01
+
+idx <- intersect(which(rel.pos >= upstream.limit), which(rel.pos <= downstream.limit))
+
+pdf(here("Documents", "3.Manuscript", "Figures", "DNA_methylation_across_strains.pdf"), 
+  height = 5, width = 6)
+plot.new()
+plot.window(xlim = c(upstream.limit, downstream.limit), ylim = c(min.fit, max.fit)) 
+plot.poly.xy(rel.pos[idx], stat.mat[idx,"slope.lwr"], rel.pos[idx], stat.mat[idx,"slope.upr"],
+col = "gray80", border = "gray80")
+points(rel.pos[idx], stat.mat[idx,"slope.fit"], type = "l", col = "gray40", lwd = 2)
+abline(v = c(0,1), lwd = 4, col = "gray60", lty = 2)
+abline(h = 0, col = "gray40", lty = 1, lwd = 4)
+#mtext(side = 2, "Effect", cex = 2, line = 0.5)
+draw.rectangle(upstream.limit, downstream.limit, min.fit, max.fit, 
+  border.col = "gray80", lwd = 2)
+dev.off()
+```
+
 
 ## Gene expression by presence/absence
 

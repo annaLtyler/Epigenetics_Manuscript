@@ -46,6 +46,6 @@ add = FALSE, lwd = 2, idx = NULL){
     plot.poly.xy(poly.top.x = pos, poly.top.y = state.avg + state.error, 
     poly.bottom.x = pos, poly.bottom.y = state.avg - state.error, 
     col = rgb(error.col[1]/256, error.col[2]/256, error.col[3]/256, alpha = 0.5), border = NA)
-    abline(v = c(0,1), col = "darkgray", lwd = 2, lty = 1)
+    abline(v = c(0,1), col = "darkgray", lwd = 3, lty = 2)
 
 }

@@ -165,7 +165,7 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
   for(i in start.at:length(common.transcripts)){
     print(i)
     if(is.interactive){report.progress(i, length(common.transcripts))}
-    #gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == "Pkd2"),"ensembl_gene_id"][1]
+    #gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == "Irf5"),"ensembl_gene_id"][1]
     #i <- which(common.transcripts == gene.id)
     gene.id <- common.transcripts[i]
     gene.name <- transcript.info[which(transcript.info[,"ensembl_gene_id"] == gene.id),"external_gene_name"][1]
@@ -194,7 +194,18 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
     expr[,expr.locale], confidence = 0.95, plot.results = FALSE)}else{rep(NA, 5)})
     chrom.effect[[i]] <- prop.effect
     #barplot(t(prop.effect["slope.fit",]), names = 1:num.states)
-    #boxplot(t(prop.effect))
+    #par(mfrow = c(3,3))
+    #for(i in 1:9){if(var(prop.state[[i]]) > 0){plot.with.model(prop.state[[i]], expr[,expr.locale], xlab = i, ylab = "Expression")}}
+    #test.mat <- cbind(Reduce("cbind", prop.state), expr[,expr.locale])
+    #colnames(test.mat) <- c(1:9, "expr")
+    #expr.order <- order(expr[,expr.locale])
+    #has.var <- apply(test.mat, 2, var)
+    #pheatmap(test.mat[expr.order,which(has.var > 0)], scale = "column", show_rownames = FALSE, cluster_rows = FALSE)
+    #state.col <- colors.from.values(1:9, use.pheatmap.colors = TRUE)
+    #par(mfrow = c(3,3))
+    #for(i in 1:9){
+    #  plot(expr[expr.order,expr.locale], test.mat[expr.order,i], col = state.col[i], type = "p", lwd = 2)
+    #  }
 
     #calculate chromatin LOD scores
     chrom.lod.add <- scan1(chrom.geno, expr[,expr.locale], addcovar = covar)
