@@ -195,7 +195,6 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
     chrom.effect[[i]] <- prop.effect
     #barplot(t(prop.effect["slope.fit",]), names = 1:num.states)
     #boxplot(t(prop.effect))
-  }
 
     #calculate chromatin LOD scores
     chrom.lod.add <- scan1(chrom.geno, expr[,expr.locale], addcovar = covar)
@@ -298,6 +297,7 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
       saveRDS(geno.lod, geno.lod.file)
       saveRDS(geno.coef, geno.coef.file)
       saveRDS(geno.r2, geno.r2.file)
+      saveRDS(chrom.effect, chrom.effect.file)
     }
   }
   #also save at the end of everything.
