@@ -178,7 +178,7 @@ We then used the R package sva [sva] to perform a variance stabilizing
 transformation (vst) on the RNA-Seq read counts from both inbred
 and outbred mice. In the inbred mice we used a blind transformation,
 while in the outbred mice, we included DO wave and sex in the model.
-For eQTL mapping, we performed rankZ normalization on the RNA-Seq read 
+For eQTL mapping, we performed rank Z normalization on the RNA-Seq read 
 counts across transcripts from the outbred mice.
 
 ## Chromatin modifications
@@ -201,31 +201,60 @@ number of states possible with four binary chromatin modifications ($2^n$).
 ### Selecting the number of chromatin states
 
 Our goal in this study was to identify patterns of histone modifications
-that were most informative about variation in bene expression across
-the nine inbred strains.
+that were most informative about variation in gene expression across
+the nine inbred strains. We thus tested a range of models derived from
+ChromHMM for their effect on gene expression across the strains. 
+We tested models ranging from four states to 16 states. For each state
+we fit a linear model to estimate the effect of each state on 
+gene expression across strains. 
 
-To identify the ChromHMM model that corresponded best with gene 
-expression across strains, 
-we compared the correlation of each state with gene 
-expression across all ChromHMM models (Supp Fig. XXX). 
-Across all models, the correlations between gene expression and 
-chromatin state could be binned roughly into five bins: low, 
-moderately low, no correlation, moderately high correlation, and 
-high correlation. The nine-state model had states in each of these 
-categories with the lowest redundancy. Furthermore, state seven in 
-the nine-state model had the maximum correlation with gene expression. 
-Therefore, we chose the nine-state model for downstream analysis.
+We scaled expression of each transcript across strains. We similarly 
+scaled the abundance of each state in each gene with measured
+gene expression. We concatenated all scaled gene expression into 
+a single vector $y$ and concatenated all scaled state abundance
+into a single vector $x$. We applied rank Z normalization to 
+each vector and fit the following model:
 
-### Chromatin state composition
+\begin{equation*}
+y=\beta_{0}+\beta_{1}x+\epsilon
+\end{equation*}
 
-Emissions probabilities derived from ChromHMM indicate the contribution
-of each histone modification to each chromatin state (Figure XXX).
+The $beta_1$ coefficient is the estimate of the effect of the 
+chromatin state on gene expression. We estimated each effect with 
+a 95\% confidence interval.
 
-### Positional enrichments of chromatin states
+We found that state seven in the nine-state model had the largest effect 
+on gene expression across strains of any state in any model. We also noted 
+that the effects were binned roughly into five bins: low, moderately low, 
+no effect, moderately high, and high effect (Supplemental Fig XXX). The 
+nine-state model was the simplest model with representatives in each of 
+these bins. This model therefore maximized prediction of gene expression 
+across strains while minimizing complexity and redundancy. We used the 
+nine-state model for all futher analyses.
 
-We used the ChromHMM function OverlapEnrichment to identify correlations
-between chromatin state position and annotated functional elements of the
-genome. We used functional annotations for the following features:
+### Chromatin state annotation
+We used multiple layers of information to propose annotations for each of 
+the nine chromatin states identified by ChromHMM: 
+
+1. Histone mark combinations previously annotated in the literature
+2. Enrichment of each state near functional elements in the mouse genome
+3. Effect on gene expression within and across inbred strains
+
+
+#### Histone mark combinations
+
+We used the emissions probabilities derived from ChromHMM to identify
+which histone modifications were present in each chromatin state.
+We used a probability of 0.5 or greater to indicate presence of a 
+histone modification (Figure XXX). We used Google Scholar and PubMed
+to search for previous literature annotating combinations of histone
+marks in each state.
+
+#### Positional enrichments of chromatin states
+
+We used the ChromHMM function OverlapEnrichment to investigate whether
+each state was enriched in known functional elements in the mouse genome.
+We used functional annotations for the following features:
 
 * **Transcription start sites (TSS)** - Annotations of TSS in the mouse genome
 were provided by RefSeq [26553804] and included with the release of ChromHMM, 

@@ -777,11 +777,17 @@ if(!file.exists(across.strain.window.state.file)){
            
             across.strain.state.effect[state,] <- plot.with.model(rankZ(as.vector(window.state.mat)), 
                 rankZ(as.vector(scaled.expr.mat)), confidence = 0.95, plot.results = FALSE)
-    
+                #plot.with.model(rankZ(as.vector(window.state.mat)), rankZ(as.vector(scaled.expr.mat)), confidence = 0.95)
+
+
             within.strain.state.effect[state,] <- rowMeans(sapply(1:ncol(window.state.mat), 
                 function(x) plot.with.model(rankZ(window.state.mat[,x]), 
                 rankZ(mean.expr.mat[,x]), confidence = 0.95, plot.results = FALSE)))
+                #plot.with.model(rankZ(window.state.mat[,2]), rankZ(mean.expr.mat[,1]), confidence = 0.95)
         }
+        #barplot(rbind(within.strain.state.effect[,3], across.strain.state.effect[,3]), beside = TRUE)
+        #barplot(within.strain.state.effect[,3], col = state.col)
+        #barplot(across.strain.state.effect[,3], col = state.col)
     
         across.strain.window.results[[w]] <- across.strain.state.effect
         within.strain.window.results[[w]] <- within.strain.state.effect
