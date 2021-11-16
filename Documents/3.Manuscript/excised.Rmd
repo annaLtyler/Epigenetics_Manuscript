@@ -73,3 +73,16 @@ was also negatively correlated with transcription overall, but this effect
 was constant throughout the gene body. State 2 is characterized by H3K27me3,
 which has previously been associated with reduced transcription [CITE], but 
 was not enriched near any annotated functional genomic elements. 
+
+## Characterizing the landscape of gene expression across inbred strains
+Using the variance-stabilized read counts in the inbred strains, we
+calculated the standard deviation in expression across strains. We then
+binned the genes into 15 bins with increasing standard deviation. We used
+the R package gprofiler [CITE] to identify functional enrichments for each
+bin. We defined the divergence in expression across strains as the F statistic
+from an ANOVA testing the effect of strain on mean expression.
+
+For each group of genes binned by standard deviation,
+we performed singular value decomposition on the mean-centered expression
+matrix. We then calculated the separation of the strains in the two-dimensional
+space defined by the first two principle components. 

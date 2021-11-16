@@ -319,7 +319,7 @@ for(s in 1:num.states){
 ```
 
 
-```{r state_effect_fig, eval = FALSE}
+```{r state_effect_fig}
 
 pdf(here("Documents", "3.Manuscript", "Figures", "DO_chromatin_effects.pdf"), width = 3, height = 10)
 xmin = -0.2;xmax = 1.2;ymin = -0.25; ymax = 0.25

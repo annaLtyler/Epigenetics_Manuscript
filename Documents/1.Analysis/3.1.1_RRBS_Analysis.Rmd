@@ -521,7 +521,7 @@ if(!file.exists(methyl_dens_file)){
 }
 ```
 
-```{r density_fig, eval = FALSE}
+```{r density_fig}
 pdf(here("Documents", "3.Manuscript", "Figures", "methylation_density.pdf"), 
   width = 7, height = 5)
   med_dist <- apply(avg_methyl_dist, 2, function(x) median(x, na.rm = TRUE))
@@ -597,7 +597,7 @@ max.downstream = 1.5)
 abline(v = c(0,1), lty = 2, col = "gray", lwd = 2)
 ```
 
-```{r methyl_med_fig, eval = FALSE}
+```{r methyl_med_fig}
 pdf(here("Documents", "3.Manuscript", "Figures", "methylation_percent.pdf"), 
   width = 7, height = 5)
 percent_se <- apply(all.strain.mat, 2, function(x) sd(x, na.rm = TRUE)/sqrt(length(which(!is.na(x)))))
@@ -613,7 +613,7 @@ dev.off()
 ```
 
 
-```{r percent_fig, eval = FALSE}
+```{r percent_fig}
 pdf(here("Documents", "3.Manuscript", "Figures", "methylation_percentage.pdf"), 
   width = 5, height = 4)
   plot.centered.mat(all_rrbs_med, ylim = c(0, 100), 
@@ -781,7 +781,7 @@ abline(h = 0, col = "gray40", lty = 2)
 #pheatmap(rrbs.expr.cor, cluster_cols = FALSE, cluster_rows = FALSE)
 ```
 
-```{r within_strain_methyl_fig, eval = FALSE}
+```{r within_strain_methyl_fig}
 upstream.limit <- -0.5
 downstream.limit <- 1.5
 min.fit = -0.01
@@ -867,7 +867,7 @@ mtext("Effect of DNA methylation on Gene Expression Across Strains", side = 3)
 ```
 
 
-```{r across_strain_methyl_fig, eval = FALSE}
+```{r across_strain_methyl_fig}
 upstream.limit <- -0.5
 downstream.limit <- 1.5
 min.fit = -0.01

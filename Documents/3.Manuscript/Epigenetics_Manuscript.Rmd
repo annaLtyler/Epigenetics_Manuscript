@@ -74,6 +74,7 @@ variation in epigenetic modifications
 histone modifications, at least early in life, are determined by local
 genotype.
 
+DNA methylation is not determined genetically
 
 
 
@@ -191,30 +192,21 @@ Vivek's stuff to get bed files.
 
 ## Analysis
 
-## Characterizing the landscape of gene expression across inbred strains
-Using the variance-stabilized read counts in the inbred strains, we
-calculated the standard deviation in expression across strains. We then
-binned the genes into 15 bins with increasing standard deviation. We used
-the R package gprofiler [CITE] to identify functional enrichments for each
-bin. We defined the divergence in expression across strains as the F statistic
-from an ANOVA testing the effect of strain on mean expression.
-
-
-For each group of genes binned by standard deviation,
-we performed singular value decomposition on the mean-centered expression
-matrix. We then calculated the separation of the strains in the two-dimensional
-space defined by the first two principle components. 
-
 ## Identification and characterization of chromatin states
 We used ChromHMM [29120462] to identify chromatin states corresponding 
 to the presence and absence of the four chromatin modifications. We calculated
 states for all numbers of states between four and 16, which is the maximum
-number of states possible with four binary chromatin modifications. 
+number of states possible with four binary chromatin modifications ($2^n$). 
 
 ### Selecting the number of chromatin states
 
+Our goal in this study was to identify patterns of histone modifications
+that were most informative about variation in bene expression across
+the nine inbred strains.
+
 To identify the ChromHMM model that corresponded best with gene 
-expression, we compared the correlation of each state with gene 
+expression across strains, 
+we compared the correlation of each state with gene 
 expression across all ChromHMM models (Supp Fig. XXX). 
 Across all models, the correlations between gene expression and 
 chromatin state could be binned roughly into five bins: low, 
