@@ -401,29 +401,32 @@ behind the annotation of each state below:
 marks, enrichment in intergenic regions, and strong downregulation of gene 
 expression. This state was strongly depleted at the TSS of expressed genes 
 (Figure XXXA), but the most abundant state in the gene body and outside the 
-gene body. We suspect that this state is marking a number of different states
-that could be resolved with the measurement of more histone modifications. 
-For example, it is likely that intergenically state 1 marked heterochromatin,
-however,  and is 
-also marked by H3K9 methylation [12867029]. However, because it was also
-highly abundant within the gene bodies of expressed genes, and was associated
-with reduced expression, we suspect that it is marking another repressive
-state that cannot be resolved with the marks measured here.
+gene body. This state may multiple different states that could be resolved 
+with the measurement of more histone modifications. For example, intergenically, 
+state 1 may mark heterochromatin, which is characterized by H3K9 trimethylation 
+[12867029], which was not measured here. However, state 1 was also highly abundant
+in the gene bodies of expressed genes, but was associated with reduced expression.
+This could suggest differential distribution of heterochromatin across strains,
+or could represent an additional transcriptionally repressive state.
 
-**State 2 - repressed chromatin** was characterized by the presence of H3K27me3, which has been shown
-previously to correlate with transcriptional silencing [REF]. This state was 
-not enriched in any particular functional element, but was associated with strong
-downregulation of transcription. We named this state a repressed state.
+**State 2 - repressed chromatin** was characterized by the presence of H3K27me3, 
+which has been shown previously to correlate with transcriptional silencing [REF]. 
+This state was not enriched in any particular functional element, but was associated 
+with strong downregulation of transcription.
 
-**State 3 - bivalent promoter** was primarily characterized by the presence of H3K27me3, a
-mark associated with polycomb silencing [REF], and H3K4me1 a mark associated
-with enhancers [REF]. The co-occurence of these opposing marks has previously 
-been associated with a functional element known as a bivalent promoter [REF]. 
-This element has been studied mostly in the context of development. Bivalent 
-promoters are abundant in undifferentiated cells, and are resolved either to 
-active promoters or silenced promoters as the cells differentiate into their 
-final state [REF]. These promoters have also been shown to be important in the 
-response of cancer cells to environmental disturbances such as hypoxia [REF].
+**State 3 - poised enhancer** was primarily characterized by the presence of 
+H3K27me3, a mark associated with polycomb silencing [REF], and H3K4me1 a mark 
+associated with enhancers [REF]. The co-occurence of these opposing marks has 
+previously been associated with a functional element known as a poised enhancer 
+[21160473]. 
+
+
+
+This element has been studied mostly in the context of 
+development. Bivalent promoters are abundant in undifferentiated cells, and are 
+resolved either to active promoters or silenced promoters as the cells differentiate 
+into their final state [REF]. These promoters have also been shown to be important 
+in the response of cancer cells to environmental disturbances such as hypoxia [REF].
 The presence of bivalent promoters in adult mouse hepatocytes is interesting. They 
 may mark genes poised for expression during liver regeneration, or for responding to
 a particular environmental stimulus. There were XXX genes that were marked with this
@@ -444,11 +447,11 @@ shown to mark intragenic enhancers and to be associated with increased
 transcription, as these regions can be transcribed independently of the
 full gene [Kowalczyk et al. 2012]. We annotated this state as a weak enhancer.
 
-**State 5 - active enhancer** was characterized by the co-occurence of H3K4me1, which marks cell
-type-specific enhancers, and H3K27ac, which specifically marks active enhancers 
-[21106759]. This state was strongly enriched in known enhancers, and its presence
-had a strong postive effect on transcription. We thus annotated this state as a
-strong enhancer.
+**State 5 - active enhancer** was characterized by the co-occurence of H3K4me1, 
+which marks cell type-specific enhancers, and H3K27ac, which specifically marks 
+active enhancers [21106759, 21160473]. This state was strongly enriched in known 
+enhancers, and its presence had a strong postive effect on transcription. We thus 
+annotated this state as a strong enhancer.
 
 ## Gene transcription start sites were hypomethylated
 
