@@ -86,3 +86,20 @@ For each group of genes binned by standard deviation,
 we performed singular value decomposition on the mean-centered expression
 matrix. We then calculated the separation of the strains in the two-dimensional
 space defined by the first two principle components. 
+
+## The landscape of gene expression was strain-dependent
+
+Across the inbred strains, the landscape of variation in gene expression 
+was highly strain-dependent (Figure XXX). Principal components analysis
+Expression in the wild-derived CAST and PWK strains diverged most strongly 
+from the overall mean expression, and expression within each strain was 
+highly replicable.
+
+There was also a wide range of strain-specificity across individual 
+transcripts (Figure XXX). Gene expression ranged from being highly
+conserved across strains to highly divergent (Figure XXX). Transcripts
+with the lowest variation across strains were enriched for basic cellular 
+processes: RNA processing, chromatin modification, and chromosome organization.
+Transcripts with the greatest variation across strains were enriched in 
+hepatocyte-specific functions: steroid metabolism, small molecule biosynthesis, 
+and lipid metabolism (Fig. XXX?)

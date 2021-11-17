@@ -301,6 +301,18 @@ trimodal_sites <- lapply(1:length(full_methyl),
 trimodal_bed <- Reduce("rbind", lapply(1:length(trimodal_sites), 
   function(x) sites_to_bed(trimodal_sites[[x]], x, 1)))
 trimodal_gz <- save_bed(trimodal_bed, here("Data", "RRBS", "trimodal_sites.bed"))
+
+unmethylated_sites <- lapply(1:length(full_methyl), 
+  function(x) full_methyl[[x]][which(apply(full_methyl[[x]], 1, function(y) all(y == 0))),])
+unmethylated_bed <- Reduce("rbind", lapply(1:length(unmethylated_sites), 
+  function(x) sites_to_bed(unmethylated_sites[[x]], x, 1)))
+unmethylated_gz <- save_bed(unmethylated_bed, here("Data", "RRBS", "unmethylated_sites.bed"))
+
+fullymethylated_sites <- lapply(1:length(full_methyl), 
+  function(x) full_methyl[[x]][which(apply(full_methyl[[x]], 1, function(y) all(y == 100))),])
+fullymethylated_bed <- Reduce("rbind", lapply(1:length(fullymethylated_sites), 
+  function(x) sites_to_bed(fullymethylated_sites[[x]], x, 1)))
+fullymethylated_gz <- save_bed(fullymethylated_bed, here("Data", "RRBS", "fullymethylated_sites.bed"))
 ```
 
 The following box plot shows the distribution of proportions of sites on each 
@@ -308,16 +320,17 @@ chromosome that have no variation across strains, have a bimodal distribution
 (methylated/unmethylated), or a trimodal distribution 
 (methylated/hemimethylated/unmethylated).
 
-```{r state_count_box}
+```{r state_count_box, fig.width = 8, fig.height = 5}
 site_counts <- sapply(1:length(non_varying_sites), 
-  function(x) c(nrow(non_varying_sites[[x]]), nrow(bimodal_sites[[x]]), nrow(trimodal_sites[[x]])))
+  function(x) c(nrow(non_varying_sites[[x]]), nrow(bimodal_sites[[x]]), 
+  nrow(trimodal_sites[[x]]), nrow(fullymethylated_sites[[x]]), nrow(unmethylated_sites[[x]])))
 colnames(site_counts) <- 1:19
-rownames(site_counts) <- c("Non-Varying", "Bimodal", "Trimodal")
+rownames(site_counts) <- c("Non-Varying", "Bimodal", "Trimodal", "Fully_methylated", "Unmethylated")
 
 site_prop <- apply(site_counts, 2, function(x) x/sum(x))
-type.cols <- c("#e41a1c", "#377eb8", "#4daf4a")
-if(is.interactive){quartz()}
-boxplot(t(site_prop), main = "Proportion of CpG sites", ylab = "Proportion")
+type.cols <- brewer.pal(5, "Set1")
+
+boxplot(t(site_prop), main = "Proportion of CpG sites", ylab = "Proportion", col = type.cols)
 ```
 
 The following heat map shows the log10(Fold Enrichment) 
@@ -325,44 +338,42 @@ of each type of CpG site (non-varying, bimodal, or trimodal)
 relative to annotated positions in the genome.
 
 This shows us that non-varying CpG sites are enriched in promoters
-and TSS regions, but depleted in enhancers.
+and TSS regions, but depleted in enhancers. This pattern was dominated
+by unmethylated sites. Fully methylated sites were depleted at the TES,
+and in promoters, but slightly enriched in enhancers. Bimodal and trimodal
+sites were relatively enriched in enhancers.
 
-The bimodal and trimodal sites were not particularly enriched
-or depleted anywhere. 
+
 
 ```{r state_enrich, fig.width = 4, fig.height = 7}
 CpG.enrich.mat.file <- here("Results", "RRBS", "CpG.types.enrichment.RDS")
 
 if(!file.exists(CpG.enrich.mat.file)){
-  CpG.enrich.mat <- matrix(NA, length(test.files), nrow = 3)
-  rownames(CpG.enrich.mat) <- c("non_varying", "bimodal", "trimodal")
+  test.files <- list.files(path = here("Data", "RRBS"), pattern = ".bed.gz", full.names = TRUE)
+  CpG.enrich.mat <- matrix(NA, nrow = length(test.files), ncol = length(background.files))
+  rownames(CpG.enrich.mat) <- gsub(".bed.gz", "", basename(test.files))
   colnames(CpG.enrich.mat) <- gsub(".bed.gz", "", basename(background.files))
-
   for(i in 1:length(background.files)){
-    print(basename(background.files[i]))
-    CpG.enrich.mat[1,i] <- enrichment_bed(
-          state.bed = non_varying_gz, 
-          annotation.bed = background.files[i], 
-          chrom.size.file = here("Data", "support_files", "mm10.txt"))
-
-    CpG.enrich.mat[2,i] <- enrichment_bed(
-          state.bed = bimodal_gz, 
-          annotation.bed = background.files[i], 
-          chrom.size.file = here("Data", "support_files", "mm10.txt"))
-
-    CpG.enrich.mat[3,i] <- enrichment_bed(
-          state.bed = trimodal_gz, 
-          annotation.bed = background.files[i], 
-          chrom.size.file = here("Data", "support_files", "mm10.txt"))
+    cat(basename(background.files[i]), "\n")
+    for(j in 1:length(test.files)){
+     cat("\t", basename(test.files[j]), "\n")
+      CpG.enrich.mat[j,i] <- enrichment_bed(
+        state.bed = test.files[j], 
+        annotation.bed = background.files[i], 
+        chrom.size.file = here("Data", "support_files", "mm10.txt"))
+    }
   }
   saveRDS(CpG.enrich.mat, CpG.enrich.mat.file)
 }else{
   CpG.enrich.mat <- readRDS(CpG.enrich.mat.file)
 }
 
+row.order <- hclust(dist(log10(CpG.enrich.mat)))$order
+col.order <- hclust(dist(t(log10(CpG.enrich.mat))))$order
 
-if(is.interactive){quartz(width = 4, height = 7)}
-pheatmap(log10(t(CpG.enrich.mat)))
+par(mar = c(10,10,2,2))
+imageWithText(round(log10(t(CpG.enrich.mat[row.order,col.order])),2), 
+  split.at.vals = TRUE, col.scale = c("blue", "brown"), grad.dir = "ends")
 ```
 
 ## Methylation by gene
