@@ -32,9 +32,9 @@ delete.previous <- as.logical(args[2])
 
 if(is.na(num.states)){num.states = 10;delete.previous = FALSE}
 
-results.dir <- here("Results", "ChromHMM", paste0(num.states, "_states_C"))
 needed.packages <- c("here", "qtl2")
 for(i in 1:length(needed.packages)){library(needed.packages[i], character.only = TRUE)}
+results.dir <- here("Results", "ChromHMM", paste0(num.states, "_states_C"))
 #barplot(1:length(chrom.colors), col = chrom.colors)
 is.interactive = FALSE
 #is.interactive = TRUE
