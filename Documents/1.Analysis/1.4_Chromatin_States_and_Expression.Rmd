@@ -70,8 +70,13 @@ is.interactive = FALSE
 #is.interactive = TRUE
 
 if(is.na(num.states)){
-    num.states = 9; delete.previous = FALSE
     #num.states = 9; delete.previous = FALSE
+    #num.states = 10; delete.previous = FALSE
+    #num.states = 11; delete.previous = FALSE
+    #num.states = 14; delete.previous = FALSE
+    num.states = 15; delete.previous = FALSE
+    #num.states =16; delete.previous = FALSE
+    
 }
 ```
 
@@ -414,7 +419,7 @@ mtext(side = 2, "Effect", line = 2.5)
 mtext(side = 3, "Within-Strain State Effects with 95% Confidence Intervals", line = 2.5)
 ```
 
-```{r within_effect_fig}
+```{r within_effect_fig, eval = FALSE}
 y.coord = num.states:1
 pdf("~/Desktop/within_strain_effects.pdf", width = 6, height = 4)
 plot.new()
@@ -493,8 +498,8 @@ mtext(side = 2, "Effect", line = 2.5)
 mtext(side = 3, "Across-Strain State Effects with 95% Confidence Intervals", line = 2.5)
 ```
 
-```{r effect_fig}
-quartz(width = 7, height = 5)
+```{r effect_fig, eval = FALSE}
+#quartz(width = 7, height = 5)
 plot.new()
 plot.window(ylim = c(1,num.states), xlim = c(ymin, ymax))
 for(state in 1:nrow(full.state.prop.cor)){
@@ -592,7 +597,7 @@ if(!file.exists(binned.chromatin.file)){
 We wanted to look at whether we could discern spatial patterns to the presence
 of different states.
 
-```{r test_gene_sets, fig.width = 3, fig.height = 10}
+```{r test_gene_sets, fig.width = 9, fig.height = 9}
 #get scaled expression values for each gene
 #the chromatin boundaries go 1000 bp beyond the end of the gene
 #here we filter only to genes for which the nearest gene is no
@@ -610,20 +615,31 @@ if(!file.exists(far.position.file)){
     state.position <- readRDS(far.position.file)
 }
 
-#pdf("~/Desktop/chromatin_states_individual.pdf", width = 3, height = 9)
-par(mfrow = c(num.states, 1), mar = c(2,2,2,2))
+#pdf("~/Desktop/chromatin_states_individual.pdf", width = 3, height = num.states*2)
+#par(mfrow = c(num.states, 1), mar = c(2,2,2,2))
+par(mfrow = c(3,3), mar = c(2,2,2,2))
+max.abundance <- rep(NA, num.states)
 for(s in 1:length(state.position)){
     if(s == num.states){x.axis = TRUE}else{x.axis = FALSE}
     plot.state.by.position(state.position[[s]], error.type = "se", 
     plot.label = paste("State", s), col = state.col[s], x.axis = x.axis,
     xlim = c(-0.5, 1.5), ylim = NULL, idx = 2:length(state.position[[s]][[1]]), lwd = 4)
     abline(h = 0, col = "gray")
+    axis(2)
+    max.abundance[s] <- max(state.position[[s]]$state.avg, na.rm = TRUE)
 }
 #dev.off()
-
 ```
 
-```{r abundance_fig}
+The following barplot shows the maximum abundance of each state
+across all bins.
+
+```{r total_abundance, fig.width = 8, fig.height = 5}
+par(mar = c(3,3,2,3))
+barplot_with_num(values = round(max.abundance, 2), col = state.col, names = 1:num.states, text.shift = 0.03)
+```
+
+```{r abundance_fig, eval = FALSE}
 pdf(here("Documents", "3.Manuscript", "Figures", "chromatin_state_abundance.pdf"), width = 3, height = 10)
 par(mfrow = c(num.states, 1), mar = c(0.5,3,0.5,2))
 for(s in 1:length(state.position)){
@@ -653,10 +669,10 @@ for(s in 1:length(state.position)){
 dev.off()
 ```
 
-```{r states_together, fig.width = 8.5, fig.height = 5}
+```{r states_together, fig.width = 8.5, fig.height = 7}
 layout(matrix(c(1,2), ncol = 2), widths = c(1, 0.3))
 plot.new()
-plot.window(xlim = c(-0.5, 1.5), ylim = c(0,1))
+plot.window(xlim = c(-0.5, 1.5), ylim = c(0,0.8))
 if(num.states == 9){state.order <- c(4,5,6,1,7,2,8,3,9)}else{state.order = 1:num.states}
 for(s in state.order){ #ordered for ease of visualization
     plot.state.by.position(state.position[[s]], error.type = "se", 
@@ -676,7 +692,7 @@ par(xpd = TRUE)
 #dev.off()
 ```
 
-```{r together_fig}
+```{r together_fig, eval = FALSE}
 pdf(here("Documents", "3.Manuscript", "Figures", "chromatin_states_together.pdf"), width = 7, height = 5)
 plot.new()
 plot.window(xlim = c(-0.5, 1.5), ylim = c(0,0.8))
@@ -779,11 +795,12 @@ if(!file.exists(across.strain.window.state.file)){
                 rankZ(as.vector(scaled.expr.mat)), confidence = 0.95, plot.results = FALSE)
                 #plot.with.model(rankZ(as.vector(window.state.mat)), rankZ(as.vector(scaled.expr.mat)), confidence = 0.95)
 
-
-            within.strain.state.effect[state,] <- rowMeans(sapply(1:ncol(window.state.mat), 
+            has.vals <- which(apply(window.state.mat, 2, function(x) length(unique(x[which(!is.na(x))]))) > 1)
+            within.strain.state.effect[state,] <- rowMeans(sapply(has.vals, 
                 function(x) plot.with.model(rankZ(window.state.mat[,x]), 
                 rankZ(mean.expr.mat[,x]), confidence = 0.95, plot.results = FALSE)))
-                #plot.with.model(rankZ(window.state.mat[,2]), rankZ(mean.expr.mat[,1]), confidence = 0.95)
+                #i = 3
+                #plot.with.model(rankZ(window.state.mat[,i]), rankZ(mean.expr.mat[,i]), confidence = 0.95)
         }
         #barplot(rbind(within.strain.state.effect[,3], across.strain.state.effect[,3]), beside = TRUE)
         #barplot(within.strain.state.effect[,3], col = state.col)
@@ -821,7 +838,7 @@ for(state in 1:num.states){
 }
 ```
 
-```{r across_strain_fig}
+```{r across_strain_fig, eval = FALSE}
 pdf(here("Documents", "3.Manuscript", "Figures", "chromatin_effects_across_strains.pdf"), 
 width = 3, height = 10)
 par(mfrow = c(num.states, 1), mar = c(0.5,3,0.5,2))
@@ -874,7 +891,7 @@ for(state in 1:num.states){
 ```
 
 
-```{r within_strain_fig}
+```{r within_strain_fig, eval = FALSE}
 pdf(here("Documents", "3.Manuscript", "Figures", "chromatin_effects_within_strain.pdf"), 
 width = 3, height = 10)
 xmin = -0.2;xmax = 1.2;ymin = -0.65; ymax = 0.65
@@ -907,22 +924,24 @@ TSS. State 7 elsewhere in the gene is also correlated with expression.
 
 ```{r state_abundance, fig.width = 7, fig.height = 8, eval = FALSE}
 
-chrom.mats <- readRDS(here("Results", "ChromHMM", "9_states_C", 
-    "Chromatin_States_9_full_gene_1000.RData"))
+chrom.mats <- readRDS(get.files(path = results.dir,
+    want = c("Chromatin_States", "full_gene_1000.RData"), full.names = TRUE))
 
 #state ammount by strain
-state.totals <- state.sd <- matrix(NA, nrow = 9, ncol = 9)
-rownames(state.totals) <- 1:9
+state.totals <- matrix(NA, nrow = num.states, ncol = 9)
+rownames(state.totals) <- 1:num.states
 colnames(state.totals) <- colnames(chrom.mats[[1]])
-for(st in 1:9){
+for(st in 1:num.states){
     print(st)
     state.counts <- t(sapply(chrom.mats, function(x) if(length(x) > 1){apply(x, 2, function(y) length(which(y == st)))}else{rep(NA, 9)}))
     state.totals[st,] <- colSums(state.counts, na.rm = TRUE)
-    state.totals[st,] <- state.totals[st,]/max(state.totals[st,])
 }
 
+pheatmap(log10(state.totals))
+pheatmap(state.totals, scale = "row")
 
 for(st in 1:nrow(state.totals)){
+    quartz()
     barplot(state.totals[st,], main = paste("Relative Abundance of State", st),
     col = col.table[match(colnames(state.totals), col.table[,6]),3])
 }

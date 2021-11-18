@@ -94,7 +94,7 @@ var.genes <- which(apply(state.counts, 1, function(x) length(which(x != 0)) > 1)
 #state across the strains
 state.enrich.file <- file.path(results.dir, "Enrichment.by.State.and.Strain.RDS")
 if(!file.exists(state.enrich.file)){
-st.enrich <- vector(mode = "list", length = ncol(tss.states))
+st.enrich <- vector(mode = "list", length = ncol(state.counts))
 names(st.enrich) <- 1:num.states
     for(st in 1:num.states){
         if(is.interactive){print(st)}
@@ -105,12 +105,14 @@ names(st.enrich) <- 1:num.states
     saveRDS(st.enrich, state.enrich.file)
 }else{
     st.enrich <- readRDS(state.enrich.file)
+    #pdf("~/Desktop/enrichment16.pdf")
     for(st in 1:num.states){
         cat("### State", st, "\n")
         plot.enrichment.group(st.enrich[[st]], max.term.size = 2000,
         sort.by = "p_value")
         cat("\n\n")
     }
+    #dev.off()
 }
 
 ```
@@ -153,27 +155,28 @@ for(i in 1:nrow(state_pairs)){
     state2 <- state_pairs[i,2]
     
     if(state1 == state2){
-        state1.locale <- state2.locale <- which(state.counts[,state1] == ncol(state.counts))
+        state1.locale <- state2.locale <- which(state.counts[,state1] == ncol(tss.states))
     }else{
         state1.locale <- which(cor.mat[,state1] > 0)
         state2.locale <- which(cor.mat[,state2] > 0)
     }
     both.together <- intersect(state1.locale, state2.locale)
-    group.genes <- rownames(cor.mat)[both.together]
-    all.pair.co.occur[[i]] <- group.genes
+    if(length(both.together) > 0){
+        group.genes <- rownames(cor.mat)[both.together]
+        all.pair.co.occur[[i]] <- group.genes
     
-    #get expression for these genes
-    expr.locale <- match(group.genes, names(expr))
-    has.expr <- which(sapply(expr[expr.locale], length) == 9)
-    group.expr <- Reduce("rbind", expr[expr.locale[has.expr]])
-    rownames(group.expr) <- group.genes[has.expr]
-    #divide expression based on TSS state
-    group.tss <- tss.states[c(match(rownames(group.expr), rownames(tss.states))),]
-    
-    #plot(as.vector(group.expr)~as.factor(as.vector(group.tss)), xlab = "State", ylab = "Expression", main = paste("State", state1, "and State", state2))
-
-    paired.tss.expr[[i]] <- list("TSS_states" = group.tss, "Group_Expr" = group.expr)
+        #get expression for these genes
+        expr.locale <- match(group.genes, names(expr))
+        has.expr <- which(sapply(expr[expr.locale], length) == 9)
+        group.expr <- t(sapply(has.expr, function(x) expr[[expr.locale[x]]]))
+        rownames(group.expr) <- group.genes[has.expr]
+        #divide expression based on TSS state
+        group.tss <- tss.states[c(match(rownames(group.expr), rownames(tss.states))),,drop = FALSE]
         
+        #plot(as.vector(group.expr)~as.factor(as.vector(group.tss)), xlab = "State", ylab = "Expression", main = paste("State", state1, "and State", state2))
+
+        paired.tss.expr[[i]] <- list("TSS_states" = group.tss, "Group_Expr" = group.expr)
+    }
     #calculate correlation of two states
     state1.freq <- length(state1.locale)/nrow(cor.mat)
     state2.freq <- length(state2.locale)/nrow(cor.mat)
@@ -227,35 +230,25 @@ have the highest expression overall.
 ```{r expr_overall}
 matched.expr <- expr[match(rownames(tss.states), names(expr))]
 has.expr <- which(sapply(matched.expr, length) == 9)
-sub.expr <- Reduce("rbind", matched.expr[has.expr])
+sub.expr <- t(sapply(has.expr, function(x) matched.expr[[x]]))
 rownames(sub.expr) <- names(matched.expr)[has.expr]
 sub.tss <- tss.states[match(rownames(sub.expr), rownames(tss.states)),]
 expr.vector <- unlist(sub.expr)
 tss.vector <- unlist(sub.tss)
-expr.by.tss <- lapply(1:9, function(x) expr.vector[which(tss.vector == x)])
-if(is.interactive){quartz()}
+expr.by.tss <- lapply(1:num.states, function(x) expr.vector[which(tss.vector == x)])
 boxplot(expr.by.tss)
+expr.mean <- median(sub.expr, na.rm = TRUE)
+abline(h = expr.mean)
 ```
 
 
 
 ```{r plot_expr, results = "asis"}
-
-for(i in 1:length(paired.tss.expr)){
-    if(is.interactive){quartz()}
-    cat("###", names(paired.tss.expr[i]), "\n")
-    box.col <- rep("gray", num.states)
-    box.col[state_pairs[i,]] <- "red"
-    plot(as.vector(paired.tss.expr[[i]][[2]])~as.factor(as.vector(paired.tss.expr[[i]][[1]])), 
-         main = paste("State", unique(state_pairs[i,])), xlab = "State", ylab = "Expression",
-        col = box.col)
-    cat("\n\n")
-}
-
 cat("### All Single States\n")
 single.locale <- which(apply(state_pairs, 1, function(x) length(unique(x))) == 1)
 if(is.interactive){quartz()}
-boxplot(lapply(paired.tss.expr[single.locale], function(x) x[[2]]))
+single.state.expr <- lapply(paired.tss.expr[single.locale], function(x) x[[2]])
+boxplot(single.state.expr, las = 2)
 abline(h = median(unlist(paired.tss.expr[single.locale])))
 cat("\n\n")
 ```
@@ -292,15 +285,17 @@ What are the enrichments of genes for which some strains have poised enhancers (
 and others have active enhancers (5,6,7) at the TSS?
 
 ```{r state_enrichment}
-enrich.file <- here("Results", "chQTL", "State_Pair_Enrichment.RDS")
+enrich.file <- file.path(results.dir, "State_Pair_Enrichment.RDS")
 
 if(!file.exists(enrich.file)){
     state_enrich <- vector(mode = "list", length = length(all.pair.co.occur))
     names(state_enrich) <- names(all.pair.co.occur)
     for(i in 1:length(all.pair.co.occur)){
-        enrichment <- gost(all.pair.co.occur[[i]], organism = "mmusculus", sources = "GO")
-        if(!is.null(enrichment)){
-            state_enrich[[i]] <- enrichment
+        if(length(all.pair.co.occur[[i]]) > 0){
+            enrichment <- gost(all.pair.co.occur[[i]], organism = "mmusculus", sources = "GO")
+            if(!is.null(enrichment)){
+                state_enrich[[i]] <- enrichment
+            }
         }
     }
     saveRDS(state_enrich, enrich.file)
@@ -333,10 +328,11 @@ state_gene_names <- lapply(all.pair.co.occur,
 
 ## Group Enrichment
 
-```{r group_enrich}
-#pdf("~/Desktop/group_enrich.pdf", width = 9, height = 12)
-test <- plot.enrichment.group(state_enrich, transformation = "sqrt")
-#dev.off()
+```{r group_enrich, fig.height = 15, fig.width = 9}
+#pdf("~/Desktop/group_enrich.pdf", width = 15, height = 25)
+has.enrich <- which(sapply(state_enrich, length) > 0)
+test <- plot.enrichment.group(state_enrich[has.enrich], transformation = "sqrt")
+#dev.off() 
 
 pdf(file.path(results.dir, "TSS_Enrichment_Projections.pdf"), height = 15, width = 15)
 plot_bipartite(test)
@@ -344,11 +340,11 @@ dev.off()
 ```
 
 ```{r test, eval = FALSE}
-state_gene_names$"2_5"
+state_gene_names$"7_15"
 
 
-states <- "3_7"
-states <- "7_7"
+states <- "7_15"
+states <- "15_15"
 
 if(is.interactive){quartz()}
 pair.locale <- which(names(state_enrich) == states)

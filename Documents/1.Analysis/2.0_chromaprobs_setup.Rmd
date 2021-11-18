@@ -26,7 +26,7 @@ We prepare the following files:
 args <- commandArgs(trailingOnly=T)
 num.states <- as.numeric(args[1])
 
-if(is.na(num.states)){num.states = 9}
+if(is.na(num.states)){num.states = 10}
 
 needed.packages <- c("here")
 for(i in 1:length(needed.packages)){library(needed.packages[i], character.only = TRUE)}
@@ -48,6 +48,7 @@ Load chromatin data.
 chrom.dir <- paste0(num.states, "_states_C")
 chrom.file <- paste0("Chromatin_States_", num.states, "_full_gene_1000.RData")
 chrom.states <- readRDS(here("Results", "ChromHMM", chrom.dir, chrom.file))
+results.dir <- here("Results", "ChromHMM", paste0(num.states, "_states_C"))
 ```
 
 Load the DO data. We will be using the genoprobs object for our mapping.
@@ -120,7 +121,7 @@ expand_chrom <- function(chrom.mat, num.states){
   return(chrom.array)
 }
 
-expanded.chrom.file <- here("Data", "chQTL", "Expanded_Chromatin.RDS")
+expanded.chrom.file <- file.path(results.dir, "Expanded_Chromatin.RDS")
 exp.chrom <- lapply_pb(chrom.states, function(x) expand_chrom(x, num.states))
 saveRDS(exp.chrom, expanded.chrom.file)
 ```
