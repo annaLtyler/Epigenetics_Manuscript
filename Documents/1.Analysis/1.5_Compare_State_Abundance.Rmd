@@ -1,0 +1,202 @@
+---
+title: "Compare State Abundance"
+author: Anna L Tyler
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  html_document:
+    code_folding: hide
+    collapsed: no
+    toc: yes
+    toc_float: yes
+---
+
+## Introduction
+The purpose of this workflow is to compare state abundance across models.
+State abundance is calculated in 1.4_Chromatin_States_and_Expression.Rmd.
+
+We use the emissions of the states in each model to cluster the states
+into similar states across models. We then compare the maximum abundance
+of each state. 
+
+This helps us visualize how stable the states are across models, and which
+states are fragmented into other states.
+
+```{r set_param}
+presence.threshold = 0.3 #the minimum abundance of a histone mark to be considered present in the state
+```
+
+```{r source_code}
+library("here")
+all.code.dir <- list.files(here("Code"), full.names = TRUE)
+for(i in 1:length(all.code.dir)){
+	all.fun <- list.files(all.code.dir[i], full.names = TRUE, pattern = ".R")
+	for(j in 1:length(all.fun)){source(all.fun[j])}
+}
+library(pheatmap)
+```
+
+```{r binary_states}
+binary_states <- t(sapply(0:15, function(x) number2binary(x, 4)))
+```
+
+```{r find_state_fun}
+find_state <- function(all.states, bin.state, thresh = 0.2){
+    has.mark <- which(bin.state == 1)
+    no.mark <- which(bin.state == 0)
+    has.mark.idx <- Reduce("intersect", lapply(has.mark, function(x) which(all.states[,x] >= thresh)))
+    no.mark.idx <- Reduce("intersect", lapply(no.mark, function(x) which(all.states[,x] < thresh)))
+    if(length(has.mark) > 0 && length(no.mark) > 0){
+        state.idx <- intersect(has.mark.idx, no.mark.idx)
+    }
+    if(length(has.mark) == 0){
+        state.idx <- no.mark.idx
+    }
+    if(length(no.mark) == 0){
+        state.idx <- has.mark.idx
+    }
+    #pheatmap(all.states[state.idx,])
+    return(all.states[state.idx,,drop=FALSE])
+}
+
+```
+
+```{r emissions}
+histone.order <- c("H3K27me3", "H3K4me3", "H3K4me1", "H3K27ac")
+
+all.models <- list.files(here("Data", "ChromHMM"))
+state.num <- as.numeric(sapply(strsplit(all.models, "_"), function(x) x[1]))
+model.order <- order(state.num, decreasing = FALSE)
+ordered.models <- all.models[model.order]
+emissions <- vector(mode = "list", length = length(all.models))
+names(emissions) <- ordered.models
+for(i in 1:length(ordered.models)){
+    emissions[[i]] <- as.matrix(read.table(here("Data", "ChromHMM", ordered.models[i], 
+    paste0("emissions_", state.num[model.order[i]], ".txt")), sep = "\t", header = TRUE,
+    row.names = 1))
+    #sort by histone modification
+    mark.order <- match(histone.order, colnames(emissions[[i]]))
+    #colnames(emissions[[i]])[mark.order]
+    emissions[[i]] <- emissions[[i]][,mark.order]
+}
+
+#t(sapply(emissions, colnames))
+
+all.states <- Reduce("rbind", emissions)
+model.names <- unlist(lapply(1:length(emissions), 
+    function(x) paste0("model_", rep(state.num[model.order[x]], 
+    nrow(emissions[[x]])), "_state_", 1:nrow(emissions[[x]]))))
+rownames(all.states) <- model.names
+colnames(binary_states) <- colnames(all.states)
+
+grouped.states <- lapply(1:nrow(binary_states), 
+    function(x) find_state(all.states, binary_states[x,], presence.threshold))
+```
+
+## Grouped States {.tabset .tabset-fade .tabset-pills}
+
+The following images show the states that were grouped together from different
+models. These plots confirm the consistency of states from model to model.
+
+```{r plot_state_groups, results = "asis", fig.height = 7, fig.width = 7}
+for(i in 1:length(grouped.states)){
+    cat("###", binary_states[i,], "\n")
+    par(mar = c(4, 8, 2, 2))
+    imageWithText(round(grouped.states[[i]], 2), global.color.scale = TRUE, 
+        use.pheatmap.colors = TRUE, global.min = 0, global.max = 1, col.text.rotation = 0,
+        col.text.adj = 0.5, row.text.shift = 0.2, cex = 1)
+    cat("\n\n")
+}
+```
+
+## State Abundance
+
+```{r read_state_abundance}
+state.abundance  <- lapply(ordered.models, 
+    function(x) readRDS(here("Results", "ChromHMM", x, "State_Abundance.RDS")))
+abundance.vector <- unlist(state.abundance)
+grouped.abundance <- lapply(1:length(grouped.states), 
+    function(x) abundance.vector[match(rownames(grouped.states[[x]]), model.names)])
+for(i in 1:length(grouped.abundance)){
+    names(grouped.abundance[[i]]) <- rownames(grouped.states[[i]])
+}
+
+#pheatmap(binary_states, cluster_rows = FALSE, cluster_cols = FALSE)
+```
+
+Build a grid that has the abundance for each state in each model.
+Rows represent a single binary state. Columns represent a single model,
+for example, the 4-state or 9-state model.
+
+```{r state_grid, fig.width = 9, fig.height = 5}
+#pheatmap(grouped.states[[15]], cluster_rows = FALSE, cluster_cols = FALSE)
+#grouped.abundance[[15]]
+abundance.grid <- matrix(NA, nrow = nrow(binary_states), ncol = length(ordered.models))
+colnames(abundance.grid) <- sapply(strsplit(ordered.models, "_"), function(x) as.numeric(x[1]))
+
+for(i in 1:nrow(binary_states)){
+    if(length(grouped.abundance[[i]]) > 0){
+        all.abundance <- grouped.abundance[[i]]
+        model.size <- sapply(strsplit(names(all.abundance), "_"), function(x) as.numeric(x[2]))
+        ordered.size <- as.character(sort(model.size, decreasing = FALSE))
+        abundance.grid[i, ordered.size] <- all.abundance
+    }
+}
+
+layout.mat <- matrix(1:3, nrow = 1)
+layout(layout.mat, widths = c(0.2, 1, 0.1))
+par(mar = c(4,2,2,0))
+imageWithText(binary_states, global.color.scale = TRUE, global.max = 1, global.min = 0, 
+use.pheatmap.colors = TRUE, cex = 1, col.text.shift = -1)
+par(mar = c(4,0,2,2))
+imageWithText(round(abundance.grid, 2), global.color.scale = TRUE, global.max = 1, global.min = 0, 
+use.pheatmap.colors = TRUE, col.text.rotation = 0, cex = 1, col.text.shift = -0.5, col.text.adj = 0.5,
+col.text.cex = 1.5)
+par(mar = c(4,2,2,2))
+imageWithTextColorbar(abundance.grid, global.color.scale = TRUE, global.max = 1, global.min = 0, 
+use.pheatmap.colors = TRUE, cex = 1.5)
+
+```
+
+## State Effects
+
+Also look at the state effects based on these groupings.
+The following effects results were generated in 1.3_Compare_ChromHMM_States.Rmd
+
+```{r state_effects, fig.width = 9, fig.height = 5}
+state.effects <- readRDS(here("Results", "ChromHMM", "across.strain.models.RDS"))
+effect.vector <- unlist(lapply(state.effects, function(x) x[,3]))
+names(effect.vector) <- rownames(all.states)
+
+grouped.effect <- vector(mode = "list", length = length(grouped.states))
+for(i in 1:length(grouped.states)){
+    effect.locale <- match(rownames(grouped.states[[i]]), names(effect.vector))
+    grouped.effect[[i]] <- effect.vector[effect.locale]
+}
+
+effect.grid <- matrix(NA, nrow = nrow(binary_states), ncol = length(ordered.models))
+colnames(effect.grid) <- sapply(strsplit(ordered.models, "_"), function(x) as.numeric(x[1]))
+
+for(i in 1:nrow(binary_states)){
+    if(length(grouped.effect[[i]]) > 0){
+        all.effect <- grouped.effect[[i]]
+        model.size <- sapply(strsplit(names(all.effect), "_"), function(x) as.numeric(x[2]))
+        ordered.size <- as.character(sort(model.size, decreasing = FALSE))
+        effect.grid[i, ordered.size] <- all.effect
+    }
+}
+
+layout.mat <- matrix(1:3, nrow = 1)
+layout(layout.mat, widths = c(0.2, 1, 0.1))
+par(mar = c(4,2,2,0))
+imageWithText(binary_states, global.color.scale = TRUE, global.max = 1, global.min = 0, 
+use.pheatmap.colors = TRUE, cex = 1, col.text.shift = -1)
+par(mar = c(4,0,2,2))
+imageWithText(round(effect.grid, 2), use.pheatmap.colors = TRUE, 
+col.text.rotation = 0, cex = 1, col.text.shift = -0.5, col.text.adj = 0.5,
+col.text.cex = 1.5)
+par(mar = c(4,2,2,2))
+imageWithTextColorbar(effect.grid, use.pheatmap.colors = TRUE, cex = 1.5, axis.line = -2)
+
+#plot(as.vector(abundance.grid), as.vector(effect.grid))
+#abline(h = 0)
+```

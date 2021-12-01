@@ -1,9 +1,8 @@
 
 
-R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '1.4_Chromatin_States_and_Expression.Rmd'))" --args "9" "FALSE"
-
-
-R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '1.4_Compare_ChromHMM_States.Rmd'))"
+numStates=16
+R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '1.4_Chromatin_States_and_Expression.Rmd'))" --args $numStates "FALSE"
+mv Documents/1.Analysis/1.4_Chromatin_States_and_Expression.html Documents/1.Analysis/1.4_Chromatin_States_and_Expression-$numStates-states.html
 
 
 

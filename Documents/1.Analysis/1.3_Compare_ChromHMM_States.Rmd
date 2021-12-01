@@ -184,6 +184,7 @@ for(i in 1:length(ordered.states)){
     }
     model.across[[i]] <- state.fits
 }
+saveRDS(model.across, here("Results", "ChromHMM", "across.strain.models.RDS"))
 ```
 
 Plot these together.
@@ -327,15 +328,38 @@ pattern = ".txt", full.names = TRUE)[state_order]
 for(i in 1:length(enrichment.files)){
     cat("###", state.names[state_order[i]], "\n")
     if(is.interactive){quartz(width = 8, height = 4)}
-    enrichment.map <- as.matrix(read.delim(enrichment.files[i], row.names = 1))
-    pheatmap(enrichment.map, scale = "column", cluster_rows = FALSE, cluster_cols = FALSE)
+    enrichment.map <- t(as.matrix(read.delim(enrichment.files[i], row.names = 1))[1:(i+3),])
+    pheatmap(enrichment.map, cluster_cols = FALSE, main = "enrichment")
+
+    pheatmap(log10(enrichment.map), cluster_cols = FALSE, main = "log10 enrichment")
+    #pheatmap(log10(sqrt(enrichment.map)), cluster_cols = FALSE)
+
+    scaled.cols <- apply(enrichment.map, 2, scale)
+    rownames(scaled.cols) <- rownames(enrichment.map)
+    pheatmap(scaled.cols, cluster_cols = FALSE, main = "columns scaled")
+
+    scaled.rows <- t(apply(enrichment.map, 1, scale))
+    colnames(scaled.rows) <- colnames(enrichment.map)    
+    pheatmap(scaled.rows, cluster_cols = FALSE, main = "rows scaled")
     cat("\n\n")
 }
 ```
 
 ```{r enrich_fig, eval = FALSE}
-pdf(here("Documents", "3.Manuscript", "3.Manuscript", "enrichment.pdf"), width = 5, height = 2.5)
-pheatmap(t(enrichment.map[,c(1, 2,3,4,7,8,10,11,13)]), scale = "row", cluster_cols = FALSE)
+ordered.features <- c("Genome..", "CpGIsland.mm10.bed.gz", "RefSeqTSS.mm10.bed.gz", 
+    "promoters.bed.gz", "RefSeqTSS2kb.mm10.bed.gz", "RefSeqExon.mm10.bed.gz", 
+    "Encode_cCRE.bed.gz","TFbs.bed.gz", "enhancers.bed.gz", "RefSeqGene.mm10.bed.gz", 
+    "RefSeqTES.mm10.bed.gz", "CTCF.bed.gz")
+
+pdf(here("Documents", "3.Manuscript", "Figures", "enrichment.pdf"), width = 5, height = 3.5)
+    for(i in 1:length(enrichment.files)){
+        enrichment.map <- t(as.matrix(read.delim(enrichment.files[i], row.names = 1))[1:(i+3),])
+        feature.order <- match(ordered.features, rownames(enrichment.map))
+        ordered.map <- enrichment.map[feature.order,]
+        scaled.map <- t(apply(ordered.map, 1, scale)) #scale rows
+        colnames(scaled.map) <- colnames(ordered.map)
+        pheatmap(scaled.map, cluster_cols = FALSE, cluster_rows = FALSE)
+    }
 dev.off()
 ```
 

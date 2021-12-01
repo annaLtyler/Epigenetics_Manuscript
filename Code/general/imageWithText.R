@@ -207,8 +207,16 @@ sig.digs = 3, use.pheatmap.colors = FALSE, na.col = "lightgray", gridlines = FAL
 		plot(c(1, dim(mat)[2]), c(1, dim(mat)[1]), type = "n", axes = FALSE, xlab = xlab, ylab = ylab, xlim = c(0.7, dim(mat)[2]+0.2), ylim = c(0.7, dim(mat)[1]+0.2), bg = "transparent")
 
 		rasterImage(col, xleft = 0.5, ybottom = 0.5, xright = dim(mat)[2]+0.5, ytop = dim(mat)[1]+0.5, interpolate = FALSE, bg = "transparent")
-		x.coord <- matrix(segment.region(0.5, dim(mat)[2]+0.5, dim(mat)[2], "center"), nrow = dim(mat)[1], ncol = dim(mat)[2], byrow = TRUE)
-		y.coord <- matrix(segment.region(0.5, dim(mat)[1]+0.5, dim(mat)[1], "center"), nrow = dim(mat)[1], ncol = dim(mat)[2])
+		if(ncol(mat) > 1){
+			x.coord <- matrix(segment.region(0.5, dim(mat)[2]+0.5, dim(mat)[2], "center"), nrow = dim(mat)[1], ncol = dim(mat)[2], byrow = TRUE)
+		}else{
+			x.coord <- matrix(0.5, ncol = ncol(mat), nrow = nrow(mat))
+		}
+		if(nrow(mat) > 1){
+			y.coord <- matrix(segment.region(0.5, dim(mat)[1]+0.5, dim(mat)[1], "center"), nrow = dim(mat)[1], ncol = dim(mat)[2])
+		}else{
+			y.coord <- matrix(0.5, ncol = ncol(mat), nrow = nrow(mat))
+		}
 		
 		if(show.text){
 		text(x.coord, rev(y.coord), labels = signif(as.vector(mat), sig.digs), cex = cex)

@@ -198,7 +198,19 @@ to the presence and absence of the four chromatin modifications. We calculated
 states for all numbers of states between four and 16, which is the maximum
 number of states possible with four binary chromatin modifications ($2^n$). 
 
-### Selecting the number of chromatin states
+### Selecting the ChromHMM model
+
+ChromHMM clustered the genome into multiple binary chromatin states based
+on the presence and absence of the provided histone marks. 
+To find the most meaningful clustering, we looked at a number of different
+factors including chromatin state prevalence across expressed genes, the 
+effect of each state on gene expression, the stability of emission 
+probabilities across different models, and the localization of each state 
+across the gene body. These comparisons are shown in the Supplemental 
+Figures. 
+
+Overall the clustering was very stable across models with different numbers
+of states. 
 
 Our goal in this study was to identify patterns of histone modifications
 that were most informative about variation in gene expression across
@@ -221,9 +233,12 @@ y=\beta_{0}+\beta_{1}x+\epsilon
 
 The $beta_1$ coefficient is the estimate of the effect of the 
 chromatin state on gene expression. We estimated each effect with 
-a 95\% confidence interval.
+a 95\% confidence interval. We also examined the abundance of each
+state as the proportion of genes containing each state. Using a 
+model with few states may combine two or more 
 
-We found that state seven in the nine-state model had the largest effect 
+The effect of chromatin state on gene expression was remarkably 
+stable across all models (Supp Fig XXX). We found that state seven in the nine-state model had the largest effect 
 on gene expression across strains of any state in any model. We also noted 
 that the effects were binned roughly into five bins: low, moderately low, 
 no effect, moderately high, and high effect (Supplemental Fig XXX). The 
@@ -244,7 +259,7 @@ the nine chromatin states identified by ChromHMM:
 
 We used the emissions probabilities derived from ChromHMM to identify
 which histone modifications were present in each chromatin state.
-We used a probability of 0.5 or greater to indicate presence of a 
+We used a probability of 0.3 or greater to indicate presence of a 
 histone modification (Figure XXX). We used Google Scholar and PubMed
 to search for previous literature annotating combinations of histone
 marks in each state.

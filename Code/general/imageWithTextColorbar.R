@@ -1,18 +1,18 @@
 #testing: 
 # mat <- matrix((1:100), 10, 10)
 # mat <- matrix(rnorm(100), 10, 10)
-#orientation = c("h", "v"); num.labels = 10; cex = 0.5; split.at.vals = FALSE; split.points = 0
+#orientation = c("h", "v"); cex = 0.5; split.at.vals = FALSE; split.points = 0
 #col.scale = c("green", "purple", "orange", "blue", "gray"); light.dark = "f"; class.mat = NULL
 #grad.dir = c("high", "low", "middle", "ends"); color.fun = c("linear", "exponential")
 #exp.steepness = 1; global.color.scale = FALSE; global.min = NULL; global.max = NULL 
 #axis.line = -3; use.pheatmap.colors = TRUE
 
-imageWithTextColorbar <- function(mat, orientation = c("h", "v"), num.labels = 10, 
+imageWithTextColorbar <- function(mat, orientation = c("h", "v"), 
 cex = 0.5, split.at.vals = FALSE, split.points = 0, 
 col.scale = c("green", "purple", "orange", "blue", "gray"), light.dark = "f", 
 class.mat = NULL, grad.dir = c("high", "low", "middle", "ends"), 
 color.fun = c("linear", "exponential"), exp.steepness = 1, color.spread = 50,
-global.color.scale = FALSE, global.min = NULL, global.max = NULL, 
+global.color.scale = FALSE, global.min = NULL, global.max = NULL,
 axis.line = -3, use.pheatmap.colors = FALSE, ax.min = NULL, ax.max = NULL, 
 n.ax.ticks = NULL, hadj = NA, padj = NA, bounding.box = TRUE){
 
@@ -30,7 +30,23 @@ n.ax.ticks = NULL, hadj = NA, padj = NA, bounding.box = TRUE){
 		if(length(get.default.col.fun) > 0){
 			color.fun = "linear"
 			}
+
+        if(global.color.scale){
+            mat.max <- global.max
+            mat.min <- global.min
+        }else{
+            mat.max <- ceiling(max(mat, na.rm = TRUE))
+            mat.min <- floor(min(mat, na.rm = TRUE))
+        }
 		
+        if(orientation == "h"){
+            plot.window(xlim = c(min(mat, na.rm = TRUE), max(mat, na.rm = TRUE)), ylim = c(0,1))
+            axis.side = 1
+            }else{
+            plot.window(ylim = c(min(mat, na.rm = TRUE), max(mat, na.rm = TRUE)), xlim = c(0,1))	
+            axis.side = 2
+            }
+
 		end.fudge.factor = 10^-10
 
 		if(is.null(class.mat)){
@@ -41,10 +57,10 @@ n.ax.ticks = NULL, hadj = NA, padj = NA, bounding.box = TRUE){
 			for(p in 1:length(split.points)){
 				class.mat[which(mat >= split.points[p])] <- p+1
 				}
-			class.boundaries <- c(min(mat, na.rm = TRUE), split.points, max(mat, na.rm = TRUE))
+			class.boundaries <- c(mat.min, split.points, mat.max)
 			}else{
 			split.points <- NULL	
-			class.boundaries <- c(min(mat, na.rm = TRUE), max(mat, na.rm = TRUE))
+			class.boundaries <- c(mat.min, mat.max)
 			}
 			
 		
@@ -173,13 +189,8 @@ n.ax.ticks = NULL, hadj = NA, padj = NA, bounding.box = TRUE){
 
 
 		if(use.pheatmap.colors){
-			if(global.color.scale){
-				min.cl <- global.min;max.cl = global.max
-			}else{
-				min.cl <- min(mat, na.rm = TRUE);max.cl <- max(mat, na.rm = TRUE)
-			}
 			pal <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 7, name = "RdYlBu")))(100)
-			bks <- segment.region(min.cl, max.cl, 
+			bks <- segment.region(mat.min, mat.max, 
 			length(pal), alignment = "ends")
 			col.key <- cbind(bks[1:length(pal)], pal)
 			num.cols <- nrow(col.key)
@@ -195,53 +206,26 @@ n.ax.ticks = NULL, hadj = NA, padj = NA, bounding.box = TRUE){
 	# par(mfrow = c(1,2))
 		# plot(x = as.numeric(col.key[,1]), y = rep(1, dim(col.key)[1]), col = col.key[,2], pch = "|", cex = 1, xlab = "", ylab = "")
 		# abline(v = split.points)
-
-		if(!global.color.scale){
-			plot.new()
-			if(orientation == "h"){
-				plot.window(xlim = c(min(mat, na.rm = TRUE), max(mat, na.rm = TRUE)), ylim = c(0,1))
-				axis.side = 1
-				}else{
-				plot.window(ylim = c(min(mat, na.rm = TRUE), max(mat, na.rm = TRUE)), xlim = c(0,1))	
-				axis.side = 2
-				}
-			par(mar = c(3,0,0,0))
-			start.x <- min(mat, na.rm = TRUE)
-			# for(i in 2:100){
-			for(i in 2:dim(col.key)[1]){
-				if(orientation == "h"){
-				polygon(x = c(start.x, rep(as.numeric(col.key[i,1]), 2), start.x), y = c(0,0,1,1), col = col.key[i,2], border = NA)
-				}else{
-				polygon(y = c(start.x, rep(as.numeric(col.key[i,1]), 2), start.x), x = c(0,0,1,1), col = col.key[i,2], border = NA)
-				}
-				start.x <- as.numeric(col.key[i, 1])
-				}
-
-			if(!is.null(n.ax.ticks)){ #if a number of tick marks is specified
-				if(is.null(ax.min)){ax.min <- floor(min(mat, na.rm = TRUE))}
-				if(is.null(ax.max)){ax.max <- ceiling(max(mat, na.rm = TRUE))}
-				at <- segment.region(ax.min, ax.max, n.ax.ticks, alignment = "ends")
-				}else{
-				at = NULL #otherwise use the default axis
-				}
-			axis(axis.side, line = axis.line, cex.axis = cex, at = at, padj = padj, hadj = hadj)
-
-			if(bounding.box){
-				if(orientation == "h"){
-					polygon(x = c(rep(min(mat, na.rm = TRUE), 2), rep(max(mat, na.rm = TRUE),2)), y = c(0,1,1,0))
-					}else{
-					polygon(y = c(rep(min(mat, na.rm = TRUE), 2), rep(max(mat, na.rm = TRUE),2)), x = c(0,1,1,0))	
-					}
-				}
+		if(!is.null(n.ax.ticks)){ #if a number of tick marks is specified
+			if(is.null(ax.min)){ax.min <- mat.min}
+			if(is.null(ax.max)){ax.max <- mat.max}
+			at <- signif(segment.region(ax.min, ax.max, n.ax.ticks, alignment = "ends"), 2)
 			}else{
-			num.mat <- as.matrix(as.numeric(col.key[,1]), ncol = 1)
-			if(orientation == "h"){
-				image(x = as.vector(num.mat), y = 1, z = num.mat, col= col.key[,2], xlab="",ylab="", yaxt = "n", cex.axis = cex)
-				}else{
-				# Original
-				image(x = 1, y = as.vector(num.mat), z = t(num.mat), col= col.key[,2], xlab="",ylab="",xaxt="n", cex.axis = cex)
-				}
+			at = NULL #otherwise use the default axis
 			}
+
+
+        num.mat <- as.matrix(as.numeric(col.key[,1]), ncol = 1)
+        if(orientation == "h"){
+            image(x = as.vector(num.mat), y = 1, z = num.mat, col = col.key[,2], xlab="",
+                ylab="", yaxt = "n", cex.axis = cex, axes = FALSE)
+            }else{
+            # Original
+            image(x = 1, y = as.vector(num.mat), z = t(num.mat), col= col.key[,2], xlab="",
+                ylab="",xaxt="n", cex.axis = cex, axes = FALSE)
+            }
+        axis(axis.side, line = axis.line, cex.axis = cex, at = at, padj = padj, hadj = hadj)
+			
 					
 		par(mar = c(5.1, 4.1, 4.1, 2.1))
 

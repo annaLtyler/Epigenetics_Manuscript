@@ -63,26 +63,22 @@ performs the following specific tasks:
 
 ```{r set_args}
 args <- commandArgs(trailingOnly=T)
-num.states <- as.numeric(args[1])
-delete.previous = as.logical(args[2]) #whether to delete and regenerate files 
+delete.previous = as.logical(args[1]) #whether to delete and regenerate files 
                     #from previous a run.
 is.interactive = FALSE
 #is.interactive = TRUE
+```
 
-if(is.na(num.states)){
-    #num.states = 9; delete.previous = FALSE
-    #num.states = 10; delete.previous = FALSE
-    #num.states = 11; delete.previous = FALSE
-    #num.states = 14; delete.previous = FALSE
-    num.states = 15; delete.previous = FALSE
-    #num.states =16; delete.previous = FALSE
-    
-}
+```{r set_param}
+library(here)
+param <- read.delim(here("Data", "support_files", "param.txt"), header = FALSE, 
+    stringsAsFactors = FALSE, row.names = 1)
+num.states = as.numeric(param["num_states",])
+ordered.marks <- strsplit(param["ordered_marks",], ",")[[1]]
 ```
 
 
 ```{r source_code}
-library("here")
 all.code.dir <- list.files(here("Code"), full.names = TRUE)
 for(i in 1:length(all.code.dir)){
 	all.fun <- list.files(all.code.dir[i], full.names = TRUE, pattern = ".R")
@@ -390,9 +386,11 @@ for(state in 1:num.states){
 }
 
 ymin <- -0.6;ymax = 0.6
-state.col <- colors.from.values(1:num.states, use.pheatmap.colors = TRUE)
-state.col[3:5] <- darken(state.col[3:5], factor = 1.1) #darken the middle colors. they are very light!
-#state.col <- rep("gray40", num.states)
+#state.col <- darken(colors.from.values(1:num.states, use.pheatmap.colors = TRUE), factor = 1.1)
+#state.col <- unique(c(brewer.pal(9, "Set1"), brewer.pal(8, "Set2")))
+#state.col = c('#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#fabebe', '#008080', '#e6beff', '#9a6324', '#800000', '#808000', '#ffd8b1', '#000075', '#808080', '#000000')
+state.col <- read.table(here("Data", "support_files", "state_colors.txt"), comment.char = "!")
+#barplot(1:length(state.col), col = state.col)
 conf.lwr <- min(all.state.conf[,"slope.lwr"])
 conf.upr <- max(all.state.conf[,"slope.upr"])
 if(is.interactive){quartz(width = 7, height = 5)}
@@ -421,7 +419,7 @@ mtext(side = 3, "Within-Strain State Effects with 95% Confidence Intervals", lin
 
 ```{r within_effect_fig, eval = FALSE}
 y.coord = num.states:1
-pdf("~/Desktop/within_strain_effects.pdf", width = 6, height = 4)
+pdf("~/Desktop/within_strain_effects.pdf", width = 6, height = 6)
 plot.new()
 plot.window(ylim = c(1, num.states), xlim = c(ymin, ymax))
 #add grid lines
@@ -532,17 +530,13 @@ axis(1, at = round(seq(-0.6, 0.6, 0.02), 2))
 The heatmap below shows the emission probabilities for each state found by ChromHMM.
 This shows us which marks each of the states in the barplot has.
 
-```{r emissions, results = "asis"}
-emissions.file <- file.path(data.dir, paste0("emissions_", num.states, ".png"))
-cat("![](",emissions.file,")")
-```
-
-```{r emissions_fig, eval = FALSE}
+```{r emissions_fig, fig.height = 7, fig.width = 2.5}
 emissions.mat <- read.delim(file.path(data.dir, paste0("emissions_", num.states, ".txt")), 
 row.names = 1)
-pdf("~/Desktop/emissions.pdf", width = 5, height = 2)
-pheatmap(t(emissions.mat), cluster_rows = FALSE, cluster_cols = FALSE)
-dev.off()
+emission.order <- match(ordered.marks, colnames(emissions.mat))
+#pdf("~/Desktop/emissions.pdf", width = 2.5, height = 7)
+pheatmap(emissions.mat[,emission.order], cluster_rows = FALSE, cluster_cols = FALSE)
+#dev.off()
 ```
 
 ## Relative position of chromatin state
@@ -637,6 +631,8 @@ across all bins.
 ```{r total_abundance, fig.width = 8, fig.height = 5}
 par(mar = c(3,3,2,3))
 barplot_with_num(values = round(max.abundance, 2), col = state.col, names = 1:num.states, text.shift = 0.03)
+#save for use in comparison figures
+saveRDS(max.abundance, file.path(results.dir, "State_Abundance.RDS"))
 ```
 
 ```{r abundance_fig, eval = FALSE}
@@ -913,38 +909,4 @@ for(state in 1:num.states){
     draw.rectangle(xmin, xmax, ymin, ymax, border.col = "gray80", lwd = 2)
 }
 dev.off()
-```
-
-## Example of one Gene
-
-A nice example shown below is Irf5 (Interferon regulatory factor 5).
-CAST and PWK have very low expression and both have state 3 at the TSS. 
-The other strains have much higher expression and all have state 7 at the 
-TSS. State 7 elsewhere in the gene is also correlated with expression. 
-
-```{r state_abundance, fig.width = 7, fig.height = 8, eval = FALSE}
-
-chrom.mats <- readRDS(get.files(path = results.dir,
-    want = c("Chromatin_States", "full_gene_1000.RData"), full.names = TRUE))
-
-#state ammount by strain
-state.totals <- matrix(NA, nrow = num.states, ncol = 9)
-rownames(state.totals) <- 1:num.states
-colnames(state.totals) <- colnames(chrom.mats[[1]])
-for(st in 1:num.states){
-    print(st)
-    state.counts <- t(sapply(chrom.mats, function(x) if(length(x) > 1){apply(x, 2, function(y) length(which(y == st)))}else{rep(NA, 9)}))
-    state.totals[st,] <- colSums(state.counts, na.rm = TRUE)
-}
-
-pheatmap(log10(state.totals))
-pheatmap(state.totals, scale = "row")
-
-for(st in 1:nrow(state.totals)){
-    quartz()
-    barplot(state.totals[st,], main = paste("Relative Abundance of State", st),
-    col = col.table[match(colnames(state.totals), col.table[,6]),3])
-}
-
-
 ```

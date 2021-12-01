@@ -31,7 +31,11 @@ library(here);library(gprofiler2);library(pheatmap);library(fgsea)
 ```
 
 ```{r set_param}
-num.states = 9
+library(here)
+param <- read.delim(here("Data", "support_files", "param.txt"), header = FALSE, 
+    stringsAsFactors = FALSE, row.names = 1)
+num.states = as.numeric(param["num_states",])
+
 is.interactive = FALSE
 #is.interactive = TRUE
 form.states <- paste0(num.states, "_states_C")

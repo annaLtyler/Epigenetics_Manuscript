@@ -1,0 +1,78 @@
+---
+title: "State Transitions"
+author: Anna L Tyler
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  html_document:
+    code_folding: hide
+    collapsed: no
+    toc: yes
+    toc_float: yes
+---
+
+## Introduction
+
+The purpose of this workflow is to look how states transition
+from one to another along the gene body. It adds another element
+to the state abundance picture
+  
+```{r load_libraries, message = FALSE, warning = FALSE, error = FALSE}
+library(here);library(gprofiler2);library(pheatmap);library(fgsea)
+```
+
+```{r set_param}
+num.states = 9
+is.interactive = FALSE
+#is.interactive = TRUE
+form.states <- paste0(num.states, "_states_C")
+data.dir <- here("Data", "ChromHMM", form.states)
+results.dir <- here("Results", "ChromHMM", form.states)
+```
+
+```{r load_code}
+all.code.dir <- list.files(here("Code"), full.names = TRUE)
+for(i in 1:length(all.code.dir)){
+	all.fun <- list.files(all.code.dir[i], full.names = TRUE)
+	for(j in 1:length(all.fun)){source(all.fun[j])}
+}
+```
+
+## Load data
+
+```{r load_data}
+chrom.mats <- readRDS(file.path(results.dir, "Chromatin.States.Gene.Coords.RDS"))
+```
+
+```{r state_transition_fun}
+state_transitions <- function(chrom.mat, num.states){
+    possible.transitions <- apply(which(matrix(0, nrow = num.states, ncol = num.states) == 0, arr.ind = TRUE), 
+        1, function(x) paste(x, collapse = "_"))
+
+    transition.mats <- vector(mode = "list", length = ncol(chrom.mat))
+    names(transition.mats) <- colnames(chrom.mat)
+    for(i in 1:ncol(chrom.mat)){
+        consec.states <- apply(consec_pairs(chrom.mat[,i]), 1, function(x) paste(x, collapse = "_"))
+        transition.count <- sapply(possible.transitions, function(x) length(which(consec.states == x)))
+        transition.mat <- matrix(transition.count, ncol = num.states, nrow = num.states)
+        rownames(transition.mat) <- colnames(transition.mat) <- 1:num.states
+        transition.mats[[i]] <- transition.mat/sum(transition.mat)
+    }
+    return(transition.mats)
+}
+
+state.transition.file <- file.path(results.dir, "state_transitions.RDS")
+if(!file.exists(state.transition.file)){
+    all.transitions <- lapply_pb(chrom.mats, function(x) if(length(x) > 1){state_transitions(x, num.states)}else{NA})
+    saveRDS(all.transitions, state.transition.file)
+}else{
+    all.transitions <- readRDS(state.transition.file)
+}
+
+possible.transitions <- apply(which(matrix(0, nrow = num.states, ncol = num.states) == 0, arr.ind = TRUE), 
+    1, function(x) paste(x, collapse = "_"))
+
+sum.by.gene <- t(sapply(all.transitions, function(x) if(length(x) > 1){as.vector(Reduce("+", x))}else{rep(NA, num.states^2)}))
+sum.total <- matrix(colMeans(sum.by.gene, na.rm = TRUE), nrow = num.states, ncol = num.states)
+rownames(sum.total) <- colnames(sum.total) <- 1:num.states
+pheatmap(sqrt(sum.total/max(sum.total)), display_numbers = TRUE, cluster_rows = FALSE, cluster_cols = FALSE)
+```
