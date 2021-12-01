@@ -158,7 +158,7 @@ if(file.exists(chrom.coef.file)){
 
 ```{r run_remaining}
 if(start.at < length(common.transcripts)){ #if we haven't scanned all the transcripts yet
-  sink(here("progress.txt"))
+  sink(file.path(results.dir, "progress.txt"))
   #for each remaining transcript
   #for(i in 201:300){
   for(i in start.at:length(common.transcripts)){
@@ -317,6 +317,7 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
   saveRDS(geno.lod, geno.lod.file)
   saveRDS(geno.coef, geno.coef.file)
   saveRDS(geno.r2, geno.r2.file)
+  saveRDS(chrom.effect, chrom.effect.file)
 }
 
 sink(NULL)
@@ -334,10 +335,3 @@ individually because there isn't enough memory anywhere to calculate them
 all at once. We also have more data here than n the inbreds so we should 
 be able to get a pretty good estimate of the effects using one gene
 at a time...
-
-```{r bulk_fit}
-#adjust all expression for covariates
-adj.expr <- adjust(expr, covar)
-
-
-```
