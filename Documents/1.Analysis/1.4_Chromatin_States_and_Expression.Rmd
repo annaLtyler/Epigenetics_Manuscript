@@ -67,6 +67,8 @@ delete.previous = as.logical(args[1]) #whether to delete and regenerate files
                     #from previous a run.
 is.interactive = FALSE
 #is.interactive = TRUE
+
+if(is.na(delete.previous)){delete.previous = FALSE}
 ```
 
 ```{r set_param}
@@ -77,6 +79,7 @@ num.states = as.numeric(param["num_states",])
 ordered.marks <- strsplit(param["ordered_marks",], ",")[[1]]
 ```
 
+This document has figures pertaining to the `r num.states`-state model.
 
 ```{r source_code}
 all.code.dir <- list.files(here("Code"), full.names = TRUE)
@@ -108,7 +111,7 @@ selected.mark <- NULL #set to null to use all marks
 Set up additional parameters for looking at states around gene bodies.
 These are changeable, but will not change after the 
 
-```{r set_param}
+```{r set_boundaries}
 start.feature = "start_position" #feature of gene to start from. start_position means TSS, and end_position means TES
 end.feature = "end_position" #feature of gene to end at. start_position means TSS, and end_position means TES
 upstream.buffer = 1000 #number of bp upstream to go from start.feature
@@ -386,10 +389,7 @@ for(state in 1:num.states){
 }
 
 ymin <- -0.6;ymax = 0.6
-#state.col <- darken(colors.from.values(1:num.states, use.pheatmap.colors = TRUE), factor = 1.1)
-#state.col <- unique(c(brewer.pal(9, "Set1"), brewer.pal(8, "Set2")))
-#state.col = c('#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#fabebe', '#008080', '#e6beff', '#9a6324', '#800000', '#808000', '#ffd8b1', '#000075', '#808080', '#000000')
-state.col <- read.table(here("Data", "support_files", "state_colors.txt"), comment.char = "!")
+state.col <- read.table(here("Data", "support_files", "state_colors.txt"), comment.char = "!")[,1]
 #barplot(1:length(state.col), col = state.col)
 conf.lwr <- min(all.state.conf[,"slope.lwr"])
 conf.upr <- max(all.state.conf[,"slope.upr"])
@@ -415,33 +415,11 @@ text(x = 1:num.states, y = rep((ymin*1.1), num.states), labels = 1:num.states)
 par(xpd = FALSE)
 mtext(side = 2, "Effect", line = 2.5)
 mtext(side = 3, "Within-Strain State Effects with 95% Confidence Intervals", line = 2.5)
+
+saveRDS(all.state.conf, file.path(results.dir, "State.Effects.Within.Strain.RDS"))
 ```
 
-```{r within_effect_fig, eval = FALSE}
-y.coord = num.states:1
-pdf("~/Desktop/within_strain_effects.pdf", width = 6, height = 6)
-plot.new()
-plot.window(ylim = c(1, num.states), xlim = c(ymin, ymax))
-#add grid lines
-abline(h = 1:num.states, v = seq(-0.6, 0.6, 0.2), col = "gray80")
-for(state in 1:num.states){
-    line.col <- state.col[state]
-    #points(y = y.coord[state], x = all.state.conf[state,"slope.fit"], pch = 16, 
-    #    col = line.col, cex = 1.5)
-    segments(y0 = y.coord[state]-0.2, y1 = y.coord[state]+0.2, 
-        x0 = all.state.conf[state,"slope.lwr"], col = line.col, lwd = 4) #lower confidence interval
-    segments(y0 = y.coord[state]-0.2, y1 = y.coord[state]+0.2, 
-        x0 = all.state.conf[state,"slope.upr"],
-        col = line.col, lwd = 4) #upper confidence interval
-    segments(y0 = y.coord[state], x0 = all.state.conf[state,"slope.lwr"], 
-        x1 = all.state.conf[state,"slope.upr"], col = line.col, lwd = 4) #vertical bar
-}
-abline(v = 0)
-#axis(1, at = round(seq(ymin, ymax, 0.2), 1))
-dev.off()
-```
-
-## Chromatin state and inbred expression
+## Effect of Chromatin State on Expression Across Strains
 We also wanted to see if differential expression across strains 
 could be explained, at least in part, by chromatin state. 
 
@@ -453,18 +431,22 @@ The figure below shows the 95\% confidence intervals around the
 effect size of each state.
 
 ```{r states_and_expression}
-expr.mat <- t(sapply(strain.mean.expr, function(x) if(length(x) > 1){scale(x)}else{rep(NA, 9)}))
-colnames(expr.mat) <- names(strain.mean.expr[[1]])
+expr.mat <- t(sapply(scaled.mean.expr, function(x) if(length(x) > 1){x[,1]}else{rep(NA, 9)}))
 full.state.prop.cor <- matrix(NA, nrow = num.states, ncol = 5)
 colnames(full.state.prop.cor) <- c("r", "p.value", "slope.fit", "slope.lwr", "slope.upr")
 for(state in 1:num.states){
     strain.state.prop <- t(sapply(chrom.state.props, 
     function(x) if(length(x) > 1){x[state,chrom.order]}else{rep(NA, 9)}))
-    full.state.prop.cor[state,] <- plot.with.model(rankZ(as.vector(strain.state.prop)), 
+    scaled.state.prop <- t(apply(strain.state.prop, 1, scale))
+    #identical(rownames(strain.state.prop), rownames(expr.mat))
+    full.state.prop.cor[state,] <- plot.with.model(rankZ(as.vector(scaled.state.prop)), 
         rankZ(as.vector(expr.mat)), confidence = 0.95, plot.results = FALSE)
 }
 
-ymin <- -0.05; ymax = 0.06
+ylim <- get_plot_bounds(min(full.state.prop.cor[,"slope.lwr"]), 
+    max(full.state.prop.cor[,"slope.lwr"]), scale.factor = 100,
+    return.even = TRUE, center = TRUE)
+ymin <- ylim[1]; ymax = ylim[2]
 plot.new()
 plot.window(xlim = c(1,num.states), ylim = c(ymin, ymax))
 for(state in 1:nrow(full.state.prop.cor)){
@@ -494,36 +476,10 @@ text(x = 1:num.states, y = rep((ymin*1.1), num.states), labels = 1:num.states)
 par(xpd = FALSE)
 mtext(side = 2, "Effect", line = 2.5)
 mtext(side = 3, "Across-Strain State Effects with 95% Confidence Intervals", line = 2.5)
+
+saveRDS(full.state.prop.cor, file.path(results.dir, "State.Effects.Across.Strain.RDS"))
 ```
 
-```{r effect_fig, eval = FALSE}
-#quartz(width = 7, height = 5)
-plot.new()
-plot.window(ylim = c(1,num.states), xlim = c(ymin, ymax))
-for(state in 1:nrow(full.state.prop.cor)){
-
-    line.col <- state.col[state]
-
-    points(y = state, x = full.state.prop.cor[state,"slope.fit"],
-    col = line.col, cex = 1.5, pch = 16)
-
-    segments(y0 = state, x0 = full.state.prop.cor[state,"slope.lwr"],
-    x1 = full.state.prop.cor[state, "slope.upr"], lwd = 4, 
-    col = line.col) #full range
-
-    segments(y0 = state-0.2, y1 = state + 0.2, 
-    x0 = full.state.prop.cor[state,"slope.upr"], lwd = 4, 
-    col = line.col) #upper bound
-
-    segments(y0 = state-0.2, y1 = state + 0.2, 
-    x0 = full.state.prop.cor[state,"slope.lwr"], lwd = 4, 
-    col = line.col) #lower bound
-
-    }
-abline(v = 0)
-axis(1, at = round(seq(-0.6, 0.6, 0.02), 2))
-
-```
 
 ## State Annotations
 
@@ -635,36 +591,6 @@ barplot_with_num(values = round(max.abundance, 2), col = state.col, names = 1:nu
 saveRDS(max.abundance, file.path(results.dir, "State_Abundance.RDS"))
 ```
 
-```{r abundance_fig, eval = FALSE}
-pdf(here("Documents", "3.Manuscript", "Figures", "chromatin_state_abundance.pdf"), width = 3, height = 10)
-par(mfrow = c(num.states, 1), mar = c(0.5,3,0.5,2))
-for(s in 1:length(state.position)){
-    state.abundance <- state.position[[s]]$state.avg
-    state.pos <- state.position[[s]]$position
-    
-    #trim
-    idx <- intersect(which(state.pos >= -0.5), which(state.pos <= 1.5))
-    state.abundance <- state.abundance[idx]
-    state.pos <- state.pos[idx]
-
-    max.abundance <- max(state.abundance, na.rm = TRUE)
-    min.abundance <- min(state.abundance, na.rm = TRUE)
-    abundance.range <- max.abundance - min.abundance
-
-    ymin <- (min.abundance-(abundance.range*0.08))
-    ymax <- (max.abundance + (abundance.range*0.08))
-
-    plot(state.pos, state.abundance, type = "l", ylim = c(ymin, ymax), 
-        col = state.col[s], xlim = c(-0.5, 1.5), lwd = 4, axes = FALSE)
-    
-    draw.rectangle(-0.57, 1.57, ymin, ymax, border.col = "gray80", lwd = 2)
-    #axis(2)
-    abline(v = c(0,1), col = "darkgray", lty = 2, lwd = 3)
-    mtext(side = 2, paste("State", s), cex = 1.5, line = 0.5)
-}
-dev.off()
-```
-
 ```{r states_together, fig.width = 8.5, fig.height = 7}
 layout(matrix(c(1,2), ncol = 2), widths = c(1, 0.3))
 plot.new()
@@ -687,21 +613,6 @@ legend = paste("State", 1:num.states))
 par(xpd = TRUE)
 #dev.off()
 ```
-
-```{r together_fig, eval = FALSE}
-pdf(here("Documents", "3.Manuscript", "Figures", "chromatin_states_together.pdf"), width = 7, height = 5)
-plot.new()
-plot.window(xlim = c(-0.5, 1.5), ylim = c(0,0.8))
-if(num.states == 9){state.order = c(4,5,6,1,7,2,8,3,9)}else{state.order = 1:num.states}
-for(s in state.order){ #ordered for ease of visualization
-    plot.state.by.position(state.position[[s]], error.type = "se", 
-    plot.label = "", col = state.col[s], add = TRUE, lwd = 4,
-    idx = 2:length(state.position[[s]][[1]]), x.axis = FALSE)
-}
-axis(2, cex.axis = 2)
-dev.off()
-```
-
 
 ## Does relative position change the effect of chromatin state on expression?
 
@@ -812,7 +723,9 @@ if(!file.exists(across.strain.window.state.file)){
     across.strain.window.results <- readRDS(across.strain.window.state.file)
     within.strain.window.results  <- readRDS(within.strain.window.state.file)
 }
+```
 
+```{r plot_window_across_strain}
 #plot the across-strain effects
 window.mids <- sapply(gene.windows, max)
 if(is.interactive){quartz(width = 9, height = 9)}
@@ -834,28 +747,6 @@ for(state in 1:num.states){
 }
 ```
 
-```{r across_strain_fig, eval = FALSE}
-pdf(here("Documents", "3.Manuscript", "Figures", "chromatin_effects_across_strains.pdf"), 
-width = 3, height = 10)
-par(mfrow = c(num.states, 1), mar = c(0.5,3,0.5,2))
-xmin = -0.2;xmax = 1.2;ymin = -0.065; ymax = 0.07
-window.mids <- sapply(gene.windows, max)
-for(state in 1:num.states){
-    state.effects <- sapply(across.strain.window.results, function(x) x[state,])
-    min.effect <- min(state.effects["slope.lwr",])
-    max.effect <- max(state.effects["slope.upr",])
-    plot.new()
-    plot.window(xlim = c(xmin, xmax), ylim = c(ymin, ymax))
-    points(window.mids, state.effects["slope.fit",], col = state.col[state], type = "l")
-    plot.poly.xy(window.mids, state.effects["slope.lwr",],
-    window.mids, state.effects["slope.upr",], col = state.col[state])
-    segments(xmin, 0, xmax, col = "gray40", lwd = 2)
-    mtext(side = 2, paste("State", state), cex = 1.5)
-    abline(v = c(0,1), lty = 2, col = "darkgray", lwd = 2)
-    draw.rectangle(xmin, xmax, ymin, ymax, border.col = "gray80", lwd = 2)
-}
-dev.off()
-```
 
 ### Correlation by position within-strain {.tabset .tabset-fade .tabset-pills}
 
@@ -884,29 +775,4 @@ for(state in 1:num.states){
     abline(v = c(0,1), lty = 2, col = "darkgray")
 }
 
-```
-
-
-```{r within_strain_fig, eval = FALSE}
-pdf(here("Documents", "3.Manuscript", "Figures", "chromatin_effects_within_strain.pdf"), 
-width = 3, height = 10)
-xmin = -0.2;xmax = 1.2;ymin = -0.65; ymax = 0.65
-par(mfrow = c(num.states, 1), mar = c(0.5,3,0.5,2))
-#plot the across-strain effects
-window.mids <- sapply(gene.windows, max)
-for(state in 1:num.states){
-    state.effects <- sapply(within.strain.window.results, function(x) x[state,])
-    min.effect <- min(state.effects["slope.lwr",which(is.finite(state.effects["slope.lwr",]))])
-    max.effect <- max(state.effects["slope.upr",which(is.finite(state.effects["slope.upr",]))])
-    plot.new()
-    plot.window(xlim = c(xmin, xmax), ylim = c(ymin, ymax))
-    points(window.mids, state.effects["slope.fit",], col = state.col[state], type = "l")
-    plot.poly.xy(window.mids, state.effects["slope.lwr",],
-    window.mids, state.effects["slope.upr",], col = state.col[state])
-    segments(xmin, 0, xmax, col = "gray40", lwd = 2)
-    mtext(side = 2, paste("State", state), cex = 1.5)
-    abline(v = c(0,1), lty = 2, col = "darkgray", lwd = 2)
-    draw.rectangle(xmin, xmax, ymin, ymax, border.col = "gray80", lwd = 2)
-}
-dev.off()
 ```

@@ -42,7 +42,7 @@ each state for all runs of ChromHMM
 
 
 ```{r collect_results}
-state.num <- list.files(here("Results", "ChromHMM"), full.names = TRUE)
+state.num <- get.files(here("Results", "ChromHMM"), want = "states", full.names = TRUE)
 state.names <- basename(state.num)
 state.as.num <- as.numeric(sapply(strsplit(state.names, "_"), function(x) x[1]))
 state_order <- order(state.as.num)
@@ -98,7 +98,7 @@ for(i in 1:length(ordered.states)){
 ```
 
 Plot the fit for each state in each model with the mean 95% confidence intervals across 
-all straints. The fits are very similar across the strains, so we average the 
+all strains. The fits are very similar across the strains, so we average the 
 fits across strains.
 
 ```{r parse_fit, results = "asis", fig.width = 7, fig.height = 5}
@@ -179,8 +179,8 @@ for(i in 1:length(ordered.states)){
     for(state in states){
         all.gene.state <- t(sapply(all.prop[[i]], function(x) if(length(x) > 1){x[state,strain.order]}else{rep(NA, 9)}))
         scaled.gene.state <- t(apply(all.gene.state, 1, scale))
-        state.fits[state,] <- plot.with.model(rankZ(as.vector(scaled.gene.state)), rankZ(as.vector(scaled.expr.mat)), 
-        confidence = 0.95, plot.results = FALSE)
+        state.fits[state,] <- plot.with.model(rankZ(as.vector(scaled.gene.state)), 
+            rankZ(as.vector(scaled.expr.mat)), confidence = 0.95, plot.results = FALSE)
     }
     model.across[[i]] <- state.fits
 }

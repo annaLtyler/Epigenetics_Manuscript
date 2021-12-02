@@ -200,3 +200,14 @@ imageWithTextColorbar(effect.grid, use.pheatmap.colors = TRUE, cex = 1.5, axis.l
 #plot(as.vector(abundance.grid), as.vector(effect.grid))
 #abline(h = 0)
 ```
+
+Write out a table of annotations to use in plotting.
+```{r write_annotations}
+annotations <- c("heterochromatin", "active enhancer", "intragenic enhancer", 
+    "active enhancer", "unknown", "active promoter", "unknown", "active enhancer",
+    "repressor", "unknown", "unknown", "unknown", "bivalent promoter", "unknown", "poised enhancer",
+    "unknown")
+annotation.table <- cbind(binary_states, annotations)
+write.table(annotation.table, here("Data", "support_files", "annotation.table.txt"),
+    sep = "\t", quote = FALSE, row.names = FALSE)
+```

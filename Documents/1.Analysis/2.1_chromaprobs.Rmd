@@ -189,8 +189,9 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
    
     #calculate proportion of each state
     prop.state <- lapply(1:num.states, function(x) rowMeans(chrom.geno[[1]][,x,]))
-    prop.effect <- sapply(1:num.states, function(x) if(var(prop.state[[x]]) > 0){plot.with.model(prop.state[[x]], 
+    prop.effect <- sapply(1:num.states, function(x) if(var(signif(prop.state[[x]], 4)) > 0){plot.with.model(prop.state[[x]], 
     expr[,expr.locale], confidence = 0.95, plot.results = FALSE)}else{rep(NA, 5)})
+
     chrom.effect[[i]] <- prop.effect
     #barplot(t(prop.effect["slope.fit",]), names = 1:num.states)
     #par(mfrow = c(3,3))

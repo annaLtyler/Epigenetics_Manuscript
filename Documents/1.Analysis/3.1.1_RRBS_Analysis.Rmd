@@ -18,11 +18,19 @@ This workflow uses the output from the RRBS workflow.
 ```{r load_libraries, echo = FALSE}
 is.interactive = FALSE
 #is.interactive = TRUE
+delete.previous = TRUE
+
 seq.by = 0.1 #the density at which to bin methylation across relative gene positions from -2 to 2
 oldPar <- par(no.readonly = TRUE)
 needed.packages <- c("here", "pheatmap", "hexbin", "RColorBrewer", "gprofiler2",
 "knitr")
 for(i in 1:length(needed.packages)){library(needed.packages[i], character.only = TRUE)}
+```
+
+```{r delete_old_results}
+if(delete.previous){
+
+}
 ```
 
 ```{r source_code}
@@ -96,7 +104,7 @@ get_methyl_sites <- function(chr, sites, methyl_list){
 } 
 
 methylome_file <- here("Results", "RRBS", "Methylome.RDS")
-if(!file.exists(methylome_file)){
+if(!file.exists(methylome_file) || delete.previous){
   c.locale <- which(id.table[,"treat.label"] == "C")
   all_sites <- vector(mode = "list", length = 19)
   for(chr in 1:19){
@@ -155,7 +163,7 @@ methylome.strain.col <- col.table[match(methylome_strains, col.table[,6]), 3]
 
 #get all strain-specific CpG sites
 strain.specific.file <- here("Results", "RRBS", "strain_specific_sites.RDS")
-if(!file.exists(strain.specific.file)){
+if(!file.exists(strain.specific.file) || delete.previous){
   strain.spec.sites <- lapply(all_sites, function(x) methyl_by_strain(x, strain.idx.list))
   saveRDS(strain.spec.sites, strain.specific.file)
 }else{
@@ -196,7 +204,7 @@ sites_to_bed <- function(strain.methyl.mat, chr, bp.buffer = 1){
 
 save_bed <- function(bed.table, filename){
   gz_file <- paste0(filename, ".gz")
-  if(!file.exists(gz_file)){
+  if(!file.exists(gz_file) || delete.previous){
     write.table(bed.table, filename, quote = FALSE, sep = "\t", 
     col.names = FALSE, row.names = FALSE)
     system(paste("gzip", filename))
@@ -212,7 +220,7 @@ background.files <- list.files(here("Data", "mm10"), full.names = TRUE)
 
 strain.spec.enrich.file <- here("Data", "RRBS", "strain-specific_site_enrichment.RDS")
 
-if(!file.exists(strain.spec.enrich.file)){
+if(!file.exists(strain.spec.enrich.file) || delete.previous){
   strain_spec_CpG_enrich <- rep(NA, length(background.files))
   names(strain_spec_CpG_enrich) <- gsub(".bed.gz", "", basename(background.files))
 
@@ -251,7 +259,7 @@ site.distribution <- Reduce("rbind", strain.spec.sites)
 site.distribution[which(!is.na(site.distribution))] <- 1
 site.distribution[which(is.na(site.distribution))] <- 0
 site.decomp.file <- here("Results", "RRBS", "CpG_site_distribution_decomposition.RDS")
-if(!file.exists(site.decomp.file)){
+if(!file.exists(site.decomp.file) || delete.previous){
   site.dist.decomp <- plot.decomp(t(site.distribution), plot.results = FALSE)
   saveRDS(site.dist.decomp, site.decomp.file)
 }else{
@@ -348,7 +356,7 @@ sites were relatively enriched in enhancers.
 ```{r state_enrich, fig.width = 4, fig.height = 7}
 CpG.enrich.mat.file <- here("Results", "RRBS", "CpG.types.enrichment.RDS")
 
-if(!file.exists(CpG.enrich.mat.file)){
+if(!file.exists(CpG.enrich.mat.file) || delete.previous){
   test.files <- list.files(path = here("Data", "RRBS"), pattern = ".bed.gz", full.names = TRUE)
   CpG.enrich.mat <- matrix(NA, nrow = length(test.files), ncol = length(background.files))
   rownames(CpG.enrich.mat) <- gsub(".bed.gz", "", basename(test.files))
@@ -387,7 +395,7 @@ names(strain.gene.methylation) <- strains
 for(st in 1:length(strains)){
   gene.methyl.file <- here("Data", "RRBS", paste0("All.Gene.Methylation.", strains[st], ".RDS"))
 
-  if(!file.exists(gene.methyl.file)){
+  if(!file.exists(gene.methyl.file) || delete.previous){
     cat("Getting methylation for", strains[st], "\n")
     gene.methyl <- lapply_pb(u_genes[1:test.num], 
     function(x) get.methyl.by.gene(x, gene.info.table = transcript.info, 
@@ -418,7 +426,7 @@ avg_methyl <- function(methyl_mat, min_rep = 2){
 }
 
 strain.avg.file <- here("Results", "RRBS", "Strain.Avg.RRBS.RDS")
-if(!file.exists(strain.avg.file)){
+if(!file.exists(strain.avg.file) || delete.previous){
   strain_avg_rrbs <- vector(mode = "list", length = length(strains))
   names(strain_avg_rrbs) <- strains
   for(st in 1:length(strains)){
@@ -443,7 +451,7 @@ Combine methylation data for each gene across strains.
 
 ```{r comb_strains}
 methyl.mat.file <- here("Results", "RRBS", "Aligned.Methyl.Mats.RDS")
-if(!file.exists(methyl.mat.file)){
+if(!file.exists(methyl.mat.file) || delete.previous){
   methyl.mats <- vector(mode = "list", length = length(strain_avg_rrbs[[1]]))
   names(methyl.mats) <- names(strain_avg_rrbs[[1]])
   for(i in 1:length(methyl.mats)){
@@ -472,7 +480,7 @@ Normalize gene coordinates to run from 0 to 1 from the TSS to the TES.
 ```{r norm_rrbs}
 norm.rrbs.file <- here("Results", "RRBS", "RRBS.Normalized.Position.RDS")
 
-if(!file.exists(norm.rrbs.file)){
+if(!file.exists(norm.rrbs.file) || delete.previous){
   #first center all the coordinates
     norm_rrbs_coord <- lapply_pb(1:length(methyl.mats), 
         function(x) if(length(methyl.mats[[x]]) > 1){center.on.feature(gene.name = names(methyl.mats)[x], 
@@ -516,7 +524,7 @@ for(i in 1:length(methyl_dist)){
 }
 if(is.interactive){quartz()}
 methyl_dens_file <- here("Results", "RRBS", "Methylation_Density.RDS")
-if(!file.exists(methyl_dens_file)){
+if(!file.exists(methyl_dens_file) || delete.previous){
   avg_methyl_dist <- plot.centered.vals(val.list = methyl_dist, 
     seq.by = seq.by, min.representation = 10, ylim = c(0, 3500),
     plot.label = paste("Average Distance to Next Methylation Position"),
@@ -556,7 +564,7 @@ and sites within the gene body have very high methylation.
 
 ```{r within_strain, results = "asis"}
 strain.methyl.file <- here("Results", "RRBS", "Strain.RRBS.Percent.RDS")
-if(!file.exists(strain.methyl.file)){
+if(!file.exists(strain.methyl.file) || delete.previous){
   strain_rrbs_mat <- vector(mode = "list", length = length(strains))
   names(strain_rrbs_mat) <- strains
   for(st in 1:length(strains)){
@@ -652,7 +660,7 @@ type_by_norm_pos <- function(norm.rrbs.mat, n.states = 1, min.strains = 3){
 }
 
 non.varying.rrbs.file <- here("Results", "RRBS", "site.type.nonvarying.RDS")
-if(!file.exists(non.varying.rrbs.file)){
+if(!file.exists(non.varying.rrbs.file) || delete.previous){
   non_varying_rrbs <- lapply_pb(norm_rrbs, 
     function(x) if(length(x) > 1){type_by_norm_pos(x, 1, 3)}else{NA})
   saveRDS(non_varying_rrbs, non.varying.rrbs.file)
@@ -662,7 +670,7 @@ if(!file.exists(non.varying.rrbs.file)){
 
 
 bimodal.rrbs.file <- here("Results", "RRBS", "site.type.bimodal.RDS")
-if(!file.exists(bimodal.rrbs.file)){
+if(!file.exists(bimodal.rrbs.file) || delete.previous){
   bimodal_rrbs <- lapply_pb(norm_rrbs, 
     function(x) if(length(x) > 1){type_by_norm_pos(x, 2, 3)}else{NA})
   saveRDS(bimodal_rrbs, bimodal.rrbs.file)
@@ -671,7 +679,7 @@ if(!file.exists(bimodal.rrbs.file)){
 }
 
 trimodal.rrbs.file <- here("Results", "RRBS", "site.type.trimodal.RDS")
-if(!file.exists(trimodal.rrbs.file)){
+if(!file.exists(trimodal.rrbs.file) || delete.previous){
   trimodal_rrbs <- lapply_pb(norm_rrbs, 
     function(x) if(length(x) > 1){type_by_norm_pos(x, 3, 3)}else{NA})
   saveRDS(trimodal_rrbs, trimodal.rrbs.file)
@@ -831,7 +839,7 @@ across strains.
 
 rrbs.by.gene.file <- here("Results", "RRBS", "RRBS.by.Gene.RDS")
 
-if(!file.exists(rrbs.by.gene.file)){
+if(!file.exists(rrbs.by.gene.file) || delete.previous){
   gene.by.strain <- lapply_pb(common.genes, function(y) sapply(strain_rrbs_mat, function(x) x[which(rownames(x) == y),]))
   names(gene.by.strain) <- common.genes
   saveRDS(gene.by.strain, rrbs.by.gene.file)
@@ -841,7 +849,7 @@ if(!file.exists(rrbs.by.gene.file)){
 
 
 gene.expr.cor.file <- here("Results", "RRBS", "RRBS.Expr.Cor.Across.Strains.RDS")
-if(!file.exists(gene.expr.cor.file)){
+if(!file.exists(gene.expr.cor.file) || delete.previous){
   expr.gene.names <- transcript.info[match(names(strain.expr), 
       transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
   common.genes <- Reduce("intersect", lapply(strain_rrbs_mat, rownames))
@@ -917,7 +925,7 @@ presence/absence and gene expression across strains.
 ```{r presence_absence}
 pres.expr.cor.file <- here("Results", "RRBS", "RRBS.presence.Expr.Cor.Across.Strains.RDS")
 
-if(!file.exists(pres.expr.cor.file)){
+if(!file.exists(pres.expr.cor.file) || delete.previous){
   expr.gene.names <- transcript.info[match(names(strain.expr), 
       transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
   common.genes <- Reduce("intersect", lapply(strain_rrbs_mat, rownames))

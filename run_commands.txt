@@ -1,7 +1,9 @@
 
+#for 1.4_Chromatin_States_and_Expression.Rmd the state number is stored in support_file/param.txt
 
-numStates=16
-R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '1.4_Chromatin_States_and_Expression.Rmd'))" --args $numStates "FALSE"
+R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '1.4_Chromatin_States_and_Expression.Rmd'))" --args "FALSE"
+
+num_states=16
 mv Documents/1.Analysis/1.4_Chromatin_States_and_Expression.html Documents/1.Analysis/1.4_Chromatin_States_and_Expression-$numStates-states.html
 
 
@@ -16,6 +18,8 @@ R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '2.1_chromaprobs.R
 R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '2.2_chromaprobs_analysis.Rmd'))"
 
 R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '2.3_TSS_enhancer_states.Rmd'))"
+
+R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '3.1_RRBS_expression.Rmd'))"
 
 R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '4.0_Impute_SNPs.Rmd'))"
 
