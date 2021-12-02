@@ -648,6 +648,7 @@ common.genes <- intersect(names(cent.mats), names(scaled.mean.expr))
 #generate sliding windows each containing five normalized positions, 
 #and overlapping by one position.
 gene.windows <- sliding.window.el(seq(-0.15, 1.15, 0.015), 5, 2, plot.results = FALSE)
+saveRDS(gene.windows, here("Data", "support_files", "gene_windows.RDS"))
 #length(gene.windows)
 #sapply(gene.windows, mean)
 #abline(v = c(0, 1))
@@ -725,7 +726,7 @@ if(!file.exists(across.strain.window.state.file)){
 }
 ```
 
-```{r plot_window_across_strain}
+```{r plot_window_across_strain, fig.height = 9, fig.width = 9}
 #plot the across-strain effects
 window.mids <- sapply(gene.windows, max)
 if(is.interactive){quartz(width = 9, height = 9)}

@@ -145,7 +145,7 @@ xlab = "R2 Genetic eQTL", ylab = "R2 Chromatin eQTL",
 main = "Comparison of Chromatin and Genetic R2")
 abline(0,1)
 
-large.r2.diff <- get.percentile(r2.diff, 95)
+large.r2.diff <- get.percentile(r2.diff[which(!is.na(r2.diff[,1])),1], 95)
 hist(r2.diff[,1], breaks = 100, main = "R2 Difference Distribution", 
 xlab = "R2 Difference")
 abline(v = large.r2.diff)
@@ -160,10 +160,8 @@ r2diff.order <- apply(r2.diff, 2, function(x) order(x, decreasing = TRUE))
 big.diff <- apply(r2.diff, 2, function(x) rownames(r2.diff)[which(x > large.r2.diff)])
 ```
 
-This set of `r length(big.diff[[1]])` genes is highly enriched for
-RNA and non-coding RNA processing. 
 
-```{r mismatch_enrich, fig.height = 10, fig.width = 7}
+```{r mismatch_enrich, fig.height = 10, fig.width = 7, error = FALSE, warning = FALSE, message = FALSE}
 diff.enrich <- gost(big.diff[[1]], organism = "mmusculus")
 if(is.interactive){quartz(width = 8, height = 4)}
 par(mfrow = c(1,2))
@@ -181,7 +179,7 @@ the gene after the TSS.
 
 ```{r norm_lod}
 
-centered.lod.file <- here("Results", "chQTL", "centered.LOD.RDS")
+centered.lod.file <- file.path(results.dir, "centered.LOD.RDS")
 if(!file.exists(centered.lod.file)){
   test.idx <- 1:length(ch.lod)
   #test.idx <- big.diff.locale
@@ -321,33 +319,9 @@ for(s in 1:num.states){
   abline(h = 0, v = c(0,1))
   cat("\n\n")
 }
+saveRDS(all.state.coef, file.path(results.dir, "Chromatin_State_DO_Coef.RDS"))
 ```
 
-
-```{r state_effect_fig}
-
-pdf(here("Documents", "3.Manuscript", "Figures", "DO_chromatin_effects.pdf"), width = 3, height = 10)
-xmin = -0.2;xmax = 1.2;ymin = -0.25; ymax = 0.25
-par(mfrow = c(num.states, 1), mar = c(0.5,3,0.5,2))
-#plot the across-strain effects
-for(state in 1:num.states){
-    state.effects <- all.state.coef[[state]]
-    coords <- as.numeric(colnames(state.effects))
-
-    mean.effects <- apply(state.effects, 2, function(x) mean(x, na.rm = TRUE))
-    effect.sd <- apply(state.effects, 2, function(x) sd(x, na.rm = TRUE)/sqrt(length(which(!is.na(x)))))
-    
-    plot.new()
-    plot.window(xlim = c(xmin, xmax), ylim = c(ymin, ymax))
-    plot.poly.xy(coords, mean.effects+effect.sd, coords, mean.effects-effect.sd, 
-    col = state.col[state])
-    segments(xmin, 0, xmax, col = "gray40", lwd = 2)
-    mtext(side = 2, paste("State", state), cex = 1.5)
-    abline(v = c(0,1), lty = 2, col = "darkgray", lwd = 2)
-    draw.rectangle(xmin, xmax, ymin, ymax, border.col = "gray80", lwd = 2)
-}
-dev.off()
-```
 
 ## Effect size of chromatin does not depend on position {.tabset .tabset-fade .tabset-pills}
 
