@@ -22,7 +22,13 @@ This workflow compares the eQTL mapped to chromatin and to haplotypes.
 library(here);library(qtl2);library(gprofiler2);library(stringr)
 library(msigdbr);library(fgsea);library(pheatmap);library(biomaRt)
 library(knitr)
-num.states = 9
+
+param <- read.delim(here("Data", "support_files", "param.txt"), header = FALSE, 
+    stringsAsFactors = FALSE, row.names = 1)
+num.states = as.numeric(param["num_states",])
+
+data.dir <- here("Data", "ChromHMM", paste0(num.states, "_states_C"))
+results.dir <- here("Results", "ChromHMM", paste0(num.states, "_states_C"))
 ```
 
 
@@ -42,16 +48,16 @@ chrom.colors <- colors.from.values(1:num.states, use.pheatmap.colors = TRUE)
 ## Load data
 
 ```{r load_data}
-ch.coef <- readRDS(here("Results", "chQTL", "chQTL.coef.RDS"))
-ch.lod <- readRDS(here("Results", "chQTL", "chQTL.lod.RDS"))
-ch.r2 <- readRDS(here("Results", "chQTL", "chQTL.R2.RDS"))
-e.coef <- readRDS(here("Results", "eQTL", "eQTL.coef.RDS"))
-e.lod <- readRDS(here("Results", "eQTL", "eQTL.lod.RDS"))
-e.r2 <- readRDS(here("Results", "eQTL", "eQTL.R2.RDS"))
+ch.coef <- readRDS(file.path(results.dir, "chQTL.coef.RDS"))
+ch.lod <- readRDS(file.path(results.dir, "chQTL.lod.RDS"))
+ch.r2 <- readRDS(file.path(results.dir, "chQTL.R2.RDS"))
+e.coef <- readRDS(file.path(results.dir, "eQTL.coef.RDS"))
+e.lod <- readRDS(file.path(results.dir, "eQTL.lod.RDS"))
+e.r2 <- readRDS(file.path(results.dir, "eQTL.R2.RDS"))
 
-chrom.mats <- readRDS(here("Results", "ChromHMM", paste0(num.states, "_states_C"), 
-paste0("Chromatin_States_", num.states, "_full_gene_1000.RData")))
-chrom.states <- readRDS(here("Data", "chQTL", "Expanded_Chromatin.RDS"))
+chrom.mats <- readRDS(file.path(results.dir, 
+  paste0("Chromatin_States_", num.states, "_full_gene_1000.RData")))
+chrom.states <- readRDS(file.path(results.dir, "Expanded_Chromatin.RDS"))
 
 do.data <- load(here("Data", "DOQTL", "Svenson_DO850_for_eQTL_viewer_v9.RData"))
 expr <- dataset.mrna$data$rz
@@ -86,7 +92,6 @@ if(!file.exists(transcript.info.file)){
 }
 gene.names <- transcript.info[match(rownames(e.lod), transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
 ```
-
 
 
 ## Matching genetic eQTLs with chromatin eQTLs

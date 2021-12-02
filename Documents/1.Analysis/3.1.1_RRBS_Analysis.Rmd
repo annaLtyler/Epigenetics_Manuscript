@@ -18,19 +18,14 @@ This workflow uses the output from the RRBS workflow.
 ```{r load_libraries, echo = FALSE}
 is.interactive = FALSE
 #is.interactive = TRUE
-delete.previous = TRUE
+#delete.previous = TRUE
+delete.previous = FALSE
 
 seq.by = 0.1 #the density at which to bin methylation across relative gene positions from -2 to 2
 oldPar <- par(no.readonly = TRUE)
 needed.packages <- c("here", "pheatmap", "hexbin", "RColorBrewer", "gprofiler2",
 "knitr")
 for(i in 1:length(needed.packages)){library(needed.packages[i], character.only = TRUE)}
-```
-
-```{r delete_old_results}
-if(delete.previous){
-
-}
 ```
 
 ```{r source_code}
@@ -204,7 +199,7 @@ sites_to_bed <- function(strain.methyl.mat, chr, bp.buffer = 1){
 
 save_bed <- function(bed.table, filename){
   gz_file <- paste0(filename, ".gz")
-  if(!file.exists(gz_file) || delete.previous){
+  if(!file.exists(gz_file)){
     write.table(bed.table, filename, quote = FALSE, sep = "\t", 
     col.names = FALSE, row.names = FALSE)
     system(paste("gzip", filename))
@@ -220,7 +215,7 @@ background.files <- list.files(here("Data", "mm10"), full.names = TRUE)
 
 strain.spec.enrich.file <- here("Data", "RRBS", "strain-specific_site_enrichment.RDS")
 
-if(!file.exists(strain.spec.enrich.file) || delete.previous){
+if(!file.exists(strain.spec.enrich.file)){
   strain_spec_CpG_enrich <- rep(NA, length(background.files))
   names(strain_spec_CpG_enrich) <- gsub(".bed.gz", "", basename(background.files))
 
@@ -513,6 +508,8 @@ to the next position. Around 80% of DNA methylation positions were
 a single base pair from the next position in all strains.
 
 ```{r methyl_dens}
+delete.previous = TRUE
+
 methyl_consec <- lapply(methyl.mats, function(x) if(length(x) > 1){consec.pairs(as.numeric(colnames(x)))}else{NA})
 methyl_dist <- lapply(methyl_consec, function(x) if(length(x) >  1){x[,2] - x[,1]}else{NA})
 for(i in 1:length(methyl_dist)){
@@ -538,21 +535,7 @@ if(!file.exists(methyl_dens_file) || delete.previous){
     ylab = "Distance to Next Methylation Position")
       abline(v = c(0,1))
 }
-```
-
-```{r density_fig}
-pdf(here("Documents", "3.Manuscript", "Figures", "methylation_density.pdf"), 
-  width = 7, height = 5)
-  med_dist <- apply(avg_methyl_dist, 2, function(x) median(x, na.rm = TRUE))
-  dist_se <- apply(avg_methyl_dist, 2, function(x) sd(x, na.rm = TRUE)/sqrt(length(which(!is.na(x)))))
-  plot.new()
-  plot.window(xlim = c(-0.5, 1.5), ylim = c(0, 550))
-  plot.poly.xy(as.numeric(names(med_dist)), med_dist+dist_se, as.numeric(names(med_dist)), 
-    med_dist-dist_se, col = "lightblue", border = NA)
-  points(as.numeric(names(med_dist)), med_dist, type = "l", col = "gray40", lwd = 4)
-abline(v = c(0, 1), lty = 2, col = "darkgray", lwd = 4)
-axis(2, cex.axis = 2) 
-dev.off()
+delete.previous = FALSE
 ```
 
 ## DNA methylation percentage {.tabset .tabset-fade .tabset-pills}
@@ -563,6 +546,8 @@ methylation. Sites at the TSS have very low percentage methylation,
 and sites within the gene body have very high methylation.
 
 ```{r within_strain, results = "asis"}
+delete.previous = TRUE
+
 strain.methyl.file <- here("Results", "RRBS", "Strain.RRBS.Percent.RDS")
 if(!file.exists(strain.methyl.file) || delete.previous){
   strain_rrbs_mat <- vector(mode = "list", length = length(strains))
@@ -580,6 +565,7 @@ if(!file.exists(strain.methyl.file) || delete.previous){
 }else{
   strain_rrbs_mat <- readRDS(strain.methyl.file)
 }
+delete.previous = FALSE
 ```
 
 
@@ -616,30 +602,6 @@ max.downstream = 1.5)
 abline(v = c(0,1), lty = 2, col = "gray", lwd = 2)
 ```
 
-```{r methyl_med_fig}
-pdf(here("Documents", "3.Manuscript", "Figures", "methylation_percent.pdf"), 
-  width = 7, height = 5)
-percent_se <- apply(all.strain.mat, 2, function(x) sd(x, na.rm = TRUE)/sqrt(length(which(!is.na(x)))))
-plot.new()
-plot.window(xlim = c(-0.5, 1.5), ylim = c(0, 100))
-methyl.med <- apply(all.strain.mat, 2, function(x) median(x, na.rm = TRUE))
-plot.poly.xy(as.numeric(names(methyl.med)), methyl.med+percent_se, 
-  as.numeric(names(methyl.med)), methyl.med-percent_se, col = "lightblue", border = NA)
-points(as.numeric(names(methyl.med)), methyl.med, type = "l", col = "gray40", lwd = 4)
-abline(v = c(0,1), lty = 2, col = "darkgray", lwd = 4)
-axis(2, cex.axis = 2)
-dev.off()
-```
-
-
-```{r percent_fig}
-pdf(here("Documents", "3.Manuscript", "Figures", "methylation_percentage.pdf"), 
-  width = 5, height = 4)
-  plot.centered.mat(all_rrbs_med, ylim = c(0, 100), 
-  ylab = "Median Percent DNA Methylation", min.upstream = -1, max.downstream = 2)
-  abline(v = c(0,1), lwd = 2, lty = 2, col = "darkgray")
-dev.off()
-```
 
 ## Non-varying, Bimodal, and Trimodal by gene
 
@@ -695,6 +657,7 @@ The majority of sites (60\%) are non-varying everywhere. This increases
 to about 80% at the TSS. The dashed horizongal line markd 50\%.
 
 ```{r plot_non_var_freq, message = FALSE}
+delete.previous = TRUE
 
 non_varying_mat <- plot.centered.vals(non_varying_rrbs, seq.by = seq.by, ylim = c(0,1), 
   return.means = FALSE, plot.label = "Non-Varying")
@@ -707,12 +670,16 @@ non_var_genes <- which(sapply(tss_non_var, function(x) length(x) > 0 && x == 1))
 non_var_enrich <- gost(names(non_var_genes), organism = "mmusculus")
 par(mfrow = c(1,2))
 plot.enrichment.wordcloud(non_var_enrich)
+
+delete.previous = FALSE
 ```
 
 Around 35\% of sites are bimodal. Around 20\% of TSS sites are bimodal.
 These genes are enriched for response to stimuli.
 
 ```{r plot_bimodal}
+delete.previous = TRUE
+
 par(oldPar)
 bimodal_mat <- plot.centered.vals(bimodal_rrbs, seq.by = seq.by, ylim = c(0,0.6), 
   return.means = FALSE, plot.label = "Bimodal")
@@ -725,12 +692,16 @@ bimodal_genes <- which(sapply(tss_bimodal, function(x) length(x) > 0 && x == 1))
 bimodal_enrich <- gost(names(bimodal_genes), organism = "mmusculus")
 par(mfrow = c(1,2))
 plot.enrichment.wordcloud(bimodal_enrich)
+
+delete.previous = FALSE
 ```
 
 Very few sites, roughly 4\% are trimodal in any given position. 
 Just under 3\% are trimodal at the TSS. These genes are not enriched for anything.
 
 ```{r plot_trimodal}
+delete.previous = TRUE
+
 par(oldPar)
 trimodal_mat <- plot.centered.vals(trimodal_rrbs, seq.by = seq.by, ylim = c(0,0.08), 
   return.means = FALSE, plot.label = "Trimodal")
@@ -743,6 +714,8 @@ trimodal_genes <- which(sapply(tss_trimodal, function(x) length(x) > 0 && x == 1
 trimodal_enrich <- gost(names(trimodal_genes), organism = "mmusculus")
 par(mfrow = c(1,2))
 plot.enrichment.wordcloud(trimodal_enrich)
+
+delete.previous = FALSE
 ```
 
 
@@ -800,28 +773,6 @@ abline(h = 0, col = "gray40", lty = 2)
 #pheatmap(rrbs.expr.cor, cluster_cols = FALSE, cluster_rows = FALSE)
 ```
 
-```{r within_strain_methyl_fig}
-upstream.limit <- -0.5
-downstream.limit <- 1.5
-min.fit = -0.01
-max.fit = 0.01
-
-idx <- intersect(which(rel.pos >= upstream.limit), which(rel.pos <= downstream.limit))
-
-pdf(here("Documents", "3.Manuscript", "Figures", "DNA_methylation_within_strain.pdf"), 
-  height = 5, width = 6)
-plot.new()
-plot.window(xlim = c(upstream.limit, downstream.limit), ylim = c(min.fit, max.fit)) 
-plot.poly.xy(rel.pos[idx], all.lwr[idx], rel.pos[idx], all.upr[idx], col = "gray80", 
-  border = "gray80")
-points(rel.pos[idx], all.fit[idx], type = "l", col = "gray40", lwd = 2)
-abline(v = c(0,1), lwd = 4, col = "gray60", lty = 2)
-abline(h = 0, col = "gray40", lty = 1, lwd = 4)
-#mtext(side = 2, "Effect", cex = 2, line = 0.5)
-draw.rectangle(upstream.limit, downstream.limit, min.fit, max.fit, 
-  border.col = "gray80", lwd = 2)
-dev.off()
-```
 
 ## Across-strain variation in DNA methylation
 
@@ -884,31 +835,6 @@ mtext("Effect Size", side = 2, line = 2.5)
 mtext("Effect of DNA methylation on Gene Expression Across Strains", side = 3)
 
 ```
-
-
-```{r across_strain_methyl_fig}
-upstream.limit <- -0.5
-downstream.limit <- 1.5
-min.fit = -0.01
-max.fit = 0.01
-
-idx <- intersect(which(rel.pos >= upstream.limit), which(rel.pos <= downstream.limit))
-
-pdf(here("Documents", "3.Manuscript", "Figures", "DNA_methylation_across_strains.pdf"), 
-  height = 5, width = 6)
-plot.new()
-plot.window(xlim = c(upstream.limit, downstream.limit), ylim = c(min.fit, max.fit)) 
-plot.poly.xy(rel.pos[idx], stat.mat[idx,"slope.lwr"], rel.pos[idx], stat.mat[idx,"slope.upr"],
-col = "gray80", border = "gray80")
-points(rel.pos[idx], stat.mat[idx,"slope.fit"], type = "l", col = "gray40", lwd = 2)
-abline(v = c(0,1), lwd = 4, col = "gray60", lty = 2)
-abline(h = 0, col = "gray40", lty = 1, lwd = 4)
-#mtext(side = 2, "Effect", cex = 2, line = 0.5)
-draw.rectangle(upstream.limit, downstream.limit, min.fit, max.fit, 
-  border.col = "gray80", lwd = 2)
-dev.off()
-```
-
 
 ## Gene expression by presence/absence
 

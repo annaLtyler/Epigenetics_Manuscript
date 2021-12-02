@@ -227,7 +227,7 @@ a single vector $y$ and concatenated all scaled state abundance
 into a single vector $x$. We applied rank Z normalization to 
 each vector and fit the following model:
 
-\begin{equation*}
+\begin{equation*}\label{eqn:linear}
 y=\beta_{0}+\beta_{1}x+\epsilon
 \end{equation*}
 
@@ -355,7 +355,7 @@ for each normalized position across the gene bodies.
 ### Position-based effects on gene expression
 For both chromatin state and DNA methylation we calculated position-based 
 effects on gene expression. We did this in the same manner as described
-above in equation \ref{eqn:model_fit} where $y$ was the rank Z normalized 
+above in equation \ref{eqn:linear} where $y$ was the rank Z normalized 
 gene expression, and $x$ was the rank Z normalized epigenetic feature across 
 all genes in the position-based bin. We calculated 95\% confidence intervals
 for all model fits.

@@ -19,7 +19,10 @@ R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '2.2_chromaprobs_a
 
 R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '2.3_TSS_enhancer_states.Rmd'))"
 
+
 R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '3.1_RRBS_expression.Rmd'))"
+
+R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '3.1.1_RRBS_Analysis.Rmd'))"
 
 R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '4.0_Impute_SNPs.Rmd'))"
 

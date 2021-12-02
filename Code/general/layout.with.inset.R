@@ -10,7 +10,9 @@ inset.y.min = 3, inset.y.max = 5){
     #find the matrix entries for the inset
     x.coord <- inset.x.min : inset.x.max
     #y.coord <- (nrow - inset.y.max + 1) : (nrow - inset.y.min + 1)
-    y.coord <- ((nrow - inset.y.max) - 1): ((nrow - inset.y.min) + 1)
+    y.coord <- ((nrow - inset.y.max) - 1):((nrow - inset.y.min) + 1)
+    good.vals <- which(y.coord > 0)
+    y.coord <- y.coord[good.vals]
     inset.coord <- cbind(rep(x.coord, length = length(y.coord)), rep(y.coord, each = length(x.coord)))
     for(i in 1:nrow(inset.coord)){
         layout.mat[inset.coord[i,2], inset.coord[i,1]] <- 2

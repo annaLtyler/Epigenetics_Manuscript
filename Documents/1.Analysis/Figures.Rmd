@@ -70,7 +70,7 @@ rna.seq <- readRDS(rna.seq.file)
 
 layout.mat <- matrix(c(1,2), nrow = 1)
 col.order <- match.order(substr(colnames(rna.seq), 1, 2), col.table[,1], col.table)
-pdf(here("Documents", "3.Manuscript", "Figures", "Fig_1_Decomposition.pdf"), width = 5, height = 5)
+pdf(here("Documents", "3.Manuscript", "Figures", "Fig1_Decomposition.pdf"), width = 5, height = 5)
 expr.decomp <- plot.decomp(t(rna.seq), cols = col.table[col.order,3], cex = 1.5)
 legend("bottomright", legend = col.table[,2], pch = 16, col = col.table[,3])
 dev.off()
@@ -276,22 +276,19 @@ avg.methyl.dist <- readRDS(methyl.dens.file)
 
 strain.methyl.file <- here("Results", "RRBS", "Strain.RRBS.Percent.RDS") #generated in 3.1.1_RRBS_Analysis.Rmd
 strain.methyl.mat <- readRDS(strain.methyl.file)
-
-methyl.effect.file <- here("Results", "RRBS", "RRBS.Expr.Cor.Across.Strains.RDS") #generated in 3.1.1_RRBS_Analysis.Rmd
-methyl.effect <- readRDS(methyl.effect.file)
 ```
 
 ```{r abundance_plot}
-chrom.layout <- 1:length(use.states)
-big.panel.len <- floor(length(use.states)/3)
-big.panel.idx <- (length(use.states)+1):(length(use.states)+3)
-other.layout <- rep(length(use.states)+1, length(use.states))
+chrom.layout <- 1:(length(use.states)+1)
+big.panel.len <- floor((length(use.states)+1)/3)
+big.panel.idx <- (length(use.states)+2):(length(use.states)+4)
+other.layout <- rep(length(use.states)+2, (length(use.states)+1))
 
 start.y <- 1
 
 for(i in 1:3){
     end.y <- start.y + big.panel.len - 1
-    panel.layout <- layout.with.inset(nrow = length(use.states), ncol = 1, 
+    panel.layout <- layout.with.inset(nrow = (length(use.states)+1), ncol = 1, 
     inset.x.min = 1, inset.x.max = 1, inset.y.min = start.y, inset.y.max = end.y)
     other.layout[which(panel.layout == 2)] <- rev(big.panel.idx)[i]
     start.y <- end.y + 1
@@ -300,11 +297,21 @@ layout.mat <- cbind(chrom.layout, other.layout)
 
 xmin = -0.5; xmax = 1.5
 
-#chromatin state abundance
-#quartz(height = 9, width = 6.5)
-layout(layout.mat, widths = c(0.5, 1))
-#layout.show(max(big.panel.idx))
+pdf(here("Documents", "3.Manuscript", "Figures", "Fig3_Abundance.pdf"), height = 9, width = 6.5)
+
+panel.height <- 1/(length(use.states)+1)
+layout(layout.mat, widths = c(0.5, 1), heights = c(panel.height/2, rep(panel.height, length(use.states))))
+
+# add TSS/TES labels for chromatin state plots
 par(mar = c(0.5,3,0.5,2))
+plot.new()
+plot.window(xlim = c(xmin, xmax), ylim = c(0,1))
+par(xpd = TRUE)
+text(x = 0, y = 0, labels = "TSS", font = 2, col = "gray40", cex = 1.5)
+text(x = 1, y = 0, labels = "TES", font = 2, col = "gray40", cex = 1.5)
+par(xpd = FALSE)
+
+#chromatin state abundance
 for(s in 1:length(state.abundance)){
     state.avg <- state.abundance[[s]]$state.avg
     state.pos <- state.abundance[[s]]$position
@@ -334,7 +341,7 @@ for(s in 1:length(state.abundance)){
 all.abund <- t(sapply(state.abundance, function(x) x$state.avg))[,idx]
 ymax <- ceiling(max(all.abund, na.rm = TRUE)*10)/10
 
-par(mar = c(4,4,2,2))
+par(mar = c(2,4,2,2))
 plot.new()
 plot.window(xlim = c(-0.5, 1.5), ylim = c(0,ymax))
 segments(x0 = c(0,1), x1 = c(0,1), y0 = c(0,0), y1 = c(ymax*0.95, ymax*0.95), 
@@ -349,6 +356,7 @@ text(x = 0, y = ymax, labels = "TSS", font = 2, col = "gray40", cex = 2)
 text(x = 1, y = ymax, labels = "TES", font = 2, col = "gray40", cex = 2)
 
 #DNA methylation density
+par(mar = c(2,4,1,2))
 dist.pos <- as.numeric(colnames(avg.methyl.dist))
 dist.avg <- apply(avg.methyl.dist, 2, function(x) median(x, na.rm = TRUE))
 dist.se <- apply(avg.methyl.dist, 2, function(x) sd(x, na.rm = TRUE)/sqrt(length(which(!is.na(x)))))
@@ -368,7 +376,7 @@ mtext("Distance (pb)", side = 2, line = 3, cex = 1.5)
 
 #DNA methylation percent
 perc.pos <- as.numeric(colnames(strain.methyl.mat[[1]]))
-methyl.mean.perc <- rowMeans(sapply(strain.methyl.mat, function(x) colMeans(x, na.rm = TRUE)))
+methyl.mean.perc <- rowMeans(sapply(strain.methyl.mat, function(x) apply(x, 2, function(y) median(y, na.rm = TRUE))))
 methyl.mean.se <- rowMeans(sapply(strain.methyl.mat, function(x) apply(x, 2, function(y) sd(y, na.rm = TRUE)/sqrt(length(which(!is.na(y)))))))
 
 ytop <- methyl.mean.perc + methyl.mean.se
@@ -377,42 +385,62 @@ plot.window(xlim = c(xmin, xmax), ylim = c(0, (max(ytop)*1.05)))
 plot.poly.xy(poly.top.x = perc.pos, poly.top.y = methyl.mean.perc+methyl.mean.se,
     poly.bottom.x = perc.pos, poly.bottom.y = methyl.mean.perc-methyl.mean.se, 
     col = "lightblue", new.plot = FALSE, border = NA)
-points(dist.pos, dist.avg, col = "gray40", type = "l", lwd = 4)
+points(perc.pos, methyl.mean.perc, col = "gray40", type = "l", lwd = 4)
 segments(x0 = c(0,1), x1 = c(0,1), y0 = c(0,0), y1 = c(max(ytop)*0.95, max(ytop)*0.95), 
     lty = 2, col = "gray80", lwd = 3)
-text(x = 0, y = max(ytop), labels = "TSS", font = 2, col = "gray40", cex = 2)
-text(x = 1, y = max(ytop), labels = "TES", font = 2, col = "gray40", cex = 2)
+text(x = 0, y = (max(ytop)*1.05), labels = "TSS", font = 2, col = "gray40", cex = 2)
+text(x = 1, y = (max(ytop)*1.05), labels = "TES", font = 2, col = "gray40", cex = 2)
 axis(2, cex.axis = 1.5)
-mtext("Distance (pb)", side = 2, line = 3, cex = 1.5)
-
-
-```
-
-```{r abundance_fig, eval = FALSE}
-max.abundance <- rep(NA, num.states)
-for(s in 1:length(state.position)){
-    if(s == num.states){x.axis = TRUE}else{x.axis = FALSE}
-    plot.state.by.position(state.position[[s]], error.type = "se", 
-    plot.label = paste("State", s), col = state.col[s], x.axis = x.axis,
-    xlim = c(-0.5, 1.5), ylim = NULL, idx = 2:length(state.position[[s]][[1]]), lwd = 4)
-    abline(h = 0, col = "gray")
-    axis(2)
-    max.abundance[s] <- max(state.position[[s]]$state.avg, na.rm = TRUE)
-}
-
-#DNA methylation percent
-all.strain.mat <- Reduce("rbind", strain_rrbs_mat)
-plot.centered.mat(all.strain.mat, ylim = c(0,100), 
-plot.label = "Percent Methylation Across the Gene Body", 
-show.var = "se", plot.fun = "median")
-abline(v = c(0,1), lty = 2, col = "gray", lwd = 2)
-
-
-pdf(here("Documents", "3.Manuscript", "Figures", "chromatin_state_abundance.pdf"), width = 3, height = 10)
-
+mtext("Percent Methylated", side = 2, line = 3, cex = 1.5)
 dev.off()
 ```
 
+## Figure 4 - Epigenetic Effects
+
+Effects of chromatin states on gene expression. Each column shows the effect
+of each chromatin state on gene expression in a different context. The first
+column shows the effect across genes in the inbred mice showing how chromatin
+states are used within a single organism to increase the expression of some genes
+and decrease the expression of other genes. The second column shows the effect
+of chromatin state on gene expression across strains, showing how variation in
+chromatin state across strains leads to variation in expression of individual
+genes across strains. The third column shows the effect of imputed chromatin 
+state on gene expression in a population of diversity outbred mice showing the
+effect of variation in chromatin state across genetically diverse individuals
+on local gene expression. Each column of panels is plotted on a single scale
+for the $y$-axis so the magnitude of the effects in a single column can be 
+compared directly to each other. Across a single row, the scale of the $y$-axis 
+varies to highlight the similarity of the shape of each curve in each different 
+setting. The final column shows the annotation of each state for comparison with
+its effects on gene expression. All $y$-axes is the $\beta$ coefficient from the 
+linear model shown in equation \ref{eqn:linear}. All $x$-axes show the relative 
+position along the gene body running from just upstream of the TSS to just downstream 
+of the TES. Vertical gray dashed lines mark the TSS and TES in all panels.
+
+```{r read_effect_data}
+across.strain.window.state.file <- file.path(results.dir, "State.Window.Effects.Across.Strains.RDS") #generated in 1.4_Chromatin_States_and_Expression.Rmd
+within.strain.window.state.file <- file.path(results.dir, "State.Window.Effects.Within.Strains.RDS") #generated in 1.4_Chromatin_States_and_Expression.Rmd
+across.strain.window.results <- readRDS(across.strain.window.state.file)
+within.strain.window.results  <- readRDS(within.strain.window.state.file)
+
+methyl.effect.file <- here("Results", "RRBS", "RRBS.Expr.Cor.Across.Strains.RDS") #generated in 3.1.1_RRBS_Analysis.Rmd
+methyl.effect <- readRDS(methyl.effect.file)
+```
+
+```{r panel_layout}
+label.row <- 0:4
+tss.row <- c(0,5,6,7,0)
+num.label.panels <- last.panel <- max(tss.row)
+panel.col <- vector(mode = "list", length = 4)
+for(i in 1:5){
+    next.panel <- last.panel + 1
+    one.col <- next.panel:((i*num.states)+num.label.panels)
+    panel.col[[i]] <- one.col
+    last.panel <- max(one.col)
+}
+
+layout.mat <- rbind(label.row, tss.row, Reduce("cbind", panel.col))
+```
 
 ```{r within_effect_fig, eval = FALSE}
 y.coord = num.states:1
@@ -539,5 +567,53 @@ for(state in 1:num.states){
     abline(v = c(0,1), lty = 2, col = "darkgray", lwd = 2)
     draw.rectangle(xmin, xmax, ymin, ymax, border.col = "gray80", lwd = 2)
 }
+dev.off()
+```
+
+
+```{r within_strain_methyl_fig}
+upstream.limit <- -0.5
+downstream.limit <- 1.5
+min.fit = -0.01
+max.fit = 0.01
+
+idx <- intersect(which(rel.pos >= upstream.limit), which(rel.pos <= downstream.limit))
+
+pdf(here("Documents", "3.Manuscript", "Figures", "DNA_methylation_within_strain.pdf"), 
+  height = 5, width = 6)
+plot.new()
+plot.window(xlim = c(upstream.limit, downstream.limit), ylim = c(min.fit, max.fit)) 
+plot.poly.xy(rel.pos[idx], all.lwr[idx], rel.pos[idx], all.upr[idx], col = "gray80", 
+  border = "gray80")
+points(rel.pos[idx], all.fit[idx], type = "l", col = "gray40", lwd = 2)
+abline(v = c(0,1), lwd = 4, col = "gray60", lty = 2)
+abline(h = 0, col = "gray40", lty = 1, lwd = 4)
+#mtext(side = 2, "Effect", cex = 2, line = 0.5)
+draw.rectangle(upstream.limit, downstream.limit, min.fit, max.fit, 
+  border.col = "gray80", lwd = 2)
+dev.off()
+```
+
+
+```{r across_strain_methyl_fig}
+upstream.limit <- -0.5
+downstream.limit <- 1.5
+min.fit = -0.01
+max.fit = 0.01
+
+idx <- intersect(which(rel.pos >= upstream.limit), which(rel.pos <= downstream.limit))
+
+pdf(here("Documents", "3.Manuscript", "Figures", "DNA_methylation_across_strains.pdf"), 
+  height = 5, width = 6)
+plot.new()
+plot.window(xlim = c(upstream.limit, downstream.limit), ylim = c(min.fit, max.fit)) 
+plot.poly.xy(rel.pos[idx], stat.mat[idx,"slope.lwr"], rel.pos[idx], stat.mat[idx,"slope.upr"],
+col = "gray80", border = "gray80")
+points(rel.pos[idx], stat.mat[idx,"slope.fit"], type = "l", col = "gray40", lwd = 2)
+abline(v = c(0,1), lwd = 4, col = "gray60", lty = 2)
+abline(h = 0, col = "gray40", lty = 1, lwd = 4)
+#mtext(side = 2, "Effect", cex = 2, line = 0.5)
+draw.rectangle(upstream.limit, downstream.limit, min.fit, max.fit, 
+  border.col = "gray80", lwd = 2)
 dev.off()
 ```
