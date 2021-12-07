@@ -1,30 +1,47 @@
 
+#============================================================================================================
 #for 1.4_Chromatin_States_and_Expression.Rmd the state number is stored in support_file/param.txt
+#============================================================================================================
 
 R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '1.4_Chromatin_States_and_Expression.Rmd'))" --args "FALSE"
 
-num_states=16
-mv Documents/1.Analysis/1.4_Chromatin_States_and_Expression.html Documents/1.Analysis/1.4_Chromatin_States_and_Expression-$numStates-states.html
 
-
+#============================================================================================================
+# these are run on sumner
+#============================================================================================================
 
 R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '2.0_chromaprobs_setup.Rmd'))" --args "9"
-
-
 
 R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '2.1_chromaprobs.Rmd'))"
 
 
+#============================================================================================================
+#download all results in a single Results/ChromHMM folder, set num.states in param.txt to the appropriate 
+#number and run the following:
+#============================================================================================================
+
 R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '2.2_chromaprobs_analysis.Rmd'))"
+
+R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '4.1_Overlay_Imputed_R2.Rmd'))"
+
+
+#============================================================================================================
+# rebuild figures, number of states for this is also set in param.txt
+#============================================================================================================
+R -e "rmarkdown::render(here::here('Documents', '1.Analysis', 'Figures.Rmd'))"
+
+
+#============================================================================================================
+#these are also interesting, but not required for building figures (yet)
+#============================================================================================================
 
 R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '2.3_TSS_enhancer_states.Rmd'))"
 
 
+#============================================================================================================
+# these analyses are required for figures, but do not change based on the model used for chromatin state
+#============================================================================================================
+R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '1.5_Compare_State_Abundance.Rmd'))" 
 R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '3.1_RRBS_expression.Rmd'))"
-
 R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '3.1.1_RRBS_Analysis.Rmd'))"
-
 R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '4.0_Impute_SNPs.Rmd'))"
-
-R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '4.1_Overlay_Imputed_R2.Rmd'))"
-

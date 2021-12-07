@@ -26,6 +26,10 @@ output: rticles::plos_article
 csl: plos.csl
 ---
 
+```{r num_states, echo = FALSE}
+num.states = 14 #set the final number of states here. This will be put in the text.
+```
+
 # Abstract
 It is well known that epigenetic modifications, such as histone modifications,
 and DNA methylation are a major mode of regulating gene transcription.
@@ -144,21 +148,28 @@ WI). Mice were maintained on this diet for 26 weeks (CITE).
 ## Genotyping
 
 ### Diversity outbred mice
-All DO mice were genotyped as described in Svenson et al. (2012) using the Mouse 
-Universal Genotyping Array (MUGA) (7854 markers), and the MegaMUGA (77,642 markers) 
-(GeneSeek, Lincoln, NE). All animal procedures were approved by the Animal Care 
-and Use Committee at The Jackson Laboratory (Animal Use Summary # 06006). 
+All DO mice were genotyped as described in Svenson et al.~(2012) using
+the Mouse Universal Genotyping Array (MUGA) (7854 markers), and the
+MegaMUGA (77,642 markers) (GeneSeek, Lincoln, NE). All animal procedures
+were approved by the Animal Care and Use Committee at The Jackson
+Laboratory (Animal Use Summary \# 06006).
+
+Founder haplotypes were inferred from SNPs using a Hidden Markov Model 
+as described in Gatti~\textit{et~al.}~2014. The MUGA and MegaMUGA arrays
+were merged to create a final set of evenly spaced 64,000 interpolated markers. 
+
 
 ## Measurement of gene expression
 
 ### Inbred Founders
 
 ### Diversity outbred mice
-At sacrifice, whole livers were collected and gene expression was measured using 
-RNA-Seq as described in (Chick, Munger et al. 2016, and Tyler et al. 2017). 
-The primary axes of variation in global gene expression grouped individuals 
-from inbred strains together (Supplemental Figure XXX), indicating high 
-replicability of gene expression measurements within each strain, and 
+At sacrifice, whole livers were collected and gene expression was
+measured using RNA-Seq as described in (Chick, Munger et al.~2016, and
+Tyler et al.~2017). Transcript sequences were aligned to strain-specific 
+genomes, and we used an expectation maximization algorithm (EMASE)
+to estimate read counts (\url{https://github.com/churchill-lab/emase}).
+
 
 ## Measurement of Chromatin Modifications
 
@@ -168,18 +179,19 @@ bisulfite sequencing.
 
 ## Data Processing
 
-## Normalization of RNA-Seq data
+## Filtering transcripts
 
-We remove transcripts with extremely low read counts, we 
-filtered to those with a mean read count of at least five 
-across all individuals. 
+We remove transcripts with extremely low read counts, by filtering
+out transcripts whose mean read count was less than five across 
+all individuals. 
 
-We then used the R package sva [sva] to perform a variance stabilizing 
-transformation (vst) on the RNA-Seq read counts from both inbred
-and outbred mice. In the inbred mice we used a blind transformation,
-while in the outbred mice, we included DO wave and sex in the model.
-For eQTL mapping, we performed rank Z normalization on the RNA-Seq read 
-counts across transcripts from the outbred mice.
+We then used the R package sva {[}sva{]} to perform a variance
+stabilizing transformation (vst) on the RNA-Seq read counts from both
+inbred and outbred mice. In the inbred mice we used a blind
+transformation, while in the outbred mice, we included DO wave and sex
+in the model. For eQTL mapping, we performed rank Z normalization on the
+RNA-Seq read counts across transcripts from the outbred mice.
+
 
 ## Chromatin modifications
 Annat's stuff to get fastq files to bam files
@@ -190,85 +202,40 @@ binarize bed files
 Annat's stuff to get bed files.
 
 
-## Analysis
+## Analysis of histone modifications
 
-## Identification and characterization of chromatin states
-We used ChromHMM [29120462] to identify chromatin states corresponding 
-to the presence and absence of the four chromatin modifications. We calculated
-states for all numbers of states between four and 16, which is the maximum
-number of states possible with four binary chromatin modifications ($2^n$). 
+### Identification of chromatin states
+We used ChromHMM [29120462] to identify *chromatin states*, which are
+unique combinations of the four chromatin modifications, for example, the
+presence of both H3K4me3 and H3K4me1, but the absence of the other two 
+modifications. We conducted all subsequent analyses at the level of the 
+chromatin state. 
 
-### Selecting the ChromHMM model
+To ensure we were analyzing the most biologically meaningful chromatin 
+states, we calculated chromatin states for all numbers of states between 
+four and 16, which is the maximum number of states possible with four binary 
+chromatin modifications ($2^n$). We then investigated a number of features 
+of each state in each model: presence/absence of histone modifications, 
+distribution patterns across the genome, and the effect of each state on 
+gene expression. We compared chromatin states from the different models
+based on these analyses and selected the `r num.states`-state model. Each 
+of these analyses, and the model comparison, are described below.
 
-ChromHMM clustered the genome into multiple binary chromatin states based
-on the presence and absence of the provided histone marks. 
-To find the most meaningful clustering, we looked at a number of different
-factors including chromatin state prevalence across expressed genes, the 
-effect of each state on gene expression, the stability of emission 
-probabilities across different models, and the localization of each state 
-across the gene body. These comparisons are shown in the Supplemental 
-Figures. 
+### Emission probabilities
 
-Overall the clustering was very stable across models with different numbers
-of states. 
+Emission probabilites are a primary output of ChromHMM (Figure XXXA). 
+They define the probability that each histone mark is present in each 
+detected state. Low probabilities suggest absence, or low levels of the mark, 
+and high probabilities suggest presence. To compare states to each other and
+to annotate states, we declared a histone mark to be present in a state if its 
+emission probability was 0.3 or higher. 
 
-Our goal in this study was to identify patterns of histone modifications
-that were most informative about variation in gene expression across
-the nine inbred strains. We thus tested a range of models derived from
-ChromHMM for their effect on gene expression across the strains. 
-We tested models ranging from four states to 16 states. For each state
-we fit a linear model to estimate the effect of each state on 
-gene expression across strains. 
+### Genome distribution of chromatin states
 
-We scaled expression of each transcript across strains. We similarly 
-scaled the abundance of each state in each gene with measured
-gene expression. We concatenated all scaled gene expression into 
-a single vector $y$ and concatenated all scaled state abundance
-into a single vector $x$. We applied rank Z normalization to 
-each vector and fit the following model:
-
-\begin{equation*}\label{eqn:linear}
-y=\beta_{0}+\beta_{1}x+\epsilon
-\end{equation*}
-
-The $beta_1$ coefficient is the estimate of the effect of the 
-chromatin state on gene expression. We estimated each effect with 
-a 95\% confidence interval. We also examined the abundance of each
-state as the proportion of genes containing each state. Using a 
-model with few states may combine two or more 
-
-The effect of chromatin state on gene expression was remarkably 
-stable across all models (Supp Fig XXX). We found that state seven in the nine-state model had the largest effect 
-on gene expression across strains of any state in any model. We also noted 
-that the effects were binned roughly into five bins: low, moderately low, 
-no effect, moderately high, and high effect (Supplemental Fig XXX). The 
-nine-state model was the simplest model with representatives in each of 
-these bins. This model therefore maximized prediction of gene expression 
-across strains while minimizing complexity and redundancy. We used the 
-nine-state model for all futher analyses.
-
-### Chromatin state annotation
-We used multiple layers of information to propose annotations for each of 
-the nine chromatin states identified by ChromHMM: 
-
-1. Histone mark combinations previously annotated in the literature
-2. Enrichment of each state near functional elements in the mouse genome
-3. Effect on gene expression within and across inbred strains
-
-#### Histone mark combinations
-
-We used the emissions probabilities derived from ChromHMM to identify
-which histone modifications were present in each chromatin state.
-We used a probability of 0.3 or greater to indicate presence of a 
-histone modification (Figure XXX). We used Google Scholar and PubMed
-to search for previous literature annotating combinations of histone
-marks in each state.
-
-#### Positional enrichments of chromatin states
-
-We used the ChromHMM function OverlapEnrichment to investigate whether
-each state was enriched in known functional elements in the mouse genome.
-We used functional annotations for the following features:
+We investigated genomic distributions of chromatin states in two ways.
+First, we used the ChromHMM function OverlapEnrichment to calculate enrichment
+of each state around known functional elements in the mouse genome.
+We analyzed the following features:
 
 * **Transcription start sites (TSS)** - Annotations of TSS in the mouse genome
 were provided by RefSeq [26553804] and included with the release of ChromHMM, 
@@ -288,24 +255,103 @@ browser on April 26, 2021.
 * **CpG Islands** - Annotations of CpG islands in the mouse genome were included 
 with the release of ChromHMM.
 
-#### Effect of chromatin state on gene expression
-We calculated the effect of each chromatin state on gene expression both
-within strain and across strains. We calculated the effect across strains
-as described above. We used a similar approach to calculate the effect of 
-each state on gene expression within each strain, but did not scale 
-either gene expression or state abundance across strains. 
+In addition to these enrichments around individual elements, we also calculated 
+chromatin state abundance across the full gene body of all transcribed genes using 
+genomic positions that were normalized to run from 0 at the transcription start site 
+(TSS) to 1 at the transcription end site (TES). Specifically, we first centered all 
+positions on the TSS by subtracting off the base pair position of the TSS. Centered 
+positions were then divided by the length of the gene in base pairs from the TSS to 
+the TES. We then binned the relative positions into 41 bins defined by the sequence 
+from -2 to 2 incremented by 0.1. If a bin encompassed multiple base pair positions 
+in the gene, we assigned the mean value of the feature of interest to the bin. To 
+avoid potential contamination from regulatory regions of nearby genes, we only 
+included genes that were at least 2kb from their nearest neighbor, for a final set 
+of 14048 genes.
 
-The effect of each chromatin state within a strain is informative about 
-which states promote high expression or low expression within the given
-cell type. These effects may be genetically coded, or responsive to the 
-environment.
+Using this normalized coordinate system, we aligned the patterns across all 
+genes to see relative abundance in five distinct regions: upstream of the TSS, the 
+TSS, intragenic, the TES, and downstream of the TES.
 
-The effect of each chromatin state across strains identifies where 
-variations in genotype across strains result in variations in chromatin
-state and thus where variations in chromatin state across strains affect
-strain variation in gene expression.
+### Chromatin state and gene expression
 
-## Creation of DNA Methylome
+We calculated the effect of each chromatin state on gene expression. 
+We did this both across genes and across strains. The first analysis 
+tells us which states are associated with high expression and low 
+expression within the hepatocytes, and the second analysis investigates 
+whether variation in chromatin state across strains contributes to 
+variation in gene expression across strains. 
+
+For each transcribed gene, we calculated the proportion of the gene body 
+($\pm$ 1000 kb) was assigned to each chromatin state. We then fit a linear
+model separately for each state to calculate the effect of state proportion 
+with gene expression:
+
+\begin{equation*}{\label{eqn:chromatin_effect}}
+y_{e} = \beta x_{s} + \epsilon
+\end{equation*}
+
+where $y_{e}$ is the rank Z normalized gene expression of the full transcriptome
+in a single inbred strain, and $x_{s}$ is the rank Z normalized proportion
+of each gene that was assigned to state $s$. We fit this model for each strain
+and each state to yield one $\beta$ coefficient with 95\% confidence interval 
+for the effect of each state on gene expression in each strain. The effects 
+were not different across strains, so we averaged the effects and confidence
+intervals across strains to yield one summary effect for each state.
+
+To calculate the effect of each chromatin state across strains, we first scaled
+transcript abundance across strains for each transcript. We also scaled the
+proportion of each chromatin state for each gene across strains. We then fit
+the same linear model, where $y_{e}$ was a rank Z normalized vector concatenating 
+all scaled expression levels across all strains, and $x_{s}$ was a rank Z normalized
+vector concatenating all scaled state proportions across all strains. We fit the 
+model for each state independently yielding a $\beta$ coefficient and 95\%
+confidence interval for each state. 
+
+These two calculations were both calculated the effect of the proportion of 
+each state across the full gene body ($\pm$ 1000 kb). We also performed the same
+calculations as above but in a position-based manner, such that we calculated
+an effect for each chromatin state on gene expression at multiple points along
+the gene body. The result was a much more nuanced view of the effect of each 
+state.
+
+### Selecting the most biologically meaningful model
+
+To find the most meaningful clustering of histone modifications clustered
+by ChromHMM, we performed the entire analysis pipeline on each clustering,
+from four states up to 16 states. For each model, we looked at the emission 
+probabilities, the abundance of each state, state correlation with gene 
+expression, and the localization of each state along the genome (all described 
+below). Across all models, the states that were represented were remarkably 
+stable (Supplemental Figure XXX). As we increased the number of states detected
+by the model, new states appeared, but previously detected states were not 
+disrupted. This stability was apparent in all state measures: emissions 
+probability patterns, overall abundance, effect on expresssion, and 
+localization along the genome. The one exception to this stability was that 
+highly abundant state (present in 65\% of transcribed genes) detected in the 
+four-state model was split into two distinct states in the 10-state model.
+These states were also highly abundant (appearing in 40\% and 41\% of 
+transcribed genes), but had distinct genome distributions and emissions 
+probabilities (Supplemental Figure XXX). These two states remained stable 
+with increasing numbers of clusters through to the 16-state model. States
+arising after the 10-state model were of lower abundance, appearing in 2\% or 
+less of transcripts. 
+
+With the 10-state model, all of the higher abundance states were firmly
+established. However, as we moved toward higher numbers of clusters, the 
+resolution on the lower-abundance states improved in terms of the emission
+probability profiles, and strength of the correlation with gene expression. 
+For example, the 14-state model better resolved a state that had appeared
+in the 10-state model but was not strongly correlated with gene expression.
+In the 14-state model, the emission patterns were more binary, and the 
+strength of the correlation with expression was increased. Beyond 14 clusters,
+the new states were extremely rare (1\% of transcripts or less), and were
+not strongly correlated with gene expression. We thus selected the 
+`r num.states`-state model for further analysis. 
+
+## Analysis of DNA methylation
+
+
+### Creation of DNA Methylome
 We combined the DNA methylation data into a single methylome cataloging
 the methylated sites across all strains. For each site, we averaged the
 methylation percent across the three replicates in each strain. The final
@@ -315,50 +361,6 @@ the average percent methylation at each site to the nearest 0, 50, or 100.
 We used the enrichment function in ChromHMM described above to identify enrichment 
 of CpG sites around functional elements in the mouse genome.
 
-## Alignment of features to relative gene position
-For both chromatin state and DNA methylation, we investigated how variation
-in each epigenetic feature along the gene body affected gene expression. 
-To do this, we created relative genomic positions in which the gene 
-transcription start site (TSS) was anchored at 0 and the transcription 
-end site (TES) was anchored at 1. Positions upstream of the TSS were 
-negative and positions downstream of the TES were greater than 1. To center 
-base pair positions for each expressed gene we first centered all positions 
-on the TSS by subtracting off the base pair position of the TSS. Centered 
-positions were then divided by the length of the gene in base pairs from the 
-TSS to the TES. We then binned the relative positions into 41 bins defined by 
-the sequence from -2 to 2 incremented by 0.1. If a bin encompassed multiple 
-base pair positions in the gene, we assigned the mean value of the feature of 
-interest to the bin.
-
-To avoid potential contamination from regulatory regions of nearby 
-genes, we only included genes that were at least 2kb from their nearest 
-neighbor, for a final set of 14048 genes.
-
-We used this relative position system to calculate position-based
-abundance and effect on gene expression for both chromatin state
-and DNA methylation as described below.
-
-### Position-based abundance of epigenetic modifications
-Using the normalized base pair positions calculated above, we 
-assessed the relative abundance of each chromatin state across 
-all gene bodies. For each relative position, we calculated the 
-proportion of genes that contained each chromatin state. 
-
-We also calculated the median percent DNA methylation across all 
-gene bodies at each normalized position. To calculate density of 
-CpG sites, we first used absolute base pair positions to calculate
-the distance from each CpG site to the next. We then normalized 
-the positions relative to gene TSS and TES as described above.
-The final result was a distance to the next CpG site in base pairs
-for each normalized position across the gene bodies.
-
-### Position-based effects on gene expression
-For both chromatin state and DNA methylation we calculated position-based 
-effects on gene expression. We did this in the same manner as described
-above in equation \ref{eqn:linear} where $y$ was the rank Z normalized 
-gene expression, and $x$ was the rank Z normalized epigenetic feature across 
-all genes in the position-based bin. We calculated 95\% confidence intervals
-for all model fits.
 
 ## Imputation of genomic features in Diversity Outbred mice
 To assess the extent to which chromatin state is responsible for local 
@@ -377,8 +379,8 @@ held DO individuals in rows and DO founder haplotypes in columns.
 For each transcript, we also generated a three-dimensional array representing 
 the genomic features derived from the DO founders. This array held DO founders
 in rows, feature state in columns, and genomic position in the third dimension. 
-The feature state for chromatin consisted of states one through nine, for SNPs 
-feature state consisted of the genotypes A,C,G, and T.
+The feature state for chromatin consisted of states one through `r num.states`, 
+for SNPs feature state consisted of the genotypes A,C,G, and T.
 
 We then multiplied the haplotype probabilities by each genomic feature array to 
 obtain the imputed genomic feature for each DO mouse. This final array held DO 
@@ -399,7 +401,8 @@ each position of imputed chromatin state, or SNPs in and around the gene body.
 
 ## Chromatin states corresponded to known functional elements
 
-We identified nine chromatin states corresponding to nine distinct 
+We identified `r num.states` chromatin states corresponding to `r num.states` 
+distinct 
 combinations of histone modifications (Figure XXXA). To annotate these
 states to functional elements, we combined previously known annotations
 with functional enrichments and relationship to gene expression. The

@@ -26,10 +26,11 @@ is.interactive = FALSE
 #is.interactive = TRUE
 ```
 
+The figures in this document refer to the `r num.states`-state model.
+
 ```{r load_libraries}
 library(here)
 ```
-
 
 ```{r source_code}
 all.code.dir <- list.files(here("Code"), full.names = TRUE)
@@ -89,7 +90,8 @@ max.chrom <- sapply(chrom.r2, function(x) if(length(x) > 1){max(x[,1], na.rm = T
 #r2.list <- list("Haplotype" = eqtl.r2[,1], "Chromatin_State" = max.chrom,
 #    "SNP" = max.snp, "DNA_Methylation" = max.methyl)
 
-r2.list <- list("Haplotype" = eqtl.r2[,1], "Chromatin_State" = max.chrom, "SNP" = max.snp)
+r2.list <- list("Haplotype" = eqtl.r2[,1], "Chromatin_State" = max.chrom, "SNP" = max.snp,
+    "DNA_methylation" = max.methyl)
 
 no.na <- lapply(r2.list, function(x) x[which(!is.na(x))])
 common.id <- Reduce("intersect", lapply(no.na, names))
@@ -113,13 +115,6 @@ stripchart(lapply(common.list, function(x) round(x, 2)), pch = 16,
 kable(round(sapply(r2.list, summary), 2))
 ```
 
-```{r r2_dist_fig}
-pdf(here("Documents", "3.Manuscript", "Figures", "Variance_Explained_Distribution.pdf"),
-width = 5, height = 5)
-boxplot(r2.list[1:3], names = c("Haplotype", "Chromatin State", "SNP"),
-cex.axis = 2)
-dev.off()
-```
 
 The following plot shows the comparison between the maximum SNP r2
 score, chromatin r2 score, haplotype r2 score and DNA methylation 
@@ -149,6 +144,8 @@ colnames(all.r2) <- c("Haplotype_R2", "Chromatin_R2", "SNP_R2", "Methylation_R2"
 all.r2[which(all.r2 == -Inf)] <- NA
 if(is.interactive){quartz()}
 pairs(all.r2)
+
+saveRDS(all.r2, here("Results", "SNPs", "All.Variance.Explained.RDS"))
 ```
 
 ```{r plot_comp, fig.width = 9, fig.height = 6}
@@ -172,6 +169,7 @@ for(i in 1:nrow(r2.pairs)){
     mtext(colnames(all.r2)[idx2], side = 2, line = 2.5)
     mtext(paste(colnames(all.r2)[idx1], "v.", colnames(all.r2)[idx2]), side = 3)
 }
+
 ```
 
 ```{r retrieval_fun}
@@ -419,14 +417,21 @@ for(i in 1:3){
 ```
 
 
-## Pkd2
+## Pkd2 and Irf5
 
-The following plot shows data for Pkd2, which is has a very clean haplotype 
-and chromatin story. Interestingly, there are no SNPs that we can attribute
+The following plot shows data for Pkd2 and Irf5, which both have very clean haplotype 
+and chromatin stories. Interestingly, there are no SNPs that we can attribute
 to the haplotype or chromatin effect.
 
-```{r test_genes, fig.width = 10, fig.height = 8}
+```{r pkd2, fig.width = 10, fig.height = 8}
 gene.name <- "Pkd2"
+gene.id <- gene.info[which(gene.info[,"external_gene_name"] == gene.name)[1],1]
+plot_together(gene.id)
+```
+
+
+```{r irf5, fig.width = 10, fig.height = 8}
+gene.name <- "Irf5"
 gene.id <- gene.info[which(gene.info[,"external_gene_name"] == gene.name)[1],1]
 plot_together(gene.id)
 ```

@@ -205,9 +205,9 @@ Write out a table of annotations to use in plotting.
 ```{r write_annotations}
 
 annotations <- c("heterochromatin", "active enhancer", "intragenic enhancer", 
-    "active enhancer", "unknown", "active promoter", "unknown", "active enhancer",
-    "repressor", "unknown", "unknown", "unknown", "bivalent promoter", "unknown", "poised enhancer",
-    "unknown")
+    "active enhancer", "unannotated", "active promoter", "unannotated", "active enhancer",
+    "repressor", "unannotated", "unannotated", "unannotated", "bivalent promoter", "unannotated", 
+    "poised enhancer", "unannotated")
 
 descriptions <- c("strong downregulation", "weak upregulation esp. near TES", 
 "weak upregulation", "upregulation", "weak downregulation near TSS", 

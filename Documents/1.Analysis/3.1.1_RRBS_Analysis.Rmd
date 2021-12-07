@@ -771,6 +771,10 @@ mtext(text = "Effect Size", side = 2, line = 2.5)
 abline(v = c(0,1), lwd = 2, col = "gray60", lty = 2)
 abline(h = 0, col = "gray40", lty = 2)
 #pheatmap(rrbs.expr.cor, cluster_cols = FALSE, cluster_rows = FALSE)
+
+within.strain.plotting.data <- cbind(rel.pos, all.lwr, all.fit, all.upr)
+colnames(within.strain.plotting.data) <- c("position", "lwr", "fit", "upr")
+saveRDS(within.strain.plotting.data, here("Results", "RRBS", "Plotting_Within_Strain.RDS"))
 ```
 
 
@@ -834,6 +838,10 @@ abline(h = 0, col = "gray40", lty = 2)
 mtext("Effect Size", side = 2, line = 2.5)
 mtext("Effect of DNA methylation on Gene Expression Across Strains", side = 3)
 
+across.strain.plotting.data <- cbind(rel.pos, stat.mat[,"slope.lwr"], 
+  stat.mat[,"slope.fit"], stat.mat[,"slope.upr"])
+colnames(across.strain.plotting.data) <- c("position", "lwr", "fit", "upr")
+saveRDS(across.strain.plotting.data, here("Results", "RRBS", "Plotting_Across_Strain.RDS"))
 ```
 
 ## Gene expression by presence/absence
