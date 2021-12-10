@@ -366,6 +366,7 @@ whereas the presence of states 1 and 2 is correlated
 with lowly expressed genes.
 
 ```{r within_strain}
+
 has.expr <- which(sapply(strain.mean.expr, length) == 9)
 has.chrom <- which(sapply(chrom.state.props, length) > 1)
 common.genes <- intersect(names(strain.mean.expr)[has.expr], names(chrom.state.props)[has.chrom])

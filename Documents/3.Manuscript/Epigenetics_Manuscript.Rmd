@@ -18,7 +18,7 @@ address:
   - code: The Jackson Laboratory
     address: 600 Main St. Bar Harbor, ME, 04609
 abstract: 
- - The abstract goes here
+ - This abstract is in the yaml header. The easier-to-edit one is below.
 author_summary:
  - The author summary goes here
 bibliography: epigenetics.bib
@@ -27,7 +27,39 @@ csl: plos.csl
 ---
 
 ```{r num_states, echo = FALSE}
-num.states = 14 #set the final number of states here. This will be put in the text.
+library(here)
+param <- read.delim(here("Data", "support_files", "param.txt"), header = FALSE, 
+    stringsAsFactors = FALSE, row.names = 1)
+num.states = as.numeric(param["num_states",])
+ordered.marks <- strsplit(param["ordered_marks",], ",")[[1]]
+
+annotations <- as.matrix(read.delim(here("Data", "support_files", "annotation.table.txt")))
+emissions <- as.matrix(read.delim(here("Data", "ChromHMM", paste0(num.states, "_states_C"), paste0("emissions_", num.states, ".txt")), row.names = 1))
+
+#make sure all marks are in the same order
+annotations[,1:4] <- annotations[,match(ordered.marks, colnames(annotations)[1:4])]
+emissions <- emissions[,match(ordered.marks, colnames(emissions))]
+```
+
+```{r id_state, echo = FALSE}
+id_state <- function(tag = NULL, state.emissions = NULL, annotation.table, emissions){
+  if(!is.null(tag)){
+    state.emissions <- annotation.table[which(annotation.table[,"annotations"] == tag),1:4]
+  }
+  thresholded.emissions <- emissions
+  thresholded.emissions[which(emissions < 0.3)] <- 0
+  thresholded.emissions[which(emissions >= 0.3)] <- 1
+  state.num <- Reduce("intersect", lapply(1:length(state.emissions), function(x) which(thresholded.emissions[,x] == state.emissions[x])))
+  return(state.num)
+}
+
+repressor.state <- id_state("repressor", annotation.table = annotations, emissions = emissions)
+active.promoter.state <- id_state("active promoter", annotation.table = annotations, emissions = emissions)
+heterochromatin.state <- id_state("heterochromatin", annotation.table = annotations, emissions = emissions)
+active.enhancer.state <- id_state(state.emissions = c(0,1,1,1), annotation.table = annotations, emissions = emissions)
+tes.state <- id_state(state.emissions = c(0,1,0,0), annotation.table = annotations, emissions = emissions)
+weak.intragenic.enhancer <- id_state(state.emissions = c(0,0,1,0), annotation.table = annotations, emissions = emissions)
+strong.intragenic.enhancer <- id_state(state.emissions = c(0,0,1,1), annotation.table = annotations, emissions = emissions)
 ```
 
 # Abstract
@@ -119,11 +151,6 @@ Each of these epigenetic-expression patterns represent functioning
 hepatocytes these are "good enough" solutions to make hepatocytes 
 [22859671]
 
-
-
-```{r read_results, echo = FALSE, message = FALSE, warning = FALSE, error = FALSE}
-library(here)
-```
 
 There is evidence that, especially early in life, 
 chromatin modifications are genetically determined [cite]. 
@@ -300,14 +327,14 @@ The effects were not different across strains, so we averaged the effects and
 confidence intervals across strains to yield one summary effect for each state.
 
 To calculate the effect of each chromatin state across strains, we first 
-mean-centered and standardized transcript abundance across strains for each 
-transcript. We also mean-centered and standardized the proportion of each 
-chromatin state for each gene across strains. We then fit the same linear 
-model, where $y_{e}$ was a rank Z normalized vector concatenating all 
-standardized expression levels across all strains, and $x_{s}$ was a rank 
-Z normalized vector concatenating all standardized state proportions across 
-all strains. We fit the model for each state independently yielding a $\beta$ 
-coefficient and 95\% confidence interval for each state. 
+standardized transcript abundance across strains for each transcript. We 
+also standardized the proportion of each chromatin state for each gene 
+across strains. We then fit the same linear model, where $y_{e}$ was a 
+rank Z normalized vector concatenating all standardized expression levels 
+across all strains, and $x_{s}$ was a rank Z normalized vector concatenating 
+all standardized state proportions across all strains. We fit the model for 
+each state independently yielding a $\beta$ coefficient and 95\% confidence 
+interval for each state. 
 
 In addition to calculating the effect of state proportion across the full gene
 body, we also performed the same calculations in a position-based manner. This
@@ -324,26 +351,26 @@ by the model, new states appeared, but previously detected states were not
 disrupted. This stability was apparent in all state measures: emissions 
 probability patterns, overall abundance, effect on expresssion, and 
 localization along the genome. The one exception to this stability was that 
-highly abundant state (present in 65\% of transcribed genes) detected in the 
-four-state model was split into two distinct states in the 10-state model.
-These states were also highly abundant (appearing in 40\% and 41\% of 
-transcribed genes), but had distinct genomic distributions and emissions 
+highly abundant state (present in 65\% of transcribed genes) detected first 
+in the four-state model was split into two distinct states in the 10-state 
+model. These states were also highly abundant (appearing in 40\% and 41\% 
+of transcribed genes), and had distinct genomic distributions and emissions 
 probabilities (Supplemental Figure XXX). These two states remained stable 
 with increasing numbers of clusters through to the 16-state model. States
-arising after the 10-state model were of lower abundance, appearing in 2\% or 
-less of transcripts. 
+arising after the 10-state model were of lower abundance, appearing in 2\% 
+or less of transcribed genes. 
 
-With the 10-state model, all of the higher abundance states were
-established. However, as we moved toward higher numbers of clusters, the 
-resolution on the lower-abundance states improved in terms of the emission
-probability profiles, and strength of the correlation with gene expression. 
-For example, the 14-state model better resolved a state that had appeared
-in the 10-state model but was not strongly correlated with gene expression.
-In the 14-state model, the emission patterns were closer to binary, and the 
-strength of the correlation with expression was increased. Beyond 14 clusters,
-the new states identified were extremely rare (1\% of transcripts or less), 
-and were not strongly correlated with gene expression. We thus selected the 
-`r num.states`-state model for further analysis. 
+All of the higher abundance states were established in the 10-state model. 
+However, as we moved toward higher numbers of clusters, the resolution on 
+the lower-abundance states improved in terms of the emission probability 
+profiles, and strength of the correlation with gene expression. For example, 
+the 14-state model better resolved a state that had appeared in the 10-state 
+model but was not strongly correlated with gene expression. In the 14-state 
+model, the emission patterns were closer to binary, and the strength of the 
+correlation with expression was increased. Beyond 14 clusters, the new states 
+identified were extremely rare (1\% of transcripts or less), and were not 
+strongly correlated with gene expression. We thus selected the `r num.states`-state 
+model and the model with the most biologically meaningful clusters. 
 
 ## Analysis of DNA methylation
 
@@ -408,196 +435,96 @@ gene body.
 
 # Results
 
-## Chromatin states corresponded to known functional elements
+Gene expression varies widely and reproducibly across inbred strains of 
+mice (Figure XXX). Genetic control of this variation can be measured in 
+a mapping population as expression quantitative trait loci (eQTL), which 
+associate genetic variation with this variation in gene expression. In 
+this study we investigated the extent to which variation in epigenetic 
+modifications, such as histone modifications and DNA methylation, are 
+associated with genetically controlled variation in gene expression. 
 
-We identified `r num.states` chromatin states corresponding to `r num.states` 
-distinct 
-combinations of histone modifications (Figure XXXA). To annotate these
-states to functional elements, we combined previously known annotations
-with functional enrichments and relationship to gene expression. The
-characterizations are summarized in Figure XXX. Figure XXXA further 
-shows the relative abundance of each state in and around the gene body. 
-This high-resolution image of abundance helped further refine the 
-annotations of each state. Figure XXXB shows that overall states 1 and 
-7 were the most abundant states with state 7 being highly enriched at 
-the TSS, and state 1 being strongly depleted at the TSS, but enriched 
-within the gene body and in intragenic spaces. We describe the reasoning
-behind the annotation of each state below:
+## Chromatin state overview
 
-**State 1 - heterochromatin** was characterized by the absence of all measured 
-marks, enrichment in intergenic regions, and strong downregulation of gene 
-expression. This state was strongly depleted at the TSS of expressed genes 
-(Figure XXXA), but the most abundant state in the gene body and outside the 
-gene body. This state may multiple different states that could be resolved 
-with the measurement of more histone modifications. For example, intergenically, 
-state 1 may mark heterochromatin, which is characterized by H3K9 trimethylation 
-[12867029], which was not measured here. However, state 1 was also highly abundant
-in the gene bodies of expressed genes, but was associated with reduced expression.
-This could suggest differential distribution of heterochromatin across strains,
-or could represent an additional transcriptionally repressive state.
+To investigate this association, we used ChromHMM to identify `r num.states`
+chromatin states composed of unique combinations of four histone 
+modifications in the hepatocytes of nine inbred strains of mouse (Methods). 
+Figure XXX gives an overview of these states.
 
-**State 2 - repressed chromatin** was characterized by the presence of H3K27me3, 
-which has been shown previously to correlate with transcriptional silencing [REF]. 
-This state was not enriched in any particular functional element, but was associated 
-with strong downregulation of transcription.
+The states were distributed non-randomly around known functional elements in
+the mouse genome (Figure XXX Genomic Enrichment). The majority of the states 
+were enriched around the TSS, and other TSS-related functional elements, such 
+as promoters and CpG islands. Two states were primarily found in intergenic 
+regions, three states were enriched around known enhancers, and one was enriched 
+predominantly near the TES. The majority of these states were also associated 
+with variation in gene expression (Figure XXX Expression Effects). The within-strain 
+effects on expression (gray) were stronger in magnitude than the across-strain effects 
+(colored by states), but the direction of the effects matched with only one 
+exception. 
 
-**State 3 - poised enhancer** was primarily characterized by the presence of 
-H3K27me3, a mark associated with polycomb silencing [REF], and H3K4me1 a mark 
-associated with enhancers [REF]. The co-occurence of these opposing marks has 
-previously been associated with a functional element known as a poised enhancer 
-[21160473]. 
+The two states that were primarily located in intergenic regions were associated 
+with strong downregulation of genes when associated with genes, suggesting that 
+there is differential epigenetic silencing of genes in hepatocytes across strains. 
+That the majority of chromatin states were associated with variation in expression 
+across strains suggests that epigenetic regulation of gene expression through 
+histone modification may contribute substantially to variation in gene expression 
+across genetically distinct individuals. That most states have the same effects 
+across genes within a cell type and across strains suggests that the mechanisms 
+that are used to regulate cell type specificity also contribure to variation in 
+genetically distinct individuals.
+
+By merging histone modification patterns with enrichments near functional 
+elements and effects on gene expression, we were able to suggest annotations 
+for many of the `r num.states` chromatin states. A more detailed description
+of these annotations is in Table XXX.
+
+## Spatial distribution of epigenetic modifications around gene bodies
+
+In addition to looking for enrichment of chromatin states near 
+annotated functional elements, we characterized the fine-grained 
+spatial distribution of each state around gene bodies (Figure XXXA-B).
+We also characterized the distribution of CpG sites and their percent 
+methylation at this gene-level scale (Figure XXXC-D). 
+
+Each chromatin state had a unique pattern of spatial abundance 
+(Figure XXXA), and an overlay of all states together emphasizes the
+difference in abundance between the most abundant states , and 
+the remaining states, which were relatively rare.
+
+Each chromatin state had a characteristic distribution pattern
+relative to gene bodies (Figure XXXA). For example, state 
+`r heterochromatin.state`, which was characterized by the absence 
+of all measured histone modifications, was strongly depleted near 
+the TSS, indicating that this region is commonly subject to chromatin 
+modification. However, its abundance increased steadily to a peak at 
+the TES. In contrast, states `r active.promoter.state` and 
+`r active.enhancer.state` were both concentrated at the TSS. Whereas 
+state `r active.promoter.state` was very narrowly concentrated right at 
+the TSS, whereas state `r active.enhancer.state` was more broadly abundant 
+both upstream and downstream of the TSS. These differential distribution 
+patterns may speak to distinct functional roles in regulation of expression.
+
+The remaining states were relatively low in abundance compared
+to states `r heterochromatin.state`, `r active.enhancer.state`,
+and `r active.promoter.state` (Figure XXXB), but also showed specific 
+distributions relative to the gene body. For example, state `r tes.state`, 
+which was overall enriched around annotated TESs, was highly enriched just 
+downstream of the TES, depleted at the TSS, and enriched immediately up and 
+downstream of the TSS. In contrast, states `r weak.intragenic.enhancer` and 
+`r strong.intragenic.enhancer` were most abundant inside the gene body,
+and were relatively depleted at the TSS.
+
+DNA methylation also showed strong positional effects (Figure XXXC and D). 
+Across all genes, the TSS had densely packed CpG sites relative to the 
+region between the TSS and TES (Figure XXXC). As expected, the median 
+CpG site near the TSS was consistently hypomethylated relative to the median 
+CpG site in intergenic regions. CpG sites within the gene body were slightly 
+hypermethylated compared to intergenic CpGs (Figure XXXD).
 
 
-
-This element has been studied mostly in the context of 
-development. Bivalent promoters are abundant in undifferentiated cells, and are 
-resolved either to active promoters or silenced promoters as the cells differentiate 
-into their final state [REF]. These promoters have also been shown to be important 
-in the response of cancer cells to environmental disturbances such as hypoxia [REF].
-The presence of bivalent promoters in adult mouse hepatocytes is interesting. They 
-may mark genes poised for expression during liver regeneration, or for responding to
-a particular environmental stimulus. There were XXX genes that were marked with this
-bivalent promoter state at the TSS across all strains. This group of genes was enriched 
-for developmental processes as well as alcohol metabolism (Fig? Table?). 
-
-**State 4 - intragenic enhancer** was characterized by the presence of H3K4me1, 
-which is known to mark cell type-specific enhancers, both active and poised [REF]. 
-The presence of H3K4me1 alone, in the absence of H3K27ac, as it occurs in state 4, 
-has been shown to mark inactive, or poised enhancers [21106759]. The addition of 
-H3K27ac can then activate the enhancer to increase transcription. When present 
-within the gene body, this state acts as an intragenic enhancer, which acts as
-an alternative promoter, and can be transcribed bidirectionally to produce short
-RNAs known as eRNA [20393465]. This state was modestly enriched in known enhancers
- and was associated with slightly increased 
-gene expression. The presence of H3K4me1 in the absence of H3K4me3 has been 
-shown to mark intragenic enhancers and to be associated with increased 
-transcription, as these regions can be transcribed independently of the
-full gene [Kowalczyk et al. 2012]. We annotated this state as a weak enhancer.
-
-**State 5 - active enhancer** was characterized by the co-occurence of H3K4me1, 
-which marks cell type-specific enhancers, and H3K27ac, which specifically marks 
-active enhancers [21106759, 21160473]. This state was strongly enriched in known 
-enhancers, and its presence had a strong postive effect on transcription. We thus 
-annotated this state as a strong enhancer.
-
-## Gene transcription start sites were hypomethylated
-
-
-## Chromatin state effects variation in gene expression across strains
-
-Although individual chromatin states had large effects on gene expression
-within each strain, it was not known whether these states contribute 
-to variation in gene expression across strains. 
-
-To investigate this, we normalized gene expression across strains and 
-fit a linear model to identify the effect of each chromatin state at 
-each position along the gene body to expression variation across strains.
-
-Remarkably, each chromatin state had similar effects on across-strain 
-gene expression as within-strain gene expression, suggesting that 
-variation in chromatin state 
-
-## Variation in expression in an outbred population maps to imputed chromatin state
-
+## Imputation before spatial resolution?
 To further investigate whether chromatin state contributes to transcriptional
 variation across strains, we imputed local chromatin state into a population 
 of diversity outbred mice (REF). 
-
-
-These states
-were differentially distributed near functionally annotated genomic
-elements (Figure XXXB). For example, State 1, which corresponded to 
-the absence of all four histone modifications, found mainly in 
-intergenic regions. States 5 and 9 were enriched near enhancers and 
-TES respectively. Finally, states 3 and 7 were highly enriched near 
-the TSS and other functional elements that also occur near the TSS, 
-such as cis-regulatory regions (cCREs), transcription factor binding 
-sites (TFBS), and promoters.
-
-A subset of the chromatin states was correlated with gene expression
-across genes (Figure XXXC) in a manner that concorded with both their
-histone modification profiles and their enrichments near functional genomic 
-elements. For example, the histone modification H3K27me3 has been previously
-shown to be associated with lower transcript abundance [CITE]. We found this
-modification in both states 2 and 3 (Figure XXXA), which were both correlated 
-with reduced transcription (Figure XXXC). State 3, furthermore, was enriched
-near the TSS, promoters, TFBS, and other regulatory elements supporting a
-possible role in transcriptional regulation. 
-
-State 5 was characterized by the presence of two histone modifications 
-previously associated with increased transcription: H3K27ac [CITE], and
-H3K4me1 [CITE]. The enrichment of this state in enhancers coincides with
-previous work showing the presence of these two modifications in active
-enhancers [21106759, 21160473, 29273804], and supports the role of this
-state in upregulation of gene transcription.
-
-States 6 and 7 were also associated with increased transcription and
-the presence of transcriptionally activating histone modifications. 
-State 6 was modestly enriched in enhancers, while state 7 was enriched
-not only in enhancers, but also stongly near the TSS and other associated
-functional elements (Figure XXXB).
-
-## Chromatin states and DNA methylation were differentially enriched around gene bodies
-
-In addition to looking for enrichment of chromatin states near 
-annotated functional elements, we also characterized the relative 
-spatial distribution around gene bodies of both chromatin states 
-and DNA methylation. To do this, we scaled base pair positions of
-our measured genomic features to run between 0 at the TSS and 1 
-at the TES of their containing gene (Methods) (Figure XXX). 
-
-Each chromatin state had a characteristic distribution pattern
-relative to gene bodies (Figure XXXA and B). For example, state 1
-was strongly depleted near the TSS, indicating that this region
-is commonly subject to chromatin modification. However, its
-abundance increased steadily to a peak at the TES. In contrast,
-state 7 was present in over 60\% of TSS, but decreased to almost 
-0\% near the TES.
-
-The remaining states were relatively low in abundance compared
-to states 1 and 7, but also showed specific distributions relative
-to the gene body. State 8, was depleted at the TSS, but enriched 
-immediately downstream of the TSS. State 9 had slight enrichments 
-immediately upstream of the TSS and immediately downstream of the TES. 
-These patterns agree with the enrichments around functional genomic 
-elements shown in Figure XXXB, and add interesting resolution around
-both the TSS and TES.
-
-DNA methylation also showed strong positional enrichments 
-(Figure XXXC and D). Across all genes, the TSS had densely
-packed CpG sites cytosines relative to the region between 
-the TSS and TES (Figure XXXC). As expected, the median CpG site 
-near TSS were consistently hypomethylated relative to the median 
-CpG site in intergenic regions. CpG sites within the gene body 
-were slightly hypermethylated compared to intergenic CpGs (Figure XXXD).
-
-## Chromatin state but not DNA methylation correlated with gene expression across strains
-
-To investigate whether the previously identified relationships between
-epigenetic features and gene expression were related to local genotype,
-we looked for correlations between gene expression and epigenetic
-features for each transcript across all inbred strains. That is, for 
-any given transcript, did variation in chromatin state or DNA methylation
-across strains correlate with gene expression?
-
-The relationship between gene expression and chromatin state 
-across strains was nearly identical to the relationship within-strain, 
-including the positional effects. States 3 and
-9 had negative correlations with gene expression across strains that were
-localized to the TSS. States 5 and 7 had strong positive correlations with
-gene expression throughout the gene body, and states 1 and 2 had strong
-negative correlations with gene expression throughout the gene body. 
-
-In stark contrast, DNA methylation was completely uncorrelated with 
-variation in gene expression across strains (Figure XXXB). This lack
-of correlation is likely due to the low variability of percent methylation
-across strains at any given position. Figure XXXC shows the standard
-deviation in percent DNA methylation at normalized positions across
-the gene body. It is strikingly low everywhere, with the standard deviation
-being around 6%, which is likely below any biologically functional threshold.
-The variation dips even lower, to around 4% at the TSS, indicating that for
-the most part that DNA methylation does not vary across strains and is not 
-contributing to strain difference in gene expression.  
 
 ## Imputed chromatin state was correlated with gene expression in DO mice
 
@@ -668,21 +595,54 @@ population. The LOD scores and allele effects highlight variation
 at the TSS, and at several internal positions in the gene as potentially
 regulating gene expression. 
 
+## Spatially resolved effects on gene expression
+
+The distinct spatial distributions of the chromatin states and methylated 
+CpG sites around the gene body raised the question as to whether the effects
+of these states on gene expression could also be spatially resolved. To 
+investigate this possibility we tested the association between both chromatin
+state and DNA methylation and gene expression with a spatially resolved model
+(Methods). We tested the effect of each chromatin state on expression across
+genes within a strain (Figure XXX first column), the effect of each chromatin
+state on the variation in gene expression across strains (Figure XXX second 
+column), and finally 
+
+
+
+## Variation in expression in an outbred population maps to imputed chromatin state
+
+
+A subset of the chromatin states was correlated with gene expression
+across genes (Figure XXXC) in a manner that concorded with both their
+histone modification profiles and their enrichments near functional genomic 
+elements. For example, the histone modification H3K27me3 has been previously
+shown to be associated with lower transcript abundance [CITE]. We found this
+modification in both states 2 and 3 (Figure XXXA), which were both correlated 
+with reduced transcription (Figure XXXC). State 3, furthermore, was enriched
+near the TSS, promoters, TFBS, and other regulatory elements supporting a
+possible role in transcriptional regulation. 
+
+State 5 was characterized by the presence of two histone modifications 
+previously associated with increased transcription: H3K27ac [CITE], and
+H3K4me1 [CITE]. The enrichment of this state in enhancers coincides with
+previous work showing the presence of these two modifications in active
+enhancers [21106759, 21160473, 29273804], and supports the role of this
+state in upregulation of gene transcription.
+
+States 6 and 7 were also associated with increased transcription and
+the presence of transcriptionally activating histone modifications. 
+State 6 was modestly enriched in enhancers, while state 7 was enriched
+not only in enhancers, but also stongly near the TSS and other associated
+functional elements (Figure XXXB).
+
+
 ## DNA methylation varied across the gene body
 
 In addition to chromatin state, we examined the distribution of DNA
 methylation across the gene body, as well as the relationship between
 DNA methylation and gene expression in both inbred mice and DO mice.
 
-As expected, methylated cytosines were densely packed near the gene
-TSS (Figure XXX). They were relatively sparse within the gene body,
-and had intermediate spacing outside of gene bodies. 
 
-Outside of gene bodies, percent methylation was measured at an average
-of 50\%, whereas there was very low DNA methylation at the gene TSS 
-(Figure XXX). Percent DNA methylation within gene bodies was higher 
-than the surrounding intergenic spaces, reaching a maximum of around 80\% 
-near the gene TES.
 
 Within each strain, percent methylation at the gene TSS was slightly 
 negatively correlated with gene expression (Pearson r for all strains 
@@ -690,6 +650,94 @@ was about -0.2). However, there was very little variation in DNA methylation
 across strains, particularly at the TSS, and consequently, there was no
 relationship between percent methylation and gene expression across strains.
 
+
+## Chromatin state but not DNA methylation correlated with gene expression across strains
+
+
+In stark contrast, DNA methylation was completely uncorrelated with 
+variation in gene expression across strains (Figure XXXB). This lack
+of correlation is likely due to the low variability of percent methylation
+across strains at any given position. Figure XXXC shows the standard
+deviation in percent DNA methylation at normalized positions across
+the gene body. It is strikingly low everywhere, with the standard deviation
+being around 6%, which is likely below any biologically functional threshold.
+The variation dips even lower, to around 4% at the TSS, indicating that for
+the most part that DNA methylation does not vary across strains and is not 
+contributing to strain difference in gene expression.  
+
+
+
+
+## Annotation of chromatin states
+
+We identified `r num.states` chromatin states corresponding to `r num.states` 
+distinct 
+combinations of histone modifications (Figure XXXA). To annotate these
+states to functional elements, we combined previously known annotations
+with functional enrichments and relationship to gene expression. The
+characterizations are summarized in Figure XXX. Figure XXXA further 
+shows the relative abundance of each state in and around the gene body. 
+This high-resolution image of abundance helped further refine the 
+annotations of each state. Figure XXXB shows that overall states 1 and 
+7 were the most abundant states with state 7 being highly enriched at 
+the TSS, and state 1 being strongly depleted at the TSS, but enriched 
+within the gene body and in intragenic spaces. We describe the reasoning
+behind the annotation of each state below:
+
+**State 1 - heterochromatin** was characterized by the absence of all measured 
+marks, enrichment in intergenic regions, and strong downregulation of gene 
+expression. This state was strongly depleted at the TSS of expressed genes 
+(Figure XXXA), but the most abundant state in the gene body and outside the 
+gene body. This state may multiple different states that could be resolved 
+with the measurement of more histone modifications. For example, intergenically, 
+state 1 may mark heterochromatin, which is characterized by H3K9 trimethylation 
+[12867029], which was not measured here. However, state 1 was also highly abundant
+in the gene bodies of expressed genes, but was associated with reduced expression.
+This could suggest differential distribution of heterochromatin across strains,
+or could represent an additional transcriptionally repressive state.
+
+**State 2 - repressed chromatin** was characterized by the presence of H3K27me3, 
+which has been shown previously to correlate with transcriptional silencing [REF]. 
+This state was not enriched in any particular functional element, but was associated 
+with strong downregulation of transcription.
+
+**State 3 - poised enhancer** was primarily characterized by the presence of 
+H3K27me3, a mark associated with polycomb silencing [REF], and H3K4me1 a mark 
+associated with enhancers [REF]. The co-occurence of these opposing marks has 
+previously been associated with a functional element known as a poised enhancer 
+[21160473]. 
+
+
+This element has been studied mostly in the context of 
+development. Bivalent promoters are abundant in undifferentiated cells, and are 
+resolved either to active promoters or silenced promoters as the cells differentiate 
+into their final state [REF]. These promoters have also been shown to be important 
+in the response of cancer cells to environmental disturbances such as hypoxia [REF].
+The presence of bivalent promoters in adult mouse hepatocytes is interesting. They 
+may mark genes poised for expression during liver regeneration, or for responding to
+a particular environmental stimulus. There were XXX genes that were marked with this
+bivalent promoter state at the TSS across all strains. This group of genes was enriched 
+for developmental processes as well as alcohol metabolism (Fig? Table?). 
+
+**State 4 - intragenic enhancer** was characterized by the presence of H3K4me1, 
+which is known to mark cell type-specific enhancers, both active and poised [REF]. 
+The presence of H3K4me1 alone, in the absence of H3K27ac, as it occurs in state 4, 
+has been shown to mark inactive, or poised enhancers [21106759]. The addition of 
+H3K27ac can then activate the enhancer to increase transcription. When present 
+within the gene body, this state acts as an intragenic enhancer, which acts as
+an alternative promoter, and can be transcribed bidirectionally to produce short
+RNAs known as eRNA [20393465]. This state was modestly enriched in known enhancers
+ and was associated with slightly increased 
+gene expression. The presence of H3K4me1 in the absence of H3K4me3 has been 
+shown to mark intragenic enhancers and to be associated with increased 
+transcription, as these regions can be transcribed independently of the
+full gene [Kowalczyk et al. 2012]. We annotated this state as a weak enhancer.
+
+**State 5 - active enhancer** was characterized by the co-occurence of H3K4me1, 
+which marks cell type-specific enhancers, and H3K27ac, which specifically marks 
+active enhancers [21106759, 21160473]. This state was strongly enriched in known 
+enhancers, and its presence had a strong postive effect on transcription. We thus 
+annotated this state as a strong enhancer.
 
 # Discussion
 

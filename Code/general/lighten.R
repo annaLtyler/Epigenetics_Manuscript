@@ -9,7 +9,7 @@ lighten <- function(color, factor=1.4){
     		factor <- max(light.col)/256
     		light.col <- col*factor
 	    	}
-    col <- rgb(t(light.col), maxColorValue=255)
+    col <- rgb(t(light.col), maxColorValue=256)
     col
 }
 

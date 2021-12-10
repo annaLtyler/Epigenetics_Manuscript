@@ -95,6 +95,8 @@ for(i in 1:length(ordered.states)){
     }
     model.fits[[i]] <- state.fits
 }
+
+saveRDS(model.fits, here("Results", "ChromHMM", "within.strain.models.RDS"))
 ```
 
 Plot the fit for each state in each model with the mean 95% confidence intervals across 
@@ -158,6 +160,8 @@ axis(2)
 par(xpd = TRUE)
 text(x = 1:length(ordered.states), y = (all.min - (all.range*0.05)), labels = ordered.states)
 par(xpd = FALSE)
+
+
 ```
 
 ## Across-strain effects {.tabset .tabset-fade .tabset-pills}
