@@ -92,7 +92,7 @@ for(i in 1:length(all.code.dir)){
 ```{r load_libraries, message = FALSE, warning = FALSE, error = FALSE}
 needed.packages <- c("VennDiagram", "ape", "gprofiler2", 
 "e1071", "DESeq2", "knitr", "pheatmap", "hexbin", "RColorBrewer", "MASS", 
-"gridExtra", "grid", "ggplotify", "qtl2")
+"gridExtra", "grid", "ggplotify", "qtl2", "caTools", "stringr")
 load_libraries(needed.packages)
 ```
 
@@ -141,18 +141,6 @@ if(start.feature == "start_position" && end.feature == "end_position"){
 buffer.text <- paste(unique(c(upstream.buffer, downstream.buffer)), collapse = "_")
 ```
 
-```{r clear_results}
-#If evaluated, this chunk will clear out all results generated
-#by this script to trigger recalculation of all results
-if(delete.previous){
-    delete.files <- list.files(here("Results", "ChromHMM", form.states), full.names = TRUE)
-    if(length(delete.files) > 0){
-        for(i in 1:length(delete.files)){
-            unlink(delete.files[i])
-        }
-    }
-}
-```
 
 Strain names between different analyses are inconsistent. We have a table for 
 comparing different names as well as for defining strain colors. I made this
@@ -217,7 +205,7 @@ Average expression across individuals in each strain.
 #file containing strain averages for each transcript. These
 #do not change from run to run. Save in data
 strain.expr.file <- here("Data", "RNASeq", paste0("Strain_Mean_", T.or.C, "_Expression.RData"))
-if(!file.exists(strain.expr.file)){
+if(!file.exists(strain.expr.file) || delete.previous){
     #get expression for the condition (control or treatment)
     strain.mean.expr <- lapply(rownames(rna.seq), function(x) 
     get.cond.expr(rnaseq.gene.info, rna.seq, x, T.or.C = T.or.C, return.mean = TRUE))
@@ -230,7 +218,7 @@ if(!file.exists(strain.expr.file)){
 
 #also scale the expression for each gene.
 strain.scaled.expr.file <- here("Data", "RNASeq", paste0("Strain_Scaled_", T.or.C, "_Expression.RData"))
-if(!file.exists(strain.scaled.expr.file)){
+if(!file.exists(strain.scaled.expr.file) || delete.previous){
     scaled.mean.expr  <- lapply(strain.mean.expr, scale)
     saveRDS(scaled.mean.expr, strain.scaled.expr.file)
 }else{
@@ -532,9 +520,9 @@ if(!file.exists(cent.chrom.file)){
 }
 
 
-min.coord <- -1; max.coord <- 2; nbins = 500
+min.coord <- -0.5; max.coord <- 1.5; nbins = 42
 binned.chromatin.file <- file.path(results.dir, "Chromatin.Matrices.Scaled.RDS")
-if(!file.exists(binned.chromatin.file)){
+if(!file.exists(binned.chromatin.file) || delete.previous){
     binned.chromatin <- lapply_pb(cent.mats, 
     function(x) if(length(x) > 1){bin.centered.chromatin(centered.chrom.mat = x, 
     coord.min = min.coord, coord.max = max.coord, nbins = nbins, nstates = num.states,
@@ -556,7 +544,7 @@ of different states.
 #uptick in state 8 after the TSS is due to bleeding into the 
 #next gene or related to the post-transcriptional region
 far.position.file <- file.path(results.dir, "Chromatin.State.Position.Far.Genes.RDS")
-if(!file.exists(far.position.file)){
+if(!file.exists(far.position.file) || delete.previous){
     far.genes <- get.distant.genes(rnaseq.gene.info, 2000) 
     gene.ids <- rnaseq.gene.info[match(unlist(far.genes), rnaseq.gene.info[,"external_gene_name"]),"ensembl_gene_id"]
     state.position <- lapply(1:num.states, function(x) state.by.position(gene.ids, 
@@ -581,6 +569,66 @@ for(s in 1:length(state.position)){
 }
 #dev.off()
 ```
+
+## Enrichment by state and position
+
+We also wanted to see if there were differential functional enrichments
+of the genes across these areas of abundance. The following code generates
+plots that show the negative log of enrichment p values as they were found
+along the gene body for each state. Colors indicate the strain in which the
+enrichments were found at each position. 
+
+In some cases, the enrichments are fairly evenly split across the strains, 
+and in others, there's a big skew toward one strain. For example in state
+5 (in the 14-state model), most of the enrichments are associated with PWK.
+Does this suggest that PWK is using state 5 differently than the other strains?
+The enrichments are all related to insulin and pheromone binding. In contrast,
+right around the TSS in this same state, the strains are all much more evenly
+represented
+
+```{r bin_enrich}
+pdf(file.path(results.dir, "Enrichments.by.state.and.position.pdf"), width = 20, height = 7)
+for(state in 1:num.states){
+    if(is.interactive){print(state)}
+    state_peak_genes(binned.chromatin, state, min.n = 10, 
+    enrich.filename = file.path(results.dir, paste0("State.", state, ".by.Position.Enrichment.RDS")), 
+    gene.filename = file.path(results.dir, paste0("State.", state, ".by.Position.Gene.RDS")),
+    max.term.size = 2000, n.terms = 5, sort.by = "default")
+}
+dev.off()
+```
+
+
+The following figures show functional enrichments for groups of genes 
+with each state present at each position. There are clear groupings
+of enrichments at different positions.
+
+```{r plot_bin_enrich, results = "asis", fig.height = 15, fig.width = 8}
+#pdf("~/Desktop/State.enrichment.pdf", width = 8, height = 15)
+for(state in 1:num.states){
+    cat("State", state, "\n")
+    state.enrich <- state.bin.enrich[[state]]$enrichments
+    names(state.enrich) <- round(as.numeric(names(state.enrich)), 2)
+    which.enrich <- which(sapply(state.enrich, length) > 0)
+    num.enrich <- length(which.enrich)
+    if(num.enrich > 1){
+        enrich.mat <- plot.enrichment.group(state.enrich, cluster_cols = FALSE, 
+        transformation = "sqrt", max.term.size = 1000, 
+        plot.label = paste("state", state), n.terms = 10)
+        #wordcloud(unlist(strsplit(rownames(enrich.mat), " ")))
+    }
+    if(num.enrich == 1){
+        plot.enrichment(state.enrich[[which.enrich]])
+    }
+    if(num.enrich == 0){
+    plot.text("no enrichments")
+    }
+    cat("\n\n")
+}
+#dev.off()
+```
+
+## Abundance by position
 
 The following barplot shows the maximum abundance of each state
 across all bins.
@@ -676,7 +724,7 @@ across.strain.window.state.file <- file.path(results.dir, "State.Window.Effects.
 within.strain.window.state.file <- file.path(results.dir, "State.Window.Effects.Within.Strains.RDS")
 
 
-if(!file.exists(across.strain.window.state.file)){
+if(!file.exists(across.strain.window.state.file) || delete.previous){
     across.strain.window.results <- vector(mode = "list", length = length(gene.windows))
     within.strain.window.results <- vector(mode = "list", length = length(gene.windows))
 

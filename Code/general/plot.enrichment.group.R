@@ -13,7 +13,7 @@ filter.none = FALSE){
 
 	enrich.list <- lapply(enrichment.list, function(x) x[[1]])
 	
-	if(length(enrich.list) == 1){
+	if(length(enrich.list) == 1 && plot.results){
 		term.mat <- plot.enrichment.vis(enrich.list[[1]], num.terms = n.terms, order.by = sort.by, 
 		plot.label = plot.label, max.term.size = max.term.size)
 		}else{

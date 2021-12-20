@@ -38,3 +38,54 @@ names(best.table) <- names(all.mds)
 par(mar = c(10, 4, 4, 4))
 barplot(best.table, las = 2)
 ```
+
+## DNA methylation density by methylation percent
+
+We also looked individually at the density of sites that were 0, 50, or 100% methylated.
+All are sparse in the gene body and dense at the TSS. There are no differences in patterns
+across the different types, just in degree.
+
+This also can't distinguish from sites that have variable methylation percentages
+across strains, so it might not be a good measure. 
+
+```{r sub_methyl_dens}
+rounded.methyl <- lapply(methyl.mats, function(x) round(x/50)*50)
+
+
+bins <- c(0, 50, 100)
+for(i in 1:length(bins)){
+  sub_methyl_idx <- lapply(rounded.methyl, function(x) unique(which(x == bins[i], arr.ind = TRUE)[,2]))
+  sub_methyl_consec <- lapply(1:length(sub_methyl_idx), function(x) if(length(sub_methyl_idx[[x]]) > 1){consec.pairs(as.numeric(colnames(rounded.methyl[[x]])[sub_methyl_idx[[x]]]))}else{NA})
+  sub_methyl_dist <- lapply(sub_methyl_consec, function(x) if(length(x) >  1){x[,2] - x[,1]}else{NA})
+  
+  for(j in 1:length(methyl_dist)){
+    if(length(sub_methyl_idx[[j]]) > 1 && !is.null(colnames(norm_rrbs[[j]]))){
+      consec.coord <- consec.pairs(as.numeric(colnames(norm_rrbs[[j]])[sub_methyl_idx[[j]]]))
+      mean.coords <- rowMeans(consec.coord)
+      names(sub_methyl_dist[[j]]) <- mean.coords
+    }
+  }
+
+ avg_sub_methyl_dist <- plot.centered.vals(val.list = sub_methyl_dist, 
+    seq.by = seq.by, min.representation = 10, ylim = c(0, 10000),
+    plot.label = paste("Average Distance to Next Methylation Position"),
+    ylab = "Distance to Next Methylation Position", return.means = FALSE)
+}
+
+if(is.interactive){quartz()}
+methyl_dens_file <- here("Results", "RRBS", "Methylation_Density.RDS")
+if(!file.exists(methyl_dens_file) || delete.previous){
+  avg_methyl_dist <- plot.centered.vals(val.list = methyl_dist, 
+    seq.by = seq.by, min.representation = 10, ylim = c(0, 3500),
+    plot.label = paste("Average Distance to Next Methylation Position"),
+    ylab = "Distance to Next Methylation Position", return.means = FALSE)
+  abline(v = c(0,1))
+  saveRDS(avg_methyl_dist, methyl_dens_file)
+}else{
+  avg_methyl_dist <- readRDS(methyl_dens_file)
+  plot.centered.mat(avg_methyl_dist, ylim = c(0, 3500),
+    plot.label = paste("Average Distance to Next Methylation Position"),
+    ylab = "Distance to Next Methylation Position")
+      abline(v = c(0,1))
+}
+```

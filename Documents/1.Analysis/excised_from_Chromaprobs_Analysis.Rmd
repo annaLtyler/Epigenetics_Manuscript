@@ -104,3 +104,30 @@ plot.gsea.results(reactome.enrich, "padj", p.thresh = 0.1, plot.label = "reactom
 ```{r wiki_results}
 plot.gsea.results(wiki.enrich, "padj", p.thresh = 0.1, plot.label = "WIKIPATHWAYS")
 ```
+
+
+```{r state_bin_enrichment}
+#from 1.4_chromatin_states_and_expression.Rmd
+delete.previous = TRUE;is.interactive = TRUE
+constant.state.bin.enrich <- variable.state.bin.enrich <- vector(mode = "list", length = num.states)
+for(state in 1:num.states){
+    if(is.interactive){print(state)}
+    constant.bin.enrich.file <- file.path(results.dir, paste0("bin.enrich.constant.state.", state, ".RDS"))
+    variable.bin.enrich.file <- file.path(results.dir, paste0("bin.enrich.variable.state.", state, ".RDS"))
+    if(!file.exists(constant.bin.enrich.file) || delete.previous){
+        constant.bin.enrich <- state_peak_genes(binned.chromatin, state, min.n = 10, 
+            min.strain = 9, max.strain = 9)
+        saveRDS(constant.bin.enrich, constant.bin.enrich.file)
+        constant.state.bin.enrich[[state]] <- constant.bin.enrich
+    
+        variable.bin.enrich <- state_peak_genes(binned.chromatin, state, min.n = 10, 
+            min.strain = 1, max.strain = 8)
+        saveRDS(variable.bin.enrich, variable.bin.enrich.file)
+        variable.state.bin.enrich[[state]] <- variable.bin.enrich
+
+    }else{
+        constant.state.bin.enrich[[state]] <- readRDS(constant.bin.enrich.file)
+    }
+}
+delete.previous = FALSE;is.interactive = FALSE
+```

@@ -176,7 +176,6 @@ num_strain_spec <- sapply(strain.spec.sites, nrow)
 num_all <- sapply(all_sites, nrow)
 prop_spec <- num_strain_spec/num_all
 names(prop_spec) <- 1:19 #one element per chromosome
-if(is.interactive){quartz()}
 barplot(prop_spec, ylim = c(0, 0.2))
 ```
 
@@ -494,7 +493,6 @@ if(!file.exists(norm.rrbs.file) || delete.previous){
 }
 #quartz();pheatmap(norm_rrbs[[1]], cluster_rows = FALSE, cluster_cols = FALSE)
 
-
 ```
 
 ## Methylation density by gene position {.tabset .tabset-fade .tabset-pills}
@@ -508,7 +506,6 @@ to the next position. Around 80% of DNA methylation positions were
 a single base pair from the next position in all strains.
 
 ```{r methyl_dens}
-delete.previous = TRUE
 
 methyl_consec <- lapply(methyl.mats, function(x) if(length(x) > 1){consec.pairs(as.numeric(colnames(x)))}else{NA})
 methyl_dist <- lapply(methyl_consec, function(x) if(length(x) >  1){x[,2] - x[,1]}else{NA})
@@ -535,8 +532,9 @@ if(!file.exists(methyl_dens_file) || delete.previous){
     ylab = "Distance to Next Methylation Position")
       abline(v = c(0,1))
 }
-delete.previous = FALSE
 ```
+
+
 
 ## DNA methylation percentage {.tabset .tabset-fade .tabset-pills}
 
@@ -546,8 +544,6 @@ methylation. Sites at the TSS have very low percentage methylation,
 and sites within the gene body have very high methylation.
 
 ```{r within_strain, results = "asis"}
-delete.previous = TRUE
-
 strain.methyl.file <- here("Results", "RRBS", "Strain.RRBS.Percent.RDS")
 if(!file.exists(strain.methyl.file) || delete.previous){
   strain_rrbs_mat <- vector(mode = "list", length = length(strains))
@@ -565,7 +561,6 @@ if(!file.exists(strain.methyl.file) || delete.previous){
 }else{
   strain_rrbs_mat <- readRDS(strain.methyl.file)
 }
-delete.previous = FALSE
 ```
 
 
@@ -579,7 +574,6 @@ all_rrbs_med <- t(sapply(strain_rrbs_mat, function(x) apply(x, 2,
   function(y) median(y, na.rm = TRUE))))
 rel.pos <- as.numeric(colnames(all_rrbs_med))
 
-if(is.interactive){quartz()}
 plot.new()
 plot.window(xlim = c(min(rel.pos), max(rel.pos)), ylim = c(0, 100))
 for(i in 1:nrow(all_rrbs_med)){
@@ -595,6 +589,9 @@ The following plot shows data for all strains together.
 
 ```{r perc_all_strains}
 all.strain.mat <- Reduce("rbind", strain_rrbs_mat)
+
+barplot(apply(all.strain.mat, 2, function(x) length(which(x == 100))))
+
 plot.centered.mat(all.strain.mat, ylim = c(0,100), 
 plot.label = "Percent Methylation Across the Gene Body", 
 show.var = "se", plot.fun = "median", min.upstream = -0.5,
@@ -607,6 +604,34 @@ abline(v = c(0,1), lty = 2, col = "gray", lwd = 2)
 
 I wanted to dig a bit deeper into these types of sites to see if they are enriched
 anywhere in the gene body, or in specific sets of genes.
+
+The following plots show the proportions of sites that have methylation percentages
+of 0, 50, or 100%.
+
+The 0% methylated sites peak at the TSS and get quite low toward the TES.
+The 100% methylated sites have the opposite pattern.
+The 50% methylated sites don't have much deviation along the gene.
+
+```{r binned_mat}
+#round to nearest 50
+binned.all.strain <- apply(all.strain.mat, 2, function(x) round(x/50)*50)
+bins <- c(0, 50, 100)
+bin.count <- lapply(bins, function(x) apply(binned.all.strain, 2, function(y) length(which(y == x))/length(which(!is.na(y)))))
+
+plot.new()
+plot.window(xlim = c(-2, 2), ylim = c(0,1))
+for(i in 1:length(bin.count)){
+  points(as.numeric(colnames(all.strain.mat)), bin.count[[i]], type = "l", col = i, lwd = 3)
+}
+axis(1)
+axis(2)
+abline(v = c(0,1))
+legend("topleft", legend = bins, col = 1:length(bin.count), lty = 1, lwd = 3)
+
+count.mat <- Reduce("rbind", bin.count)
+barplot(count.mat)
+
+```
 
 ```{r site_type_location}
 type_by_norm_pos <- function(norm.rrbs.mat, n.states = 1, min.strains = 3){
@@ -657,8 +682,6 @@ The majority of sites (60\%) are non-varying everywhere. This increases
 to about 80% at the TSS. The dashed horizongal line markd 50\%.
 
 ```{r plot_non_var_freq, message = FALSE}
-delete.previous = TRUE
-
 non_varying_mat <- plot.centered.vals(non_varying_rrbs, seq.by = seq.by, ylim = c(0,1), 
   return.means = FALSE, plot.label = "Non-Varying")
 #plot.centered.mat(non_varying_mat, ylim = c(0, 1), plot.label = "Non-Varying")

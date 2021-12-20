@@ -188,6 +188,7 @@ bin.curve <- function(the.curve, plot.peaks = FALSE, window.size = NULL, amp.min
 				axis(2)
 				}
 					
-		return(list("bins" = curve.bins, "smoothed.curve" = smoothed.y, "window.size" = window.size, "amp.min" = amp.min))
+		return(list("bins" = curve.bins, "smoothed.curve" = smoothed.y, "window.size" = window.size, 
+			"amp.min" = amp.min, "peak.idx" = peak.locale))
 		}
 		

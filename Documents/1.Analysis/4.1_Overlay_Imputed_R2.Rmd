@@ -145,7 +145,7 @@ all.r2[which(all.r2 == -Inf)] <- NA
 if(is.interactive){quartz()}
 pairs(all.r2)
 
-saveRDS(all.r2, here("Results", "SNPs", "All.Variance.Explained.RDS"))
+saveRDS(all.r2, file.path(results.dir, "All.Variance.Explained.RDS"))
 ```
 
 ```{r plot_comp, fig.width = 9, fig.height = 6}

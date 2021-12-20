@@ -675,32 +675,35 @@ the imputed feature in and around the gene body.
 \section{Results}\label{results}}
 
 Gene expression varies widely and reproducibly across inbred strains of
-mice (Figure XXX). Genetic control of this variation can be measured in
-a mapping population as expression quantitative trait loci (eQTL), which
-associate genetic variation with this variation in gene expression. In
-this study we investigated the extent to which variation in epigenetic
-modifications, such as histone modifications and DNA methylation, are
-associated with genetically controlled variation in gene expression.
+mice. This is seen as a clustering of individuals from the same strain
+in a principal component plot of the hepatocyte transcriptome across
+strains (Figure XXX). The effect of genotype on this variation can be
+measured in a mapping population as expression quantitative trait loci
+(eQTL), which associate genetic variation with this variation in gene
+expression. In this study we investigated the extent to which variation
+in epigenetic modifications, such as histone modifications and DNA
+methylation, are associated with genetically controlled variation in
+gene expression.
 
 \hypertarget{chromatin-state-overview}{%
 \subsection{Chromatin state overview}\label{chromatin-state-overview}}
 
 To investigate this association, we used ChromHMM to identify 14
 chromatin states composed of unique combinations of four histone
-modifications in the hepatocytes of nine inbred strains of mouse
+modifications in the hepatocytes of nine inbred strains of mice
 (Methods). Figure XXX gives an overview of these states.
 
 The states were distributed non-randomly around known functional
 elements in the mouse genome (Figure XXX Genomic Enrichment). The
 majority of the states were enriched around the TSS, and other
 TSS-related functional elements, such as promoters and CpG islands. Two
-states were primarily found in intergenic regions, three states were
-enriched around known enhancers, and one was enriched predominantly near
-the TES. The majority of these states were also associated with
-variation in gene expression (Figure XXX Expression Effects). The
-within-strain effects on expression (gray) were stronger in magnitude
-than the across-strain effects (colored by states), but the direction of
-the effects matched with only one exception.
+states (states 2 and 3) were primarily found in intergenic regions,
+three states were enriched around known enhancers, and one was enriched
+predominantly near the TES. The majority of these states were also
+associated with variation in gene expression (Figure XXX Expression
+Effects). The within-strain effects on expression (gray) were stronger
+in magnitude than the across-strain effects (colored by states), but the
+direction of the effects matched with only one exception.
 
 The two states that were primarily located in intergenic regions were
 associated with strong downregulation of genes when associated with
@@ -749,11 +752,11 @@ expression.
 
 The remaining states were relatively low in abundance compared to states
 3, 10, and 11 (Figure XXXB), but also showed specific distributions
-relative to the gene body. For example, state 12, which was overall
-enriched around annotated TESs, was highly enriched just downstream of
-the TES, depleted at the TSS, and enriched immediately up and downstream
-of the TSS. In contrast, states 8 and 7 were most abundant inside the
-gene body, and were relatively depleted at the TSS.
+relative to the gene body. For example, state 12, which overall was
+enriched around annotated TESs, was highly concentrated just downstream
+of the TES, depleted at the TSS, and concentrated immediately up and
+downstream of the TSS. In contrast, states 8 and 7 were most abundant
+inside the gene body, and were relatively depleted at the TSS.
 
 DNA methylation also showed strong positional effects (Figure XXXC and
 D). Across all genes, the TSS had densely packed CpG sites relative to
@@ -763,13 +766,20 @@ the median CpG site in intergenic regions. CpG sites within the gene
 body were slightly hypermethylated compared to intergenic CpGs (Figure
 XXXD).
 
-\hypertarget{imputation-before-spatial-resolution}{%
-\subsection{Imputation before spatial
-resolution?}\label{imputation-before-spatial-resolution}}
+\hypertarget{spatially-resolved-effects-on-gene-expression}{%
+\subsection{Spatially resolved effects on gene
+expression}\label{spatially-resolved-effects-on-gene-expression}}
 
-To further investigate whether chromatin state contributes to
-transcriptional variation across strains, we imputed local chromatin
-state into a population of diversity outbred mice (REF).
+The distinct spatial distributions of the chromatin states and
+methylated CpG sites around the gene body raised the question as to
+whether the effects of these states on gene expression could also be
+spatially resolved. To investigate this possibility we tested the
+association between both chromatin state and DNA methylation and gene
+expression with spatially resolved models (Methods). We tested the
+effect of each chromatin state on expression across genes within a
+strain (Figure XXX first column) and the effect of each chromatin state
+on the variation in gene expression across strains (Figure XXX second
+column).
 
 \hypertarget{imputed-chromatin-state-was-correlated-with-gene-expression-in-do-mice}{%
 \subsection{Imputed chromatin state was correlated with gene expression
@@ -844,21 +854,6 @@ at each position along the gene body as calculated in the DO population.
 The LOD scores and allele effects highlight variation at the TSS, and at
 several internal positions in the gene as potentially regulating gene
 expression.
-
-\hypertarget{spatially-resolved-effects-on-gene-expression}{%
-\subsection{Spatially resolved effects on gene
-expression}\label{spatially-resolved-effects-on-gene-expression}}
-
-The distinct spatial distributions of the chromatin states and
-methylated CpG sites around the gene body raised the question as to
-whether the effects of these states on gene expression could also be
-spatially resolved. To investigate this possibility we tested the
-association between both chromatin state and DNA methylation and gene
-expression with a spatially resolved model (Methods). We tested the
-effect of each chromatin state on expression across genes within a
-strain (Figure XXX first column), the effect of each chromatin state on
-the variation in gene expression across strains (Figure XXX second
-column), and finally
 
 \hypertarget{variation-in-expression-in-an-outbred-population-maps-to-imputed-chromatin-state}{%
 \subsection{Variation in expression in an outbred population maps to

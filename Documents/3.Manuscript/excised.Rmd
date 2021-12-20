@@ -103,3 +103,60 @@ processes: RNA processing, chromatin modification, and chromosome organization.
 Transcripts with the greatest variation across strains were enriched in 
 hepatocyte-specific functions: steroid metabolism, small molecule biosynthesis, 
 and lipid metabolism (Fig. XXX?)
+
+## Variation in expression in an outbred population maps to imputed chromatin state
+
+
+A subset of the chromatin states was correlated with gene expression
+across genes (Figure XXXC) in a manner that concorded with both their
+histone modification profiles and their enrichments near functional genomic 
+elements. For example, the histone modification H3K27me3 has been previously
+shown to be associated with lower transcript abundance [CITE]. We found this
+modification in both states 2 and 3 (Figure XXXA), which were both correlated 
+with reduced transcription (Figure XXXC). State 3, furthermore, was enriched
+near the TSS, promoters, TFBS, and other regulatory elements supporting a
+possible role in transcriptional regulation. 
+
+State 5 was characterized by the presence of two histone modifications 
+previously associated with increased transcription: H3K27ac [CITE], and
+H3K4me1 [CITE]. The enrichment of this state in enhancers coincides with
+previous work showing the presence of these two modifications in active
+enhancers [21106759, 21160473, 29273804], and supports the role of this
+state in upregulation of gene transcription.
+
+States 6 and 7 were also associated with increased transcription and
+the presence of transcriptionally activating histone modifications. 
+State 6 was modestly enriched in enhancers, while state 7 was enriched
+not only in enhancers, but also stongly near the TSS and other associated
+functional elements (Figure XXXB).
+
+
+## DNA methylation varied across the gene body
+
+In addition to chromatin state, we examined the distribution of DNA
+methylation across the gene body, as well as the relationship between
+DNA methylation and gene expression in both inbred mice and DO mice.
+
+
+
+Within each strain, percent methylation at the gene TSS was slightly 
+negatively correlated with gene expression (Pearson r for all strains 
+was about -0.2). However, there was very little variation in DNA methylation
+across strains, particularly at the TSS, and consequently, there was no
+relationship between percent methylation and gene expression across strains.
+
+
+## Chromatin state but not DNA methylation correlated with gene expression across strains
+
+
+In stark contrast, DNA methylation was completely uncorrelated with 
+variation in gene expression across strains (Figure XXXB). This lack
+of correlation is likely due to the low variability of percent methylation
+across strains at any given position. Figure XXXC shows the standard
+deviation in percent DNA methylation at normalized positions across
+the gene body. It is strikingly low everywhere, with the standard deviation
+being around 6%, which is likely below any biologically functional threshold.
+The variation dips even lower, to around 4% at the TSS, indicating that for
+the most part that DNA methylation does not vary across strains and is not 
+contributing to strain difference in gene expression.  
+
