@@ -118,6 +118,30 @@ all_sites <- readRDS(methylome_file)
 total.sites <- sum(sapply(all_sites, nrow))
 ```
 
+The following PC plot shows how the strain methylomes relate to each 
+other in PC space. This plot uses all methylated sites that had 
+measured values across all strains.
+
+```{r full_methylome_decomp}
+all.present <- lapply(all_sites, function(x) x[which(apply(x, 1, function(y) all(!is.na(y)))),])
+full.methylome <- Reduce("rbind", all.present)
+full.methylome.decomp.file <- here("Results", "RRBS", "Full.Methylome.Decomposition.RDS") #keep just the PC values for the individuals
+if(!file.exists(full.methylome.decomp.file))
+  full.methyl.decomp <- plot.decomp(t(full.methylome))
+  methyl.strain.pc <- full.methyl.decomp$u
+  var.exp <- round(full.methyl.decomp$var.exp[1:ncol(methyl.strain.pc)]*100, 1)
+  rownames(methyl.strain.pc) <- colnames(all_sites[[1]])
+  colnames(methyl.strain.pc) <- paste0("PC", 1:ncol(methyl.strain.pc), " (", var.exp, "%)")
+  saveRDS(methyl.strain.pc, full.methylome.decomp.file)
+}else{
+  methyl.strain.pc <- readRDS(full.methylome.decomp.file)
+}
+
+strain.labels <- substr(rownames(methyl.strain.pc), 1, nchar(rownames(methyl.strain.pc))-2)
+strain.col <- col.table[match(strain.labels, col.table[,6]),3]
+plot(methyl.strain.pc, col = strain.col, pch = 16)
+```
+
 There are `r total.sites` unique sites in this methylome.
 
 ### Strain-Specific CpG sites {.tabset .tabset-fade .tabset-pills}
@@ -800,6 +824,114 @@ colnames(within.strain.plotting.data) <- c("position", "lwr", "fit", "upr")
 saveRDS(within.strain.plotting.data, here("Results", "RRBS", "Plotting_Within_Strain.RDS"))
 ```
 
+The figure below shows the correlation between expression and methylation
+at bimodal sites.
+
+
+```{r bimodal_expr_cor, fig.width = 7, fig.height = 5, warning = FALSE}
+bimodal.expr.effect <- vector(mode = "list", length = length(strains))
+names(bimodal.expr.effect) <- strains
+strain.expr.order <- order.strains(strains,names(strain.expr[[1]]), col.table)
+
+#align gene methylation percentages with expression in this strain.
+common.genes <- Reduce("intersect", lapply(strain_rrbs_mat, rownames))
+gene.id <- transcript.info[match(common.genes, 
+  transcript.info[,"external_gene_name"]),"ensembl_gene_id"]
+gene.idx <- match(gene.id, names(strain.expr))
+strain.expr.mat <- t(sapply(gene.idx, function(x) if(length(strain.expr[[x]]) > 1){strain.expr[[x]]}else{rep(NA, 9)}))
+rownames(strain.expr.mat) <- common.genes
+colnames(strain.expr.mat) <- rownames(strain.expr[[1]])
+
+for(st in 1:length(strains)){
+  strain_mat <- strain_rrbs_mat[[st]][match(common.genes, rownames(strain_rrbs_mat[[st]])),]
+  common.gene.idx <- match(intersect(rownames(strain_mat), rownames(bimodal_mat)), rownames(strain_mat))
+  strain_mat <- strain_mat[common.gene.idx,]
+  strain.expr.mat <- strain.expr.mat[common.gene.idx,]
+  common.bimodal.idx <- match(intersect(rownames(strain_mat), rownames(bimodal_mat)), rownames(bimodal_mat))
+  non.bimodal <- which(bimodal_mat[common.bimodal.idx,] == 0)
+  strain_mat[non.bimodal] <- NA
+  bimodal.expr.effect[[st]] <- apply(strain_mat, 2, 
+    function(x) plot.with.model(x, strain.expr.mat[,strain.expr.order[st]], 
+    confidence = 0.95, plot.results = FALSE))
+}
+
+rel.pos <- as.numeric(colnames(bimodal.expr.effect[[1]]))
+all.fit <- rowMeans(sapply(bimodal.expr.effect, function(x) x[3,]))
+all.lwr <- rowMeans(sapply(bimodal.expr.effect, function(x) x[4,]))
+all.upr <- rowMeans(sapply(bimodal.expr.effect, function(x) x[5,]))
+
+upstream.limit <- -0.5
+downstream.limit <- 1.5
+min.fit = -0.02
+max.fit = 0.02
+
+if(is.interactive){quartz(width = 7, height = 5)}
+plot.new()
+plot.window(xlim = c(upstream.limit, downstream.limit), ylim = c(min.fit, max.fit)) 
+plot.poly.xy(rel.pos, all.lwr, rel.pos, all.upr, col = "gray80", border = "gray80")
+points(rel.pos, all.fit, type = "l", col = "gray40", lwd = 2)
+axis(1)
+axis(2)
+mtext(text = "Relative Gene Position", side = 1, line = 2.5)
+mtext(text = "Effect Size", side = 2, line = 2.5)
+abline(v = c(0,1), lwd = 2, col = "gray60", lty = 2)
+abline(h = 0, col = "gray40", lty = 2)
+#pheatmap(sapply(bimodal.expr.effect, function(x) x[3,]), cluster_cols = FALSE, cluster_rows = FALSE)
+```
+
+The figure below shows the correlation between expression and methylation
+at trimodal sites.
+
+```{r trimodal_expr_cor, fig.width = 7, fig.height = 5, warning = FALSE}
+trimodal.expr.effect <- vector(mode = "list", length = length(strains))
+names(trimodal.expr.effect) <- strains
+strain.expr.order <- order.strains(strains,names(strain.expr[[1]]), col.table)
+
+#align gene methylation percentages with expression in this strain.
+common.genes <- Reduce("intersect", lapply(strain_rrbs_mat, rownames))
+gene.id <- transcript.info[match(common.genes, 
+  transcript.info[,"external_gene_name"]),"ensembl_gene_id"]
+gene.idx <- match(gene.id, names(strain.expr))
+strain.expr.mat <- t(sapply(gene.idx, function(x) if(length(strain.expr[[x]]) > 1){strain.expr[[x]]}else{rep(NA, 9)}))
+rownames(strain.expr.mat) <- common.genes
+colnames(strain.expr.mat) <- rownames(strain.expr[[1]])
+
+for(st in 1:length(strains)){
+  strain_mat <- strain_rrbs_mat[[st]][match(common.genes, rownames(strain_rrbs_mat[[st]])),]
+  common.gene.idx <- match(intersect(rownames(strain_mat), rownames(trimodal_mat)), rownames(strain_mat))
+  strain_mat <- strain_mat[common.gene.idx,]
+  strain.expr.mat <- strain.expr.mat[common.gene.idx,]
+  common.trimodal.idx <- match(intersect(rownames(strain_mat), rownames(trimodal_mat)), rownames(trimodal_mat))
+  non.trimodal <- which(trimodal_mat[common.trimodal.idx,] == 0)
+  strain_mat[non.trimodal] <- NA
+  trimodal.expr.effect[[st]] <- apply(strain_mat, 2, 
+    function(x) plot.with.model(x, strain.expr.mat[,strain.expr.order[st]], 
+    confidence = 0.95, plot.results = FALSE))
+}
+
+rel.pos <- as.numeric(colnames(trimodal.expr.effect[[1]]))
+all.fit <- rowMeans(sapply(trimodal.expr.effect, function(x) x[3,]))
+all.lwr <- rowMeans(sapply(trimodal.expr.effect, function(x) x[4,]))
+all.upr <- rowMeans(sapply(trimodal.expr.effect, function(x) x[5,]))
+
+upstream.limit <- -0.5
+downstream.limit <- 1.5
+min.fit = -0.02
+max.fit = 0.02
+
+if(is.interactive){quartz(width = 7, height = 5)}
+plot.new()
+plot.window(xlim = c(upstream.limit, downstream.limit), ylim = c(min.fit, max.fit)) 
+plot.poly.xy(rel.pos, all.lwr, rel.pos, all.upr, col = "gray80", border = "gray80")
+points(rel.pos, all.fit, type = "l", col = "gray40", lwd = 2)
+axis(1)
+axis(2)
+mtext(text = "Relative Gene Position", side = 1, line = 2.5)
+mtext(text = "Effect Size", side = 2, line = 2.5)
+abline(v = c(0,1), lwd = 2, col = "gray60", lty = 2)
+abline(h = 0, col = "gray40", lty = 2)
+#pheatmap(sapply(trimodal.expr.effect, function(x) x[3,]), cluster_cols = FALSE, cluster_rows = FALSE)
+```
 
 ## Across-strain variation in DNA methylation
 

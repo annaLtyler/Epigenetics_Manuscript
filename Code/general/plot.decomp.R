@@ -40,7 +40,8 @@ xlim = NULL, plot.results = TRUE){
 	var.text <- signif(var.exp[1:ncol(pc.mat)]*100, 2)	
 	colnames(pc.mat) <- paste0("PC", 1:ncol(pc.mat), " (", var.text, "%)")
 	decomp$rows.used <- na.rows
-	
+	decomp$var.exp <- var.exp
+
 	if(plot.results){
 		if(is.null(pch)){pch = 16}
 

@@ -5,7 +5,7 @@
 
 plot.chrom.mat <- function(state.mat, num.states = 8, xlim = NULL, 
 state.labels = 1:num.states, ylab = "Chromatin State", island.bins = NULL, 
-line.color = "gray", state.cols = NULL){
+line.color = "gray", state.cols = NULL, empty.cell.color = "lightgray"){
 
     #pheatmap(state.mat, cluster_rows = FALSE, cluster_cols = FALSE)
     if(is.null(state.cols)){
@@ -18,14 +18,16 @@ line.color = "gray", state.cols = NULL){
   
     #quartz()
     plot.new()
-    plot.window(xlim = xlim, ylim = c(0,nrow(state.mat)+1))
+    plot.window(xlim = xlim, ylim = c(0.8, nrow(state.mat)+0.2))
     plot.dim <- par("usr")
-    plot.width = plot.dim[2] - plot.dim[1]
+    plot.width <- plot.dim[2] - plot.dim[1]
+    plot.height <- plot.dim[4] - plot.dim[3]
+    #draw.rectangle(plot.dim[1], plot.dim[2], plot.dim[3], plot.dim[4])
 
     par(xpd = TRUE)
     for(i in 1:nrow(state.mat)){
         ypos <- nrow(state.mat) - i + 1
-        text(plot.dim[2], ypos, rownames(state.mat)[i])
+        text(plot.dim[1], ypos, rownames(state.mat)[i])
         consec.states <- consec.pairs(state.mat[i,])
         transition.pts <- which(apply(consec.states, 1, function(x) x[1] != x[2]))
 
@@ -33,6 +35,7 @@ line.color = "gray", state.cols = NULL){
         first.state <- consec.states[1,1]
         first.state.start <- methyl.pos[1]
         state.col <- state.cols[first.state]
+        if(is.na(state.col)){state.col <- empty.cell.color}
 
         #if there are no changes in state, use the first state for the whole row
         if(length(transition.pts) == 0){    
@@ -67,10 +70,6 @@ line.color = "gray", state.cols = NULL){
         }
     }
 
-
-    plot.dim <- par("usr")
-    plot.width <- plot.dim[2] - plot.dim[1]
-    plot.height <- plot.dim[4] - plot.dim[3]
 
     xmin <- plot.dim[2] + plot.width * 0.02
     xmax <- plot.dim[2] + plot.width * 0.06

@@ -188,7 +188,7 @@ if(!is.done){
 
 ```{r snp_arrays}
 #convert to binary SNP arrays
-snp.by.position.file <- here("Results", "SNPs", "SNP.by.Position.RDS") # nolint
+snp.by.position.file <- here("Results", "SNPs", "SNP.by.Position.RDS")
 if(!file.exists(snp.by.position.file)){
     snp.mats <- vector(mode = "list", length = length(snp.tables))
     #find the columns where strain information is stored

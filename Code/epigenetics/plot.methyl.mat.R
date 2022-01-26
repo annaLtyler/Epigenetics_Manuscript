@@ -2,7 +2,7 @@
 #marks in their genomic position
 
 plot.methyl.mat <- function(methyl.mat, plot.label = "", line.color = "black", 
-xlim = NULL, bins = NULL){
+xlim = NULL, ylab = "Methylation", bins = NULL){
 
     if(all(is.na(methyl.mat))){
         plot.text(paste("No methylation for", plot.label))
@@ -15,11 +15,15 @@ xlim = NULL, bins = NULL){
         methyl.pos <- as.numeric(colnames(methyl.mat))
         if(is.null(xlim)){xlim = c(min(methyl.pos), max(methyl.pos))}
 
+        #trim the methylation matrix so it doesn't plot outside the plotting region
+        use.idx <- intersect(which(methyl.pos >= xlim[1]), which(methyl.pos <= xlim[2]))
+        methyl.mat <- methyl.mat[,use.idx]
+        methyl.pos <- methyl.pos[use.idx]
+
         plot.new()
-        plot.window(xlim = xlim, ylim = c(0,nrow(methyl.mat)+1))
+        plot.window(xlim = xlim, ylim = c(0.8, nrow(methyl.mat)+0.2))
         plot.dim <- par("usr")
-        plot.width = plot.dim[2] - plot.dim[1]
-        
+        plot.width = plot.dim[2] - plot.dim[1]        
 
         par(xpd = TRUE)
         if(!is.null(bins)){
@@ -33,10 +37,10 @@ xlim = NULL, bins = NULL){
         for(i in 1:nrow(methyl.mat)){
             points(x = methyl.pos, y = rep(i, length(methyl.pos)), 
             pch = "|", col = strain.cols[i,], cex = 1.5)
-            text(plot.dim[2], i, rownames(methyl.mat)[i])
+            text(plot.dim[1], i, rownames(methyl.mat)[i])
         }
         par(xpd = FALSE)
-        mtext("Methylation", side = 2)
+        mtext(ylab, side = 2)
         mtext(plot.label, side = 3)
     
         plot.dim <- par("usr")

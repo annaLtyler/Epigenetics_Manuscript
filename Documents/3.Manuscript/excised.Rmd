@@ -160,3 +160,16 @@ The variation dips even lower, to around 4% at the TSS, indicating that for
 the most part that DNA methylation does not vary across strains and is not 
 contributing to strain difference in gene expression.  
 
+## Background
+
+In every mammalian cell nucleus, DNA is wound hierarchically into
+dense, and highly regulated structures. At the smallest level, 
+DNA is wound into nucleosomic core particles consisting of four
+pairs of histone proteins (H2A, H2B, H3, and H4). Each histone
+protein has a long tail that projects out of the nucleosome
+and which can be post-translationally modified, through 
+methylation, acetylation, phosphorylation, and a number of 
+other types of modifications [26704082]. Different modifications
+at different positions along these tails have markedly different
+effects on the transcription of local genes [citations]. Whereas 
+trimethylation of the ...

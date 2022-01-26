@@ -294,6 +294,102 @@ for(i in 1:nrow(strain.key)){
 }
 ```
 
+## PC strain plots
+
+```{r mark_pc}
+bin.files <- list.files(here("Data", "binarized_bed"))
+split.files <- strsplit(bin.files, "_")
+file.strain <- sapply(split.files, function(x) x[1])
+file.chr <- sapply(split.files, function(x) x[2])
+u_chr <- unique(file.chr)
+
+histone.modifications.by.chr <- vector(mode = "list", length = length(u_chr))
+names(histone.modifications.by.chr) <- u_chr
+
+for(ch in 1:length(u_chr)){
+    cat(u_chr[ch], "\n")
+    chr.files <- bin.files[which(file.chr == u_chr[ch])]
+    all.chr <- lapply(chr.files, function(x) read.delim(here("Data", "binarized_bed", x), skip = 1))
+    marks <- colnames(all.chr[[1]])
+    all.marks <- vector(mode = "list", length = length(marks))
+    names(all.marks) <- marks
+    for(m in 1:length(marks)){ 
+        mark.mat <- sapply(all.chr, function(x) x[,which(colnames(x) == marks[m])])
+        colnames(mark.mat) <- sapply(strsplit(chr.files, "_"), function(x) x[1])
+        has.vals <- which(rowSums(mark.mat) > 0)
+        mark.mat <- mark.mat[has.vals,]
+        all.marks[[m]] <- mark.mat
+        }
+    histone.modifications.by.chr[[ch]] <- all.marks
+}
+
+#for each mark make one big matrix across all chromosomes
+mark.decomp.file <- here("Results", "Decomposition.by.Mark.RDS")
+if(!file.exists(mark.decomp.file)){
+    all.mark.decomp <- vector(mode = "list", length = length(marks))
+    names(all.mark.decomp) <- marks
+    for(m in 1:length(marks)){
+        full.mark.mat <- Reduce("rbind", 
+            lapply(histone.modifications.by.chr, 
+            function(x) x[[which(names(x)  == marks[m])]]))
+        mark.decomp <- plot.decomp(t(full.mark.mat), plot.results = FALSE)
+        decomp.by.strain <- mark.decomp$u
+        var.exp <- round(mark.decomp$var.exp*100, 1)[1:ncol(decomp.by.strain)]
+        rownames(decomp.by.strain) <- colnames(full.mark.mat)
+        colnames(decomp.by.strain) <- paste0("PC", 1:ncol(decomp.by.strain), " (", var.exp, "%)")
+        all.mark.decomp[[m]] <- decomp.by.strain
+    }
+    saveRDS(all.mark.decomp, mark.decomp.file)
+}else{
+    all.mark.decomp <- readRDS(mark.decomp.file)
+}
+
+#plot the decompositions
+par(mfrow = c(2,2))
+for(i in 1:length(all.mark.decomp)){
+    strain.col <- col.table[match(rownames(all.mark.decomp[[i]]), col.table[,6]),3]
+    plot(all.mark.decomp[[i]], pch = 16, col = strain.col, cex = 2, main = names(all.mark.decomp)[i])
+
+}
+
+```
+
+## Genome percentage of each state
+
+The following plot shows the percentage of the genome that each state covers.
+
+```{r percentage_genome, fig.width = 5, fig.height = 4}
+state.percent.mat <- matrix(NA, nrow = num.states, ncol = length(all.bed))
+rownames(state.percent.mat) <- 1:num.states
+colnames(state.percent.mat) <- names(all.bed)
+
+calc_total <- function(bed.table){
+    chr <- unique(bed.table[,1])
+    chr.min <- sapply(chr, function(x) min(bed.table[which(bed.table[,1] == x),2]))
+    chr.max <- sapply(chr, function(x) max(bed.table[which(bed.table[,1] == x),2]))
+    chr.len <- chr.max - chr.min
+    return(sum(chr.len))
+}
+
+calc_state <- function(bed.table, state){
+    state.locale <- which(bed.table[,4] == state)
+    state.start <- bed.table[state.locale,2]
+    state.end <- bed.table[state.locale,3]    
+    state.coverage <- state.end - state.start
+    return(sum(state.coverage))
+}
+
+total.length <- sapply(all.bed, calc_total)
+for(state in 1:num.states){
+    total.count <- sapply(all.bed, function(x) calc_state(x, state))
+    state.percent.mat[state,] <- (total.count/total.length)*100
+}
+barplot(t(state.percent.mat), beside = TRUE, col = col.table[,3], ylab = "Percent Genome",
+xlab = "State")
+saveRDS(state.percent.mat, file.path(results.dir, "State.Genome.Percent.RDS"))
+```
+
+
 ## Chromatin states by gene
 The first step in this analysis is to create matrices of chromatin states for each 
 transcript. In this step, we go through all transcripts in the RNA Seq data set. 
