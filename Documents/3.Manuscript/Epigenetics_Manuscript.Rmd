@@ -22,7 +22,7 @@ abstract:
 author_summary:
  - The author summary goes here
 bibliography: epigenetics.bib
-output: rticles::plos_article
+output: 
 csl: plos.csl
 ---
 
@@ -103,128 +103,79 @@ gene expression [20657582, 21441907]. Similarly, the methylation
 of CpG sites around gene promoters and enhancers influences 
 transcription in a cell type-specific manner [21701563, 20720541]. 
 
-Cell type-specific patterns of histone modifications and DNA 
-methylation are established during development. The result is
-a canonical epigenetic landscape for coordination of major 
-patterns of gene expression for each cell type [sources about development].
-As an organism ages and responds to its environment, patterns of 
-both histone modifications [citation] and of DNA methylation change 
-[citation]. Such changes have been linked to scenescence [Horvath clock] 
-and cancer [citations].
+These patterns of histone modifications and DNA methylation are 
+established during development. The result is a canonical epigenetic 
+landscape for coordination of major patterns of gene expression 
+for each cell type [sources about development]. As an organism ages 
+and responds to its environment, patterns of both histone modifications 
+[citation] and of DNA methylation change [citation]. Such changes 
+have been linked to scenescence [Horvath clock] and cancer [citations].
 
 Epigenetic modifications coordinate the usage of a single genome to be 
 used for many different types of cells with diverse morphology and 
 physiology. This amazing feature of epigenetic modifications has been 
-intensely studied, and the variation in epigenetic landscapes across cell 
-types has been extensively documented. Less well understood, however, 
-is the role that genetic variation plays in determining epigenetic 
-landscapes. 
+intensely studied, and the variation in epigenetic landscapes across 
+cell types has been extensively documented [citations]. Less well 
+understood, however, is the role that genetic variation plays in 
+determining epigenetic landscapes. 
 
 Across genetically diverse populations of humans or mice, individual 
-cell types, such as hepatocytes, or cardiomyocytes, have globally similar
-gene expression profiles that define their role in the greater organism. 
-However, it is also true that across individuals, gene expression varies
-widely within the global constraints of cell type. This variation can 
-increase or decrease an organism's risk of developing disease. Variation
-in gene expression has been extensively mapped to variation in genetic 
-loci, or expression quantitative trait loci (eQTL). Large, coordinated 
-efforts, such as the Genotype-Tissue Expression (GTEx) Project [32913073, 
-32913075] have identified and catalogued many such loci in humans, and 
-countlessindependent studies have identified eQTL in mice and other model 
-organisms.
+cell types, such as hepatocytes, or cardiomyocytes, have globally 
+similar gene expression profiles that define their role within the 
+greater organism. However, it is also true that across individuals, 
+gene expression varies widely within the global constraints of cell 
+type. This variation can increase or decrease an organism's risk of 
+developing disease. Variation in gene expression has been extensively 
+mapped to variation in genetic loci, or expression quantitative trait 
+loci (eQTL). Large, coordinated efforts, such as the Genotype-Tissue 
+Expression (GTEx) Project [32913073, 32913075] have identified and 
+catalogued many such loci in humans, and countless independent 
+studies have identified eQTL in mice and other model organisms.
 
-Although the link between genetic variation and gene expression has been
-well studied, there is relatively little known about inter-individual 
+Although the link between genetic variation and gene expression has 
+been well studied, there is relatively little known about inter-individual 
 variation in epigenetic modifications, and how these variations are 
 related to variations in genotype and gene expression. The generation 
 of a more complete picture of inter-individual variation in epigenetic 
-modifications has the potential to improve our understanding of the 
-mechanics of gene regulation, improve our understanding of how cell 
-type-specific epigenetic landscapes are established, and to improve 
+modifications has the potential to increase our understanding of the 
+mechanisms of gene regulation, provide insights into the mechanisms 
+establishing cell type-specific epigenetic landscapes, and to improve 
 the functional annotation of the genome as it relates to the regulation 
-of gene expression.
+of gene expression. The vast majority of SNPs associated with human
+disease traits are located in non-coding regions, suggesting that they
+influence gene regulation, rather than protein function [citation].
+However, annotation of these regions is difficult without additional
+genomic features, such as histone modifictions and DNA methylation. 
+Overlaying a map of variation in epigenetic features has the potential 
+to provide a picture of how genetic variation changes functional 
+elements, like enhancers and insulators, in the genome [citation].
 
 Advances in chromatin immunoprecipitation (ChIP) and sequencing 
 technologies now enable genome-wide surveys of histone modifications 
 with relatively few cells [20077036], thus opening the door to the 
+possibility of cataloguing epigenetic variation across cell types 
+and individuals. Here, we performed a survey of epigenetic variation
+in hepatocytes across nine inbred mouse strains. We included the eight 
+founders of the Diversity Outbred/Collaborative Cross (DO/CC) [citation]
+mice, as well as DBA/2J, which, along with C57Bl/6J, is one of the 
+founders of the widely used BxD recombinant inbred panel of mice [citation]. 
+We assayed four histone modifications (H3K4me1, H3K4me3, H3K27me3, 
+and H3K27ac), as well as DNA methylation. We used ChromHMM [citation] 
+to identify `r num.states` chromatin states, classified by unique 
+combinations of the four histone marks, and investigated the association 
+between variation in these states and variation in gene expression across 
+the nine strains. We separately investigated the relationship between 
+DNA methylation and gene expression across strains.
 
-
-
-Such variation can 
-be mapped to genetic variation
-
-Estimates of the heritability 
-
-It is not well known how variation in epigenetic modifications across
-genetically distinct individuals contributes to heritable variation
-in gene expression. 
-
-
-Estimates of the heritability of epigenetic features range widely
-
-Early in life, the landscape of epigenetic patterns is 
-
-
-When we map an eQTL, how much of the effect of the eQTL is mediated
-through epigenetic modifications?
-
-We investigated this question in genetically diverse mice. 
-
-We conducted a survey of four histone modifications known to be 
-correlated with gene transcription across nine inbred strains of mice. 
-We also surveyed DNA methylation in these strains. 
-
-We looked at how both histone modifications and DNA methylation were 
-associated with transcription variation across strains. We further 
-imputed epigenetic states in a population of diversity outbred mice
-to more directly investigate the extent to which eQTLs are driven by
-variation in epigenetic modifications
-
-histone modifications, at least early in life, are determined by local
-genotype.
-
-DNA methylation is not determined genetically
-
-GWAS hits tend to be in non-coding regions of the genome
-estimated that most common disease variants work by altering gene expression
-rather than protein function
-
-These disease-associated SNPs likely fall into functional regions of the
-genome 
-
-eQTLs - what are we measuring when we measure eQTL?
-
-The identity of a hepatocyte is deterimined through patterns of gene 
-expression. Patterns of gene expression are determined in part through 
-patterns of genotype, DNA methylation, and chromatin modifications. 
-
-Within a given cell type, how do variations in local genetics and 
-epigenetics influence gene expression?
-
-Across mouse strains, gene expression in hepatocytes is largely
-similar. For the most part, genes that are highly expressed in one
-strain are highly expressed in another. However, there are subtle 
-variations in gene expression that are based on strain background. 
-
-This variation in gene expression across strains is related to 
-genetic and epigenetic factors. Here we explore how local genotype,
-chromatin modifications, and DNA methylation influence strain
-differences in gene expression. 
-
-patterns of chromatin state in hepatocytes varied across strains
-patterns of DNA methylation in hepatocytes varied across strains
-patterns of gene expression in hepatocytes varied across strains
-
-major axes of variation were similar in all cases, i.e. PWK and CAST were 
-  most divergent, while other strains clustered together
-
-Each of these epigenetic-expression patterns represent functioning 
-hepatocytes these are "good enough" solutions to make hepatocytes 
-[22859671]
-
-
-There is evidence that, especially early in life, 
-chromatin modifications are genetically determined [cite]. 
+We further investigated the relationship between epigenetic state 
+and gene expression by imputing the `r num.states` chromatin states 
+and DNA methylation into a population of DO mice. We then mapped gene 
+expression to the imputed epigenetic states to assess the extent to 
+which eQTLs are driven by variation in epigenetic modification. We 
+thus linked genetically controlled variation in epigentic modifications 
+to variation in gene expression in mice, and we provide the first 
+resource documenting epigenetic variation across a wide panel of 
+genetically diverse mice.
 
 # Materials and Methods
 
@@ -881,7 +832,7 @@ To compare the contribution of genetic and  epigenetic features to eQTLs in
 a gentically diverse population, we imputed chromatin state, DNA methylation,
 and SNPs into a population of DO mice described previously [Svenson, Tyler]
 (Methods). Chromatin state is largely determined by local genotype, especially 
-early in life[REF], and can thus be reliably imputed from local genotype. 
+early in life [REF], and can thus be reliably imputed from local genotype. 
 Further, we have shown here that local chromatin state correlates with 
 variation in gene expression across inbred strains. DNA methylation, on 
 the other hand, is known not to be highly heritable [REF], and thus cannot 
@@ -941,19 +892,38 @@ correlation to haplotype than either chromatin state or SNPs
 
 # Discussion
 
-In this study we surveyed strain variation in two types of epigenetic 
-modifications across nine inbred strains of mouse: histone modifications, 
-and DNA methylation. We identified `r num.states` chromatin states 
-representing different combinations of four histone modifications and 
-showed that the presence of these states was associated with variation 
-in gene expression across the inbred strains. This relationship between 
-chromatin state and gene expression varied along the gene body and was 
-concentrated both at the TSS and within the gene body. In addition to 
-the correlation betweeen chromatin state and gene expression across inbred 
-strains, we found that chromatin state, imputed from local founder haplotype, 
-explained a large amount of the variation in gene expression in an independent 
-outbred mouse population, almost completely accounting for the variance 
-explained by local eQTLs. 
+In this sudy we have shown that variation in histone modifications
+in inbred mice mirrors genetic variation, and we further showed
+that this variation was highly related to variation in gene expression
+across strains. These observations suggest that cell type-specific 
+patterns of histone modifications are determined by local genotype. 
+This hypothesis was supported by the high concordance between 
+chromatin state, which was imputed from local genotype, and gene 
+expression in an independent outbred population of mice.
+
+For most states, the effect on expression varied along the gene body
+with the largest effects existing near the TSS and within the gene
+body. This effect, first observed in inbred strains, was replicated
+in outbred mice, suggesting that these effects are robust and present 
+an opportunity to annotate functional elements in and around gene bodies.
+For example, the chromatin states in the gene \textit{Pkd2}, suggest two 
+regulatory regions--one surrounding the TSS, and the other just downstream 
+of the TSS inside the gene body. These regulatory regions are not apparent 
+in the SNP patterns or in the patterns or DNA methylation. Thus, chromatin 
+state not only helps identify putative regulatory regions, but may also 
+help annotate the SNPs underyling these regions. The SNPs underlying these 
+two regulatory regions are also correlated with gene expression, and may 
+exert this effect through an alteration in histone modification. In 
+contrast, the SNPs that are downstream of these regions and correlated 
+with gene expression, may act through another mechanism, such as 
+through directly dirsupting transcription, or by altering the transcript
+such that it is processed differently post transcriptionally. The 
+intermediate resolution of the chromatin state between that of SNPs and 
+haplotype thus provides a highly informative layer of information between 
+genotype and gene expression.
+
+
+
 
 In contrast, although percent DNA methylation was associated with 
 downregulation of genes within hepatocytes, it was not associated 
@@ -974,23 +944,9 @@ Trimodal CpG sites, i.e. those with methylation percent varying among
 0, 50, and 100%, have been shown in human brain tissue to be more heritable 
 than unimodal, or bimodal sites ($h^2 = 0.8 \pm 0.18$), and roughly half were 
 associated with local eQTL [20485568]. Here, we did not see an association
-between trimodal CpG sites and gene expression across strains 
-(Supplemental Figure XXX).
+between trimodal CpG sites and gene expression across strains (Supplemental 
+Figure XXX).
 
-The spatial resolution of chromatin state gives a finer grained picture
-of local gene regulation than haplotype without the loss of explanatory power 
-seen with SNPs. In the example gene \textit{Pkd2}, chromatin state shows two 
-clear regulatory regions, one surrounding the TSS, and the other just downstream 
-inside the gene body. These regulatory regions are not apparent in the SNP 
-patterns or in the patterns or DNA methylation. The chromatin state map not 
-only helps identify putative regulatory regions, but may also help annotate 
-the SNPs underyling these regions. SNPs underlying the two regulatory regions 
-may alter gene expression by affecting histone modificactions in regulatory 
-regions, whereas the SNPs that are further downstream of this region may alter 
-gene expression through other mechanisms, such as through altering transcription 
-itself, or the processing of the transcript. Thus the intermediate resolution of 
-the chromatin state between that of SNPs and haplotype provides a highly 
-informative layer of information between genotype and gene expression.
 
 There were a few individual states that were of particular interest. 
 
