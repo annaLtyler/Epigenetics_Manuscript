@@ -23,7 +23,7 @@ param <- read.delim(here("Data", "support_files", "param.txt"), header = FALSE,
 num.states = as.numeric(param["num_states",])
 ordered.marks <- strsplit(param["ordered_marks",], ",")[[1]]
 
-embed.figures = TRUE
+embed.figures = FALSE
 
 data.dir <- here("Data", "ChromHMM", paste0(num.states, "_states_C"))
 results.dir <- here("Results", "ChromHMM", paste0(num.states, "_states_C"))
@@ -242,6 +242,10 @@ rownames(ordered.emissions) <- 1:nrow(ordered.emissions)
 percent.mat <- readRDS(file.path(results.dir, "State.Genome.Percent.RDS"))[state.idx,]
 #barplot(t(percent.mat), beside = TRUE, col = col.table[,3])
 state.percent <- round(rowMeans(percent.mat), 1)
+zero.locale <- which(state.percent == 0)
+if(length(zero.locale) > 0){
+    state.percent[zero.locale] <- "<0.1"
+}
 
 #enrichments
 enrichment.mat <- as.matrix(read.delim(here("Results", "Enrichments", 

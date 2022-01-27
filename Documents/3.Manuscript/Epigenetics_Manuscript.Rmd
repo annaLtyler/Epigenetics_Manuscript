@@ -901,7 +901,7 @@ This hypothesis was supported by the high concordance between
 chromatin state, which was imputed from local genotype, and gene 
 expression in an independent outbred population of mice.
 
-For most states, the effect on expression varied along the gene body
+For many states, the effect on expression varied along the gene body
 with the largest effects existing near the TSS and within the gene
 body. This effect, first observed in inbred strains, was replicated
 in outbred mice, suggesting that these effects are robust and present 
@@ -922,19 +922,15 @@ intermediate resolution of the chromatin state between that of SNPs and
 haplotype thus provides a highly informative layer of information between 
 genotype and gene expression.
 
-
-
-
-In contrast, although percent DNA methylation was associated with 
-downregulation of genes within hepatocytes, it was not associated 
-with gene expression variation across inbred strains or in the 
-outbred population. Panel D in Figure XXX gives a visual example of 
-why this is the case. Despite strain variation in both genotype and 
-chromatin state at the TSS of \textit{Pkd2}, DNA methylation does 
-not vary at all. The CpG island at the TSS is unmethylated in all 
-strains, and thus all strains express \textit{Pkd2} in hepatocytes. 
-Rather, it is the variation in histone modifications that contributes 
-to the variation in expression levels across the strains.
+In contrast to chromatin state, percent DNA methylation was not 
+associated with variation in gene expression variation across inbred 
+strains or in the outbred population. This was largely due to a lack
+of variation in methylation across strains. An example of this 
+observation is shown in panel D of Figure XXX. Despite strain variation 
+in both genotype and chromatin state at the TSS of \textit{Pkd2}, 
+DNA methylation is completely invariant--the CpG island at the TSS is 
+unmethylated in all strains. Thus, although chromatin state appears to
+be highly influenced by local genotype, percent DNA methylation is not.
 
 Similar observations have been made in human studies [33931130]. Multiple
 twin studies have estimated the average heritability of individual CpG 
@@ -942,27 +938,43 @@ sites to be roughly 0.19 [27051996, 24183450, 22532803], with about 10\%
 of CpG sites having a heritability greater than 0.5 [24183450, 22532803, 24887635].
 Trimodal CpG sites, i.e. those with methylation percent varying among
 0, 50, and 100%, have been shown in human brain tissue to be more heritable 
-than unimodal, or bimodal sites ($h^2 = 0.8 \pm 0.18$), and roughly half were 
-associated with local eQTL [20485568]. Here, we did not see an association
-between trimodal CpG sites and gene expression across strains (Supplemental 
-Figure XXX).
-
+than unimodal, or bimodal sites ($h^2 = 0.8 \pm 0.18$), and roughly half 
+were associated with local eQTL [20485568]. Here, we did not see an 
+association between trimodal CpG sites and gene expression across strains 
+(Supplemental Figure XXX).
 
 There were a few individual states that were of particular interest. 
 
-more detailed discussion of a few individual states:
-combine spatial distribution, spatial effects, literature, and enrichments,
-we can find out interesting things about the states and generate hypotheses
-about the biology of hepatocytes.
+importance of combinatorial states - measured four histone marks,
+but were able to distinguish `r num.states` states with distinct 
+effects and distinct spatial patterns. Two states with large positive
+effects on transcriptsion (states `r active.promoter.state` and 
+`r active.enhancer.state`)
 
-individual states to discuss:
-states with combo activating and repressing:
+
+
+states that we could not annotate using the literature - these tended
+to be rare and to have weaker effects than the states we could annotate
+However, some had effects that were consistent between inbred and 
+outbred mice suggesting that these might be important states involved
+in gene regulation 
+in particular state 6 - 0.7% of transcripts - H3K4me3 in the absence of other marks
+H3K4me3 is most frequently associated with transcriptional activation.
+In our hands it is too, especially when paired with H3K27ac and H3K4me1.
+However, this rare state was consistently associated with downregulation
+when just downstream of the TSS.
+
+interesting states: bivalent promoters and poised enhancers
+relatively rare - showed effects across inbred strains that did
+not replicate in the outbred mice.
+
+have combo activating and repressing:
 
 bivalent promoter: typically resolved during development, but may stay for 
 regulation of some processes? tissue regeneration? abundance is right at TSS, 
 consistent with promoter annotation. Pretty rare state, but marks it
 genes that are enriched for developmental processes, so probably real. (?)
-enrichments:ube morphogenesis, tube development, vasculature development, 
+enrichments:tube morphogenesis, tube development, vasculature development, 
 regulation of locomotion, blood vessel development, cell adhesion, biological 
 adhesion, regulation of cell migration, blood vessel morphogenesis, anatomical 
 structure formation, regulation of cell differentiation
@@ -978,6 +990,7 @@ of immune system process
 both of these states have the same negative regulation of expression at the TSS in
 hepatocytes and across inbred strains, but the effect does not translate to DO mice.
 What do we make of this?
+
 
 **activating states:**
 active promoter and enhancer have different distributions, the enhancer is broader
