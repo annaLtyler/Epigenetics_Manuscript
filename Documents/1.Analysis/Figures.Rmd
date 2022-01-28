@@ -23,7 +23,7 @@ param <- read.delim(here("Data", "support_files", "param.txt"), header = FALSE,
 num.states = as.numeric(param["num_states",])
 ordered.marks <- strsplit(param["ordered_marks",], ",")[[1]]
 
-embed.figures = FALSE
+embed.figures = TRUE
 
 data.dir <- here("Data", "ChromHMM", paste0(num.states, "_states_C"))
 results.dir <- here("Results", "ChromHMM", paste0(num.states, "_states_C"))
@@ -505,7 +505,9 @@ for(s in 1:length(state.abundance)){
 
     plot(state.pos, state.avg, type = "l", ylim = c(ymin, ymax), 
         col = state.col[s], xlim = c(-0.5, 1.5), lwd = 4, axes = FALSE)
-    
+
+    #barplot_with_num(signif(state.avg*100, 1), las = 2)    
+
     draw.rectangle(-0.57, 1.57, ymin, ymax, border.col = border.box.color, lwd = 2)
     #axis(2)
     abline(v = c(0,1), col = tss.line.color, lty = 2, lwd = 3)

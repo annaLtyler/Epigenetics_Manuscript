@@ -8,7 +8,8 @@
 #20 inches.
 
 state_peak_genes <- function(binned.chromatin.states, state.id, min.n = 30, enrich.filename, 
-    gene.filename, max.term.size = NULL, n.terms = 10, sort.by = c("default", "p_value")){
+    gene.filename, max.term.size = NULL, n.terms = 10, num.strain = 9, 
+    sort.by = c("default", "p_value")){
     
 
     if(!file.exists(enrich.filename)){
@@ -38,7 +39,6 @@ state_peak_genes <- function(binned.chromatin.states, state.id, min.n = 30, enri
         }
 
         #split the chromatin state matrices by strain
-        num.strain <- nrow(one.state[[not.null.chrom[1]]])
         state.by.strain <- lapply(1:num.strain, function(x) sapply(not.null.chrom, function(y) one.state[[y]][x,]))
         names(state.by.strain)  <- rownames(one.state[[not.null.chrom[1]]])
 
@@ -56,6 +56,9 @@ state_peak_genes <- function(binned.chromatin.states, state.id, min.n = 30, enri
         enrich.by.strain.pos <- readRDS(enrich.filename)
     }
 
+    #count genes per strain with mark at each position
+    gene.count.mat <- sapply(state.by.pos, function(x) sapply(x, length))
+    #pheatmap(gene.count.mat, cluster_rows = FALSE, cluster_cols = FALSE, scale = "column")
 
     #compare enrichments by position across strains
     #make enrichment matrices for each strain
@@ -119,7 +122,15 @@ state_peak_genes <- function(binned.chromatin.states, state.id, min.n = 30, enri
     mtext(paste("State", state.id), side = 3, outer = TRUE, line = -2.5)
     #dev.off()
 
-    #result <- list("genes.with.state" = genes.with.states, "enrichments" = bin.enrich)
-    #return(result)
+    num.pos <- length(all.pos.sum)
+    genes.by.pos <- lapply(1:num.pos, function(x) unique(unlist(lapply(state.by.pos, function(y) names(y[[x]])))))
+    names(genes.by.pos) <- names(all.pos.sum)
+    #collapse the enrichment terms across strains.
+    collapsed.array <- Reduce("+", lapply(1:dim(enrich.array)[3], function(x) enrich.array[,,x]))
+
+    result <- list("genes.by.position" = genes.by.pos, 
+    "enrichment.by.position" = collapsed.array, "gene.counts" = gene.count.mat)
+    invisible(result)
+
 
 }

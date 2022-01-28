@@ -294,65 +294,6 @@ for(i in 1:nrow(strain.key)){
 }
 ```
 
-## PC strain plots
-
-```{r mark_pc}
-bin.files <- list.files(here("Data", "binarized_bed"))
-split.files <- strsplit(bin.files, "_")
-file.strain <- sapply(split.files, function(x) x[1])
-file.chr <- sapply(split.files, function(x) x[2])
-u_chr <- unique(file.chr)
-
-histone.modifications.by.chr <- vector(mode = "list", length = length(u_chr))
-names(histone.modifications.by.chr) <- u_chr
-
-for(ch in 1:length(u_chr)){
-    cat(u_chr[ch], "\n")
-    chr.files <- bin.files[which(file.chr == u_chr[ch])]
-    all.chr <- lapply(chr.files, function(x) read.delim(here("Data", "binarized_bed", x), skip = 1))
-    marks <- colnames(all.chr[[1]])
-    all.marks <- vector(mode = "list", length = length(marks))
-    names(all.marks) <- marks
-    for(m in 1:length(marks)){ 
-        mark.mat <- sapply(all.chr, function(x) x[,which(colnames(x) == marks[m])])
-        colnames(mark.mat) <- sapply(strsplit(chr.files, "_"), function(x) x[1])
-        has.vals <- which(rowSums(mark.mat) > 0)
-        mark.mat <- mark.mat[has.vals,]
-        all.marks[[m]] <- mark.mat
-        }
-    histone.modifications.by.chr[[ch]] <- all.marks
-}
-
-#for each mark make one big matrix across all chromosomes
-mark.decomp.file <- here("Results", "Decomposition.by.Mark.RDS")
-if(!file.exists(mark.decomp.file)){
-    all.mark.decomp <- vector(mode = "list", length = length(marks))
-    names(all.mark.decomp) <- marks
-    for(m in 1:length(marks)){
-        full.mark.mat <- Reduce("rbind", 
-            lapply(histone.modifications.by.chr, 
-            function(x) x[[which(names(x)  == marks[m])]]))
-        mark.decomp <- plot.decomp(t(full.mark.mat), plot.results = FALSE)
-        decomp.by.strain <- mark.decomp$u
-        var.exp <- round(mark.decomp$var.exp*100, 1)[1:ncol(decomp.by.strain)]
-        rownames(decomp.by.strain) <- colnames(full.mark.mat)
-        colnames(decomp.by.strain) <- paste0("PC", 1:ncol(decomp.by.strain), " (", var.exp, "%)")
-        all.mark.decomp[[m]] <- decomp.by.strain
-    }
-    saveRDS(all.mark.decomp, mark.decomp.file)
-}else{
-    all.mark.decomp <- readRDS(mark.decomp.file)
-}
-
-#plot the decompositions
-par(mfrow = c(2,2))
-for(i in 1:length(all.mark.decomp)){
-    strain.col <- col.table[match(rownames(all.mark.decomp[[i]]), col.table[,6]),3]
-    plot(all.mark.decomp[[i]], pch = 16, col = strain.col, cex = 2, main = names(all.mark.decomp)[i])
-
-}
-
-```
 
 ## Genome percentage of each state
 
@@ -683,10 +624,13 @@ right around the TSS in this same state, the strains are all much more evenly
 represented
 
 ```{r bin_enrich}
+bin.enrich <- vector(mode = "list", length = num.states)
+names(bin.enrich) <- 1:num.states
 pdf(file.path(results.dir, "Enrichments.by.state.and.position.pdf"), width = 20, height = 7)
 for(state in 1:num.states){
     if(is.interactive){print(state)}
-    state_peak_genes(binned.chromatin, state, min.n = 10, 
+    bin.enrich[[state]] <- state_peak_genes(binned.chromatin.states = binned.chromatin, 
+    state.id = state, min.n = 10, 
     enrich.filename = file.path(results.dir, paste0("State.", state, ".by.Position.Enrichment.RDS")), 
     gene.filename = file.path(results.dir, paste0("State.", state, ".by.Position.Gene.RDS")),
     max.term.size = 2000, n.terms = 5, sort.by = "default")
@@ -703,25 +647,33 @@ of enrichments at different positions.
 #pdf("~/Desktop/State.enrichment.pdf", width = 8, height = 15)
 for(state in 1:num.states){
     cat("State", state, "\n")
-    state.enrich <- state.bin.enrich[[state]]$enrichments
-    names(state.enrich) <- round(as.numeric(names(state.enrich)), 2)
-    which.enrich <- which(sapply(state.enrich, length) > 0)
-    num.enrich <- length(which.enrich)
-    if(num.enrich > 1){
-        enrich.mat <- plot.enrichment.group(state.enrich, cluster_cols = FALSE, 
-        transformation = "sqrt", max.term.size = 1000, 
-        plot.label = paste("state", state), n.terms = 10)
-        #wordcloud(unlist(strsplit(rownames(enrich.mat), " ")))
-    }
-    if(num.enrich == 1){
-        plot.enrichment(state.enrich[[which.enrich]])
-    }
-    if(num.enrich == 0){
-    plot.text("no enrichments")
-    }
+    enrich.mat <- bin.enrich[[state]]$enrichment.by.position
+    pheatmap(sqrt(enrich.mat), cluster_cols = FALSE)
     cat("\n\n")
 }
 #dev.off()
+
+#state = 12; use.pos = 13:16;filename="unknown.state" #unknown state with consistent, unintuitive effect, use just downstream of TSS
+#state = 13; use.pos = 10:12;filename="poised.enhancer" #poised enhancer, use right around TSS
+#state = 1; use.pos = 11:12;filename="bivalent.promoter" #bivalend promoter, use right around TSS
+#state = 8; use.pos = 12:26;filename="intragenic.enhancer"
+#state.genes <- bin.enrich[[state]]$genes.by.position
+#gene.count <- bin.enrich[[state]]$gene.counts
+#rownames(gene.count) <- round(as.numeric(rownames(gene.count)), 2)
+#gene.prop <- t(apply(gene.count, 1, function(x) x/sum(x)))
+#barplot(t(gene.prop), beside = TRUE, las = 2, col = col.table[,3], main = filename)
+#test.mat <- jaccard.matrix(state.genes)
+#diag(test.mat) <- NA
+#pheatmap(test.mat) #look at how commonality of genes marked at different regions 
+#test.genes <- state.genes[use.pos] 
+#pheatmap(bin.enrich[[state]]$enrichment.by.position, cluster_cols = FALSE)
+#plotVenn(test.genes)
+#test.query <- Reduce("intersect", test.genes)#common genes across windows
+#test.query <- unique(unlist(test.genes)) #all genes across windows
+#length(test.query)
+#test <- gost(test.query, organism = "mmusculus") 
+#plot.enrichment(test)
+#pdf(file.path("~", "Desktop", paste0("enrichment.", filename, ".pdf")));plot.enrichment.wordcloud(test, num.terms = 30);dev.off()
 ```
 
 ## Abundance by position

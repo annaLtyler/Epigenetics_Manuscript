@@ -22,7 +22,7 @@ abstract:
 author_summary:
  - The author summary goes here
 bibliography: epigenetics.bib
-output: 
+output: rticles::plos_article
 csl: plos.csl
 ---
 
@@ -62,12 +62,13 @@ id_state <- function(tag = NULL, state.emissions = NULL, annotation.table, emiss
 repressor.state <- id_state("repressor", annotation.table = annotations, emissions = emissions)
 active.promoter.state <- id_state("active promoter", annotation.table = annotations, emissions = emissions)
 heterochromatin.state <- id_state("heterochromatin", annotation.table = annotations, emissions = emissions)
+poised.enhancer.state <- id_state(state.emissions = c(1,1,1,0), annotation.table = annotations, emissions = emissions)
+bivalent.promoter.state <- id_state(state.emissions = c(1,1,0,0), annotation.table = annotations, emissions = emissions)
 active.enhancer.state <- id_state(state.emissions = c(0,1,1,1), annotation.table = annotations, emissions = emissions)
-tes.state <- id_state(state.emissions = c(0,1,0,0), annotation.table = annotations, emissions = emissions)
+unknown.state <- id_state(state.emissions = c(0,1,0,0), annotation.table = annotations, emissions = emissions)
 weak.intragenic.enhancer <- id_state(state.emissions = c(0,0,1,0), annotation.table = annotations, emissions = emissions)
 strong.intragenic.enhancer <- id_state(state.emissions = c(0,0,1,1), annotation.table = annotations, emissions = emissions)
 tes.intragenic.enhancer <- id_state(state.emissions = c(0,0,0,1), annotation.table = annotations, emissions = emissions)
-
 imputation.results <- readRDS(file.path(results.dir, "All.Variance.Explained.RDS"))
 ```
 
@@ -706,7 +707,7 @@ and CpG islands. Two states (states `r repressor.state` and
 `r heterochromatin.state`) were primarily found in intergenic regions, three 
 states (states `r weak.intragenic.enhancer`, 
 `r strong.intragenic.enhancer`, and `r tes.intragenic.enhancer`)  were enriched 
-around known enhancers, and one (state `r tes.state`) was enriched 
+around known enhancers, and one (state `r unknown.state`) was enriched 
 predominantly near the TES. The majority of these states were also associated 
 with variation in gene expression (Figure XXXC). The colored bars in this panel 
 show the effect of each state on gene expression variation across the inbred 
@@ -943,74 +944,111 @@ were associated with local eQTL [20485568]. Here, we did not see an
 association between trimodal CpG sites and gene expression across strains 
 (Supplemental Figure XXX).
 
-There were a few individual states that were of particular interest. 
+The diversity in the effects observed in the `r num.states` chromatin 
+states highlights the importance of analyzing combinatorial states as 
+opposed to individual histone modifications. To illustrate this point, 
+consider the three states with the largest positive effects on 
+transcription. Each of these three states had a distinct combination 
+of the three histone marks associated with transcriptional activation: 
+H3K4me1, H3K4me3, and H3K27ac. State `r active.promoter.state` was 
+characterized by high levels of H3K4me3 and H3K27ac, and low levels
+of H3K4me1. State `r strong.intragenic.enhancer` was characterized by 
+high levels of H3K4me1 and H3K27ac, and low levels of H3K4me3. And state
+`r active.enhancer.state` was characterized by high levels of all three
+activating marks (Figure XXX). Although all three states were associated
+with increased gene expression, each had a completely distinct spatial 
+distribution. State `r active.promoter.state` was distributed in a very 
+narrow band centered on the TSS, while state `r active.enhancer.state` 
+was distributed across a much broader region centered upstream of 
+the TSS. State `r strong.intragenic.enhancer` had a completely different 
+distribution -- it was depleted at the TSS, and most abundant within the gene
+body and near the TES. This variation in spatial distribution was mirrored
+in the spatial effects on transcription. State `r active.promoter.state`, 
+which we annotated as an active promoter, was positively associated with 
+transcription when it was present at the TSS. In contrast, states 
+`r strong.intragenic.enhancer` and `r active.enhancer.state`, which we
+annotated as enhancers, were associated with increased transcription
+when present anywhere in the gene body (Figure XXX). We would not be
+able to detect such patterns if analyzing any of the histone modifications
+in isolation. These results highlight the complexity of the histone
+code and the importance at analyzing combinatorial states.  
 
-importance of combinatorial states - measured four histone marks,
-but were able to distinguish `r num.states` states with distinct 
-effects and distinct spatial patterns. Two states with large positive
-effects on transcriptsion (states `r active.promoter.state` and 
-`r active.enhancer.state`)
+Some of the histone mark combinations had counterintuitive effects,
+which raises the intruiguing possibility of identifying new modes of
+expression regulation through histone modification. State `r unknown.state` 
+was characterized by high levels of H3K4me3 and low levels of the other
+three modifications. It appeared in 8\% of transcribed genes and had 
+a consistent negative effect on transcription just downstream of the TSS 
+in both inbred and outbred mice. 
+
+The modification H3K4me3 is most frequently associated with increased 
+transcriptional activity [citation], so the association with state 
+`r unknown.state` with reduced transcription is a deviation from the 
+dominant paradigm. This physical distribution of this state is also
+interesting. It is depleted at the TSS, and enriched just upstream 
+and just downstream of the TSS (Figuree XXX). It is also enriched 
+just downstream of the TES, although it does not appear to influence 
+transcription at this location (Figure XXX). The group of genes 
+marked by state `r unknown.state` were enriched for functions 
+such as stress response, DNA damage repair, and ncRNA processing 
+suggesting that this state may be used to regulate subsets of genes 
+involved in responses to environmental stimuli.
+
+Other states of note included two bivalent states, which are states 
+that combine an activating histone modification and a repressing
+histone modificaction [citation]. We detected a poised enhancer state 
+(state `r poised.enhancer.state`) and a bivalent promoter state 
+(state `r bivalent.promoter.state`). Both states were associated with
+downregulation across inbred strains when present near the TSS. This
+effect, however, did not replicate in the outbred mice, perhaps because 
+the effect was too weak to detect given the number of animals in the 
+population.
+
+Both bivalent promoters and poised enhancers are dynamic states that 
+change over the course of differentiation and in response to external 
+stimuli [citation]. Bivalent promoters have been studied primarily in 
+the context of development. They are abundant in undifferentiated cells, 
+and are typically resolved either to active promoters or to silenced 
+promoters as the cells differentiate into their final state 
+[23788621, 22513113]. These promoters also been shown to be important 
+in the response to changes in the environment. Their abundance increases 
+in breast cancer cells in response to hypoxia [27800026]. Poised enhancers
+are also observed during differentiation and in differentiated cells [32432110].
+In concordance with these previous observations, the genes marked by 
+states `r poised.enhancer.state` and `r bivalent.promoter.state` were
+enriched for develompental vascular development and morphogenesis. That
+we identified these states in differentiated hepatocytes may indicate
+that a subset of developmental genes retain the ability to be activated 
+under certain circumstances, such as during liver regeneration in response
+to damage. It is also possible these states were induced in the inbred 
+strains in respose to stress, rather than genetically coded. This could 
+explain why the negative effect on gene expression did not replicate 
+in the outbred mice. However, given that we detected this state in all 
+nine inbred strains in relatively equal proportions, this latter 
+hypothesis seems less likely. 
+
+
+for the majority of transcripts we still only explain about 10% of the variance 
+with haplotype and local epigenetics
+other variation explained by more complex genetic architecture? stochasticity?
+other genomic features?
 
 
 
-states that we could not annotate using the literature - these tended
-to be rare and to have weaker effects than the states we could annotate
-However, some had effects that were consistent between inbred and 
-outbred mice suggesting that these might be important states involved
-in gene regulation 
-in particular state 6 - 0.7% of transcripts - H3K4me3 in the absence of other marks
-H3K4me3 is most frequently associated with transcriptional activation.
-In our hands it is too, especially when paired with H3K27ac and H3K4me1.
-However, this rare state was consistently associated with downregulation
-when just downstream of the TSS.
 
-interesting states: bivalent promoters and poised enhancers
-relatively rare - showed effects across inbred strains that did
-not replicate in the outbred mice.
-
-have combo activating and repressing:
-
-bivalent promoter: typically resolved during development, but may stay for 
-regulation of some processes? tissue regeneration? abundance is right at TSS, 
-consistent with promoter annotation. Pretty rare state, but marks it
-genes that are enriched for developmental processes, so probably real. (?)
-enrichments:tube morphogenesis, tube development, vasculature development, 
-regulation of locomotion, blood vessel development, cell adhesion, biological 
-adhesion, regulation of cell migration, blood vessel morphogenesis, anatomical 
-structure formation, regulation of cell differentiation
-
-poised enhancer: frequency similar to bivalent promoter. Abundance peaks upstream
-of the TSS, so consistent with enhancer annotation. 
-enrichments: vasculature development, circulatory system development, cell adhesion, 
-biological adhesion, blood vessel development, regulation of cell migration, regulation 
-of cell motility, cell-cell adhesion, protein localization to cell periphery, blood vessel 
-morphogenesis, locomotion, cell migration, smooth muscle cell differentiation, regulation 
-of immune system process
-
-both of these states have the same negative regulation of expression at the TSS in
-hepatocytes and across inbred strains, but the effect does not translate to DO mice.
-What do we make of this?
+There was one state, state `r weak.intragenic.enhancer`, that was present
+more often in highly expressed genes in hepatocytes than in more lowly
+expressed genes, but had no effect on variation in gene expression across 
+strains. This is another interesting pattern that may indicate a chromatin
+state that marks genes that need to be highly expressed in a cell 
+type-specific manner, but does not contribute to across-strain variation 
+in expression. The genes marked by state `r weak.intragenic.enhancer` were
+enriched for 
 
 
-**activating states:**
-active promoter and enhancer have different distributions, the enhancer is broader
-around the TSS, the promoter state is right at the TSS. both have positive effects
-on transcription that match their abundance profile. Effects go all the way through
-to DO mice
-
-**active promoter enrichments:** response to cytokine, brush border, lipid metabolic process, 
-cellular lipid metabolic process, actin cytoskeleton, cluster of actin-based cell projections, 
-regulation of intracellular signal transduction, lipid binding, fatty acid metabolic process, 
-drug transport, brush border membrane, MAPK cascade, positive regulation of MAPK cascade, 
-monocarboxylic acid metabolic process, regulation of cell migration, Cortisol synthesis and 
-secretion, regulation of MAPK cascade, chemical homeostasis
-
-**active enhancer enrichments:** chromatin binding, tube morphogenesis, tube development, 
-regulation of establishment of protein localization, regulation of protein localization, 
-beta-catenin binding, nucleotide transport, mitochondrial membrane, neuron projection, 
-purine nucleotide transport, purine ribonucleotide transport, regulation of cellular 
-component movement, regulation of cell migration, regulation of anatomical structure 
-morphogenesis
+which was
+characterized by high levels of H3K4me1 and low levels of the other
+measured modifications. 
 
 **intragenic enhancer:**
 abundance and positive effect peak inside gene body
@@ -1018,11 +1056,6 @@ effect carries all the way through to DO mice
 enrichments: cellular macromolecule localization, cellular protein localization, 
 intracellular transport, establishment of protein localization, protein transport, 
 RNA processing, cellular response to stress.
-
-**repressor state:** marks developmental genes
-
-Genes that are marked with these different states are regulated differently
-across the inbred strains of mice.
 
 intragenic enhancer that has effect in hepatocytes, but not across strains:
 genes in hepatocytes with this state in the gene body are more highly regulated
@@ -1033,19 +1066,6 @@ differentially regulated across strains.
 enrichments: small molecule metabolic process, oxoacid metabolic process, 
 organic acid metabolic process, carboxylic acid metabolic process, lipid metabolic process, 
 organic substance catabolic process, monocarboxylic acid metabolic process
-
-By combining the spatial distribution and effects of the chromatin states
-with known information about the effects of histone modifications, we can
-
-
-variation in local genotype -> variation in epigenotype -> variation in expression
-local eigenetics explains more variation in expression than individual SNPs - 
-  implies that individual SNPs may not be the best unit of analysis (too polemical?)
-
-for the majority of transcripts we still only explain about 10% of the variance 
-with haplotype and local epigenetics
-other variation explained by more complex genetic architecture? stochasticity?
-other genomic features?
 
 
 

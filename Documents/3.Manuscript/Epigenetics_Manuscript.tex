@@ -262,8 +262,8 @@ that establish cell type-specific patterns of gene expression
 gene promoters and enhancers influences transcription in a cell
 type-specific manner {[}21701563, 20720541{]}.
 
-Cell type-specific patterns of histone modifications and DNA methylation
-are established during development. The result is a canonical epigenetic
+These patterns of histone modifications and DNA methylation are
+established during development. The result is a canonical epigenetic
 landscape for coordination of major patterns of gene expression for each
 cell type {[}sources about development{]}. As an organism ages and
 responds to its environment, patterns of both histone modifications
@@ -275,21 +275,21 @@ Epigenetic modifications coordinate the usage of a single genome to be
 used for many different types of cells with diverse morphology and
 physiology. This amazing feature of epigenetic modifications has been
 intensely studied, and the variation in epigenetic landscapes across
-cell types has been extensively documented. Less well understood,
-however, is the role that genetic variation plays in determining
-epigenetic landscapes.
+cell types has been extensively documented {[}citations{]}. Less well
+understood, however, is the role that genetic variation plays in
+determining epigenetic landscapes.
 
 Across genetically diverse populations of humans or mice, individual
 cell types, such as hepatocytes, or cardiomyocytes, have globally
-similar gene expression profiles that define their role in the greater
-organism. However, it is also true that across individuals, gene
+similar gene expression profiles that define their role within the
+greater organism. However, it is also true that across individuals, gene
 expression varies widely within the global constraints of cell type.
 This variation can increase or decrease an organism's risk of developing
 disease. Variation in gene expression has been extensively mapped to
 variation in genetic loci, or expression quantitative trait loci (eQTL).
 Large, coordinated efforts, such as the Genotype-Tissue Expression
 (GTEx) Project {[}32913073, 32913075{]} have identified and catalogued
-many such loci in humans, and countlessindependent studies have
+many such loci in humans, and countless independent studies have
 identified eQTL in mice and other model organisms.
 
 Although the link between genetic variation and gene expression has been
@@ -304,6 +304,8 @@ the functional annotation of the genome as it relates to the regulation
 of gene expression. The vast majority of SNPs associated with human
 disease traits are located in non-coding regions, suggesting that they
 influence gene regulation, rather than protein function {[}citation{]}.
+However, annotation of these regions is difficult without additional
+genomic features, such as histone modifictions and DNA methylation.
 Overlaying a map of variation in epigenetic features has the potential
 to provide a picture of how genetic variation changes functional
 elements, like enhancers and insulators, in the genome {[}citation{]}.
@@ -313,27 +315,26 @@ technologies now enable genome-wide surveys of histone modifications
 with relatively few cells {[}20077036{]}, thus opening the door to the
 possibility of cataloguing epigenetic variation across cell types and
 individuals. Here, we performed a survey of epigenetic variation in
-hepatocytes across nine inbred mouse strains. We used the eight founders
-of the Diversity Outbred/Collaborative Cross (DO/CC) {[}citation{]}
-mice, as well as DBA/2J, which, along with C57Bl/6J, is one of the
-founders of the BxD recombinant inbred panel of mice {[}citation{]}. We
-included four histone modifications (H3K4me1, H3K4me3, H3K27me3, and
-H3K27ac), as well as DNA methylation. We used ChromHMM to identify 14
-chromatin states, classified by unique combinations of the four histone
-marks, and investigated the association between variation in these
-states and variation in gene expression across the nine strains. We
-separately investigated the relationship between DNA methylation and
-gene expression across strains.
+hepatocytes across nine inbred mouse strains. We included the eight
+founders of the Diversity Outbred/Collaborative Cross (DO/CC)
+{[}citation{]} mice, as well as DBA/2J, which, along with C57Bl/6J, is
+one of the founders of the widely used BxD recombinant inbred panel of
+mice {[}citation{]}. We assayed four histone modifications (H3K4me1,
+H3K4me3, H3K27me3, and H3K27ac), as well as DNA methylation. We used
+ChromHMM {[}citation{]} to identify 14 chromatin states, classified by
+unique combinations of the four histone marks, and investigated the
+association between variation in these states and variation in gene
+expression across the nine strains. We separately investigated the
+relationship between DNA methylation and gene expression across strains.
 
 We further investigated the relationship between epigenetic state and
-gene expression by imputing the fourteen chromatin states and DNA
-methylation into a population of DO mice. We then mapped gene expression
-to the imputed epigenetic states to assess the extent to which eQTLs are
-driven by variation in epigenetic modification. This work provides an
-important link between genetic variation, epigenetic variation, and gene
-regulation in mice and suggests that similar surveys in humans could
-provide important insights into the roles of genetic and epigenetic
-variation in the regulation of gene expression.
+gene expression by imputing the 14 chromatin states and DNA methylation
+into a population of DO mice. We then mapped gene expression to the
+imputed epigenetic states to assess the extent to which eQTLs are driven
+by variation in epigenetic modification. We thus linked genetically
+controlled variation in epigentic modifications to variation in gene
+expression in mice, and we provide the first resource documenting
+epigenetic variation across a wide panel of genetically diverse mice.
 
 \hypertarget{materials-and-methods}{%
 \section{Materials and Methods}\label{materials-and-methods}}
@@ -1137,7 +1138,7 @@ To compare the contribution of genetic and epigenetic features to eQTLs
 in a gentically diverse population, we imputed chromatin state, DNA
 methylation, and SNPs into a population of DO mice described previously
 {[}Svenson, Tyler{]} (Methods). Chromatin state is largely determined by
-local genotype, especially early in life{[}REF{]}, and can thus be
+local genotype, especially early in life {[}REF{]}, and can thus be
 reliably imputed from local genotype. Further, we have shown here that
 local chromatin state correlates with variation in gene expression
 across inbred strains. DNA methylation, on the other hand, is known not
@@ -1198,30 +1199,45 @@ to haplotype than either chromatin state or SNPs (Pearson \(r = 0.74\)).
 \hypertarget{discussion}{%
 \section{Discussion}\label{discussion}}
 
-In this study we surveyed strain variation in two types of epigenetic
-modifications across nine inbred strains of mouse: histone
-modifications, and DNA methylation. We identified 14 chromatin states
-representing different combinations of four histone modifications and
-showed that the presence of these states was associated with variation
-in gene expression across the inbred strains. This relationship between
-chromatin state and gene expression varied along the gene body and was
-concentrated both at the TSS and within the gene body. In addition to
-the correlation betweeen chromatin state and gene expression across
-inbred strains, we found that chromatin state, imputed from local
-founder haplotype, explained a large amount of the variation in gene
-expression in an independent outbred mouse population, almost completely
-accounting for the variance explained by local eQTLs.
+In this sudy we have shown that variation in histone modifications in
+inbred mice mirrors genetic variation, and we further showed that this
+variation was highly related to variation in gene expression across
+strains. These observations suggest that cell type-specific patterns of
+histone modifications are determined by local genotype. This hypothesis
+was supported by the high concordance between chromatin state, which was
+imputed from local genotype, and gene expression in an independent
+outbred population of mice.
 
-In contrast, although percent DNA methylation was associated with
-downregulation of genes within hepatocytes, it was not associated with
-gene expression variation across inbred strains or in the outbred
-population. Panel D in Figure XXX gives a visual example of why this is
-the case. Despite strain variation in both genotype and chromatin state
-at the TSS of \textit{Pkd2}, DNA methylation does not vary at all. The
-CpG island at the TSS is unmethylated in all strains, and thus all
-strains express \textit{Pkd2} in hepatocytes. Rather, it is the
-variation in histone modifications that contributes to the variation in
-expression levels across the strains.
+For many states, the effect on expression varied along the gene body
+with the largest effects existing near the TSS and within the gene body.
+This effect, first observed in inbred strains, was replicated in outbred
+mice, suggesting that these effects are robust and present an
+opportunity to annotate functional elements in and around gene bodies.
+For example, the chromatin states in the gene \textit{Pkd2}, suggest two
+regulatory regions--one surrounding the TSS, and the other just
+downstream of the TSS inside the gene body. These regulatory regions are
+not apparent in the SNP patterns or in the patterns or DNA methylation.
+Thus, chromatin state not only helps identify putative regulatory
+regions, but may also help annotate the SNPs underyling these regions.
+The SNPs underlying these two regulatory regions are also correlated
+with gene expression, and may exert this effect through an alteration in
+histone modification. In contrast, the SNPs that are downstream of these
+regions and correlated with gene expression, may act through another
+mechanism, such as through directly dirsupting transcription, or by
+altering the transcript such that it is processed differently post
+transcriptionally. The intermediate resolution of the chromatin state
+between that of SNPs and haplotype thus provides a highly informative
+layer of information between genotype and gene expression.
+
+In contrast to chromatin state, percent DNA methylation was not
+associated with variation in gene expression variation across inbred
+strains or in the outbred population. This was largely due to a lack of
+variation in methylation across strains. An example of this observation
+is shown in panel D of Figure XXX. Despite strain variation in both
+genotype and chromatin state at the TSS of \textit{Pkd2}, DNA
+methylation is completely invariant--the CpG island at the TSS is
+unmethylated in all strains. Thus, although chromatin state appears to
+be highly influenced by local genotype, percent DNA methylation is not.
 
 Similar observations have been made in human studies {[}33931130{]}.
 Multiple twin studies have estimated the average heritability of
@@ -1235,88 +1251,106 @@ with local eQTL {[}20485568{]}. Here, we did not see an association
 between trimodal CpG sites and gene expression across strains
 (Supplemental Figure XXX).
 
-The spatial resolution of chromatin state gives a finer grained picture
-of local gene regulation than haplotype without the loss of explanatory
-power seen with SNPs. In the example gene \textit{Pkd2}, chromatin state
-shows two clear regulatory regions, one surrounding the TSS, and the
-other just downstream inside the gene body. These regulatory regions are
-not apparent in the SNP patterns or in the patterns or DNA methylation.
-The chromatin state map not only helps identify putative regulatory
-regions, but may also help annotate the SNPs underyling these regions.
-SNPs underlying the two regulatory regions may alter gene expression by
-affecting histone modificactions in regulatory regions, whereas the SNPs
-that are further downstream of this region may alter gene expression
-through other mechanisms, such as through altering transcription itself,
-or the processing of the transcript. Thus the intermediate resolution of
-the chromatin state between that of SNPs and haplotype provides a highly
-informative layer of information between genotype and gene expression.
+The diversity in the effects observed in the 14 chromatin states
+highlights the importance of analyzing combinatorial states as opposed
+to individual histone modifications. To illustrate this point, consider
+the three states with the largest positive effects on transcription.
+Each of these three states had a distinct combination of the three
+histone marks associated with transcriptional activation: H3K4me1,
+H3K4me3, and H3K27ac. State 12 was characterized by high levels of
+H3K4me3 and H3K27ac, and low levels of H3K4me1. State 13 was
+characterized by high levels of H3K4me1 and H3K27ac, and low levels of
+H3K4me3. And state 14 was characterized by high levels of all three
+activating marks (Figure XXX). Although all three states were associated
+with increased gene expression, each had a completely distinct spatial
+distribution. State 12 was distributed in a very narrow band centered on
+the TSS, while state 14 was distributed across a much broader region
+centered upstream of the TSS. State 13 had a completely different
+distribution -- it was depleted at the TSS, and most abundant within the
+gene body and near the TES. This variation in spatial distribution was
+mirrored in the spatial effects on transcription. State 12, which we
+annotated as an active promoter, was positively associated with
+transcription when it was present at the TSS. In contrast, states 13 and
+14, which we annotated as enhancers, were associated with increased
+transcription when present anywhere in the gene body (Figure XXX). We
+would not be able to detect such patterns if analyzing any of the
+histone modifications in isolation. These results highlight the
+complexity of the histone code and the importance at analyzing
+combinatorial states.
 
-There were a few individual states that were of particular interest.
+Some of the histone mark combinations had counterintuitive effects,
+which raises the intruiguing possibility of identifying new modes of
+expression regulation through histone modification. State 6 was
+characterized by high levels of H3K4me3 and low levels of the other
+three modifications. It appeared in 8\% of transcribed genes and had a
+consistent negative effect on transcription just downstream of the TSS
+in both inbred and outbred mice.
 
-more detailed discussion of a few individual states: combine spatial
-distribution, spatial effects, literature, and enrichments, we can find
-out interesting things about the states and generate hypotheses about
-the biology of hepatocytes.
+The modification H3K4me3 is most frequently associated with increased
+transcriptional activity {[}citation{]}, so the association with state 6
+with reduced transcription is a deviation from the dominant paradigm.
+This physical distribution of this state is also interesting. It is
+depleted at the TSS, and enriched just upstream and just downstream of
+the TSS (Figuree XXX). It is also enriched just downstream of the TES,
+although it does not appear to influence transcription at this location
+(Figure XXX). The group of genes marked by state 6 were enriched for
+functions such as stress response, DNA damage repair, and ncRNA
+processing suggesting that this state may be used to regulate subsets of
+genes involved in responses to environmental stimuli.
 
-individual states to discuss: states with combo activating and
-repressing:
+Other states of note included two bivalent states, which are states that
+combine an activating histone modification and a repressing histone
+modificaction {[}citation{]}. We detected a poised enhancer state (state
+3) and a bivalent promoter state (state 4). Both states were associated
+with downregulation across inbred strains when present near the TSS.
+This effect, however, did not replicate in the outbred mice, perhaps
+because the effect was too weak to detect given the number of animals in
+the population.
 
-bivalent promoter: typically resolved during development, but may stay
-for regulation of some processes? tissue regeneration? abundance is
-right at TSS, consistent with promoter annotation. Pretty rare state,
-but marks it genes that are enriched for developmental processes, so
-probably real. (?) enrichments:ube morphogenesis, tube development,
-vasculature development, regulation of locomotion, blood vessel
-development, cell adhesion, biological adhesion, regulation of cell
-migration, blood vessel morphogenesis, anatomical structure formation,
-regulation of cell differentiation
+Both bivalent promoters and poised enhancers are dynamic states that
+change over the course of differentiation and in response to external
+stimuli {[}citation{]}. Bivalent promoters have been studied primarily
+in the context of development. They are abundant in undifferentiated
+cells, and are typically resolved either to active promoters or to
+silenced promoters as the cells differentiate into their final state
+{[}23788621, 22513113{]}. These promoters also been shown to be
+important in the response to changes in the environment. Their abundance
+increases in breast cancer cells in response to hypoxia {[}27800026{]}.
+Poised enhancers are also observed during differentiation and in
+differentiated cells {[}32432110{]}. In concordance with these previous
+observations, the genes marked by states 3 and 4 were enriched for
+develompental vascular development and morphogenesis. That we identified
+these states in differentiated hepatocytes may indicate that a subset of
+developmental genes retain the ability to be activated under certain
+circumstances, such as during liver regeneration in response to damage.
+It is also possible these states were induced in the inbred strains in
+respose to stress, rather than genetically coded. This could explain why
+the negative effect on gene expression did not replicate in the outbred
+mice. However, given that we detected this state in all nine inbred
+strains in relatively equal proportions, this latter hypothesis seems
+less likely.
 
-poised enhancer: frequency similar to bivalent promoter. Abundance peaks
-upstream of the TSS, so consistent with enhancer annotation.
-enrichments: vasculature development, circulatory system development,
-cell adhesion, biological adhesion, blood vessel development, regulation
-of cell migration, regulation of cell motility, cell-cell adhesion,
-protein localization to cell periphery, blood vessel morphogenesis,
-locomotion, cell migration, smooth muscle cell differentiation,
-regulation of immune system process
+for the majority of transcripts we still only explain about 10\% of the
+variance with haplotype and local epigenetics other variation explained
+by more complex genetic architecture? stochasticity? other genomic
+features?
 
-both of these states have the same negative regulation of expression at
-the TSS in hepatocytes and across inbred strains, but the effect does
-not translate to DO mice. What do we make of this?
+There was one state, state 9, that was present more often in highly
+expressed genes in hepatocytes than in more lowly expressed genes, but
+had no effect on variation in gene expression across strains. This is
+another interesting pattern that may indicate a chromatin state that
+marks genes that need to be highly expressed in a cell type-specific
+manner, but does not contribute to across-strain variation in
+expression. The genes marked by state 9 were enriched for
 
-\textbf{activating states:} active promoter and enhancer have different
-distributions, the enhancer is broader around the TSS, the promoter
-state is right at the TSS. both have positive effects on transcription
-that match their abundance profile. Effects go all the way through to DO
-mice
-
-\textbf{active promoter enrichments:} response to cytokine, brush
-border, lipid metabolic process, cellular lipid metabolic process, actin
-cytoskeleton, cluster of actin-based cell projections, regulation of
-intracellular signal transduction, lipid binding, fatty acid metabolic
-process, drug transport, brush border membrane, MAPK cascade, positive
-regulation of MAPK cascade, monocarboxylic acid metabolic process,
-regulation of cell migration, Cortisol synthesis and secretion,
-regulation of MAPK cascade, chemical homeostasis
-
-\textbf{active enhancer enrichments:} chromatin binding, tube
-morphogenesis, tube development, regulation of establishment of protein
-localization, regulation of protein localization, beta-catenin binding,
-nucleotide transport, mitochondrial membrane, neuron projection, purine
-nucleotide transport, purine ribonucleotide transport, regulation of
-cellular component movement, regulation of cell migration, regulation of
-anatomical structure morphogenesis
+which was characterized by high levels of H3K4me1 and low levels of the
+other measured modifications.
 
 \textbf{intragenic enhancer:} abundance and positive effect peak inside
 gene body effect carries all the way through to DO mice enrichments:
 cellular macromolecule localization, cellular protein localization,
 intracellular transport, establishment of protein localization, protein
 transport, RNA processing, cellular response to stress.
-
-\textbf{repressor state:} marks developmental genes
-
-Genes that are marked with these different states are regulated
-differently across the inbred strains of mice.
 
 intragenic enhancer that has effect in hepatocytes, but not across
 strains: genes in hepatocytes with this state in the gene body are more
@@ -1328,20 +1362,6 @@ enrichments: small molecule metabolic process, oxoacid metabolic
 process, organic acid metabolic process, carboxylic acid metabolic
 process, lipid metabolic process, organic substance catabolic process,
 monocarboxylic acid metabolic process
-
-By combining the spatial distribution and effects of the chromatin
-states with known information about the effects of histone
-modifications, we can
-
-variation in local genotype -\textgreater{} variation in epigenotype
--\textgreater{} variation in expression local eigenetics explains more
-variation in expression than individual SNPs - implies that individual
-SNPs may not be the best unit of analysis (too polemical?)
-
-for the majority of transcripts we still only explain about 10\% of the
-variance with haplotype and local epigenetics other variation explained
-by more complex genetic architecture? stochasticity? other genomic
-features?
 
 \hypertarget{annotation-of-chromatin-states}{%
 \subsection{Annotation of chromatin
