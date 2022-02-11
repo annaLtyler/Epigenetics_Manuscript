@@ -1094,31 +1094,32 @@ spatially resolved. To investigate this possibility we tested the
 association between both chromatin state and DNA methylation and gene
 expression with spatially resolved models (Methods). We tested the
 effect of each chromatin state on expression across genes within
-hepatocytes (Figure XXXA) and the effect of each chromatin state on the
-variation in gene expression across strains (Figure XXXB).
+hepatocytes (Figure \ref{fig:state_effects}A) and the effect of each
+chromatin state on the variation in gene expression across strains
+(Figure \ref{fig:state_effects}B).
 
 All chromatin states demonstrated spatially dependent effects on gene
-expression within hepatocytes. For about half of the states, the effects
-on expression were concentrated at or near the TSS, while in the other
-states effects were seen across the whole gene body or predominantly in
-the intragenic region. The direction of the effects matched the overall
-effects of each state seen previously. Remarkably, the spatial effects
-were recapitulated for almost every state when we looked across strains.
-That is, variation in chromatin state across strains contributed to
-variation in gene expression in the same manner that cell-type
-expression was being established. One notable exception was state 9,
-whose presence upregulated genes within hepatocytes, but did not
-contribute to expression variation across strains.
+expression within hepatocytes. For many of the states, the effects on
+expression were concentrated at or near the TSS, while in the other
+states effects were seen across the whole gene. The direction of the
+effects matched the overall effects of each state seen previously
+(Figure \ref{fig:state_overview}). Remarkably, the spatial effects were
+recapitulated for almost every state when we looked across strains. That
+is, variation in chromatin state across strains contributed to variation
+in gene expression in the same manner that cell-type expression was
+being established. One notable exception was state 9, whose presence
+upregulated genes within hepatocytes, but did not contribute to
+expression variation across strains.
 
 We also examined the effect of percent DNA methylation across genes
-within hepatocytes, and as it contributred to expression variation
-across the inbred strains (Figure XXX). As expected, hypomethylation at
-the TSS was associated with lower expression in hepatocytes. However,
+within hepatocytes, and across strains (Figure
+\ref{fig:DNA_methylation_effect}). As expected, hypomethylation at the
+TSS was associated with lower expression in hepatocytes. However,
 percent DNA methylation did not contribute at all to expression
-variation across strains, implying that although DNA methylation is used
-in gene regulation within a cell type, it it not heritable and does not
-contribute to variation in gene expression across genetically diverse
-individuals.
+variation across strains, implying that although percent DNA methylation
+is used in gene regulation within a cell type, it is not heritable and
+does not contribute to variation in gene expression across genetically
+diverse individuals.
 
 \hypertarget{imputed-chromatin-state-explained-varation-in-expression-in-diversity-outbred-mice}{%
 \subsection{Imputed chromatin state explained varation in expression in
@@ -1130,9 +1131,9 @@ between local chromatin state and gene expression. However, we cannot
 establish causality in this population. For that we need a mapping
 population in which we can associate genetic or epigenetic variation at
 a single locus with changes in gene expression. A mapping population
-will also allow us to establish the extent to which variation in
-epigenetic factors contributes to observed expression quantitative trait
-loci (eQTL).
+also allows us to establish the extent to which variation in epigenetic
+factors contributes to observed expression quantitative trait loci
+(eQTL).
 
 To compare the contribution of genetic and epigenetic features to eQTLs
 in a gentically diverse population, we imputed chromatin state, DNA
@@ -1152,45 +1153,39 @@ gene expression in a new population.
 For each transcript in the DO population, we imputed the local chromatin
 state across the gene body based on the gene's local founder haplotype
 and the chromatin state at the corresponding position in the inbred
-mice. We did the same for DNA methylation and SNPs (Figure XXX).
+mice. We did the same for DNA methylation and SNPs.
 
 After imputing each genomic feature into the DO population, we mapped
 gene expression to the imputed features and calculated the variance
-explained. Example results for the gene \textit{Pkd2} are shown in
-Figure XXX. Panels B, C, and D show the chromatin state, SNP genotype,
-and DNA methylation status at multiple positions along the gene body in
-the inbred strains. The boundaries of the gene body along with the
-direction of transcription are shown by the arrow under panel A. Panel A
-shows the variance explained by each genomic feature at each position
-with a distinct symbol. The variance explained by the local haplotype is
-shown as the dashed line at the top of the panel. There are two
-particularly interesting regions in this gene. One is at the TSS and the
-immediately surrounding area, and the other is just downstream of the
-TSS.
+explained. Examples of each genomic feature and the mapping results for
+the gene \textit{Pkd2} are shown in Figure \ref{fig:example_gene}. There
+are two particularly interesting regions in this gene. One is at the TSS
+and the immediately surrounding area, and the other is just downstream
+of the TSS.
 
-Both regions show variation in chromatin state that is highly correlated
-with gene expression in the DO (blue plus signs in top panel). Panel B,
-which is in the same order as the haplotype effect shown in panel E,
-shows that chromatin states that are associated with higher expression
-(red states) are more abundant in the haplotypes that are associated
-with higher expression in the DO. The two strains with the least red in
-the chromatin state matrix, WSB and PWK, are the lowest-expressing
-alleles in the DO. The two strains with the most red, CAST and NOD, are
-the strains with the highest expressing alleles in the DO. This basic
-pattern separating the two lowest expressing strains from the remaining
-strains with high expression is mirrored in the gene expression in the
-inbred mice (Figure XXXF)
+These two regions are colored red, indicating that they are marked by
+chromatin states with a positive effect on gene expression. The order of
+the rows in this panel helps illustrate that the strains with the most
+red in chromatin state space contributed the highest-expressing alleles
+to the DO (Figure \ref{fig:example_gene}E). The two haplotypes with the
+strongest negative effect on gene expression in the DO have mostly blue
+chromatin states in these two regions. These two strains also had the
+lowest expression among the inbred mice (Figure
+\ref{fig:example_gene}F). The concordance between chromatin state and
+gene expression in the DO is seen as the blue pluses in Figure
+\ref{fig:example_gene}A that are aligned with the two red regions, which
+we suggest are putative enhancer regions.
 
-The SNP patterns underlying the chromatin state patterns also mirror the
-haplotype effects seen in the DO. The spatial patterns in the SNPs only
-partially mirror those in chromatin state. SNPs underlying the putative
-enhancer regions could potentially influence gene expression by altering
-chromatin state. But SNPs downstream of this region underly invariant
-chromatin state.
+The spatial patterns in the SNPs only partially mirror those in
+chromatin state (Figure Figure \ref{fig:example_gene}C). SNPs underlying
+the putative enhancer regions could potentially influence gene
+expression by altering chromatin state. But SNPs downstream of this
+region underly invariant chromatin.
 
 Percent DNA methylation does not vary across the strains in either of
-these critical regions, and does not contribute to variation in
-expression across genetically distinct individuals.
+these putative enhancer regions, and does not contribute to variation in
+expression across genetically distinct individuals (Figure
+\ref{fig:example_gene}D).
 
 The overall distributions of variance explained by each feature across
 all transcripts is shown in Figure XXX. These distributions show the
