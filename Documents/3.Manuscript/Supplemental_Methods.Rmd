@@ -1,0 +1,14 @@
+---
+title: "Supplemental Methods"
+author: Anna L Tyler
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  pdf_document:
+    toc: true
+---
+
+This document contains detailed methods accompanying the manuscript
+Spruce, Tyler, et al. \textit{Variation in epigenetic state correlates with 
+gene expression across nine inbred strains of mice.}
+
+

@@ -29,7 +29,14 @@ factor binding sites,
 
 Table?? Figure?? Supp Figure??
 
+A more detailed description of these annotations is in Table XXX.
 
+Both were associated with increased expression in the inbred 
+mice, suggesting promoter or enhancer functions. The state third 
+state in this group of high-expressing
+states, state `r strong.intragenic.enhancer`, was depleted nere the TSS, but
+enriched within the gene body, suggesting that this state may mark
+active intragenic enhancers.
 
 ### Promoter and enhancer states correlated with increased expression
 Chromatin states 5 and 7, which were enriched around enhancers and promoters 

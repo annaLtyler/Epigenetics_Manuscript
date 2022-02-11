@@ -1,0 +1,145 @@
+---
+title: "Notes about states"
+author: Anna L Tyler
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  html_document:
+    code_folding: hide
+    collapsed: no
+    toc: yes
+    toc_float: yes
+---
+
+## Introduction
+
+This document holds notes that I've made about individual states
+and has references associated with those notes.
+
+There are also some other general notes that could potentially 
+be used in the Discussion.
+
+## Notes
+
+for the majority of transcripts we still only explain about 10% of the variance 
+with haplotype and local epigenetics
+other variation explained by more complex genetic architecture? stochasticity?
+other genomic features?
+
+
+There was one state, state `r weak.intragenic.enhancer`, that was present
+more often in highly expressed genes in hepatocytes than in more lowly
+expressed genes, but had no effect on variation in gene expression across 
+strains. This is another interesting pattern that may indicate a chromatin
+state that marks genes that need to be highly expressed in a cell 
+type-specific manner, but does not contribute to across-strain variation 
+in expression. The genes marked by state `r weak.intragenic.enhancer` were
+enriched for 
+
+
+which was
+characterized by high levels of H3K4me1 and low levels of the other
+measured modifications. 
+
+**intragenic enhancer:**
+abundance and positive effect peak inside gene body
+effect carries all the way through to DO mice
+enrichments: cellular macromolecule localization, cellular protein localization, 
+intracellular transport, establishment of protein localization, protein transport, 
+RNA processing, cellular response to stress.
+
+intragenic enhancer that has effect in hepatocytes, but not across strains:
+genes in hepatocytes with this state in the gene body are more highly regulated
+than genes without this state. The effect is quite strong in hepatocytes,
+but does not extend to variation across strains, even in the inbred mice.
+This state marks genes that are important in hepatocytes, but are not 
+differentially regulated across strains.
+enrichments: small molecule metabolic process, oxoacid metabolic process, 
+organic acid metabolic process, carboxylic acid metabolic process, lipid metabolic process, 
+organic substance catabolic process, monocarboxylic acid metabolic process
+
+
+
+## Annotation of chromatin states
+
+Make this section into a table
+
+
+We identified `r num.states` chromatin states corresponding to `r num.states` 
+distinct 
+combinations of histone modifications (Figure XXXA). To annotate these
+states to functional elements, we combined previously known annotations
+with functional enrichments and relationship to gene expression. The
+characterizations are summarized in Figure XXX. Figure XXXA further 
+shows the relative abundance of each state in and around the gene body. 
+This high-resolution image of abundance helped further refine the 
+annotations of each state. Figure XXXB shows that overall states 1 and 
+7 were the most abundant states with state 7 being highly enriched at 
+the TSS, and state 1 being strongly depleted at the TSS, but enriched 
+within the gene body and in intragenic spaces. We describe the reasoning
+behind the annotation of each state below:
+
+**State 1 - heterochromatin** was characterized by the absence of all measured 
+marks, enrichment in intergenic regions, and strong downregulation of gene 
+expression. This state was strongly depleted at the TSS of expressed genes 
+(Figure XXXA), but the most abundant state in the gene body and outside the 
+gene body. This state may multiple different states that could be resolved 
+with the measurement of more histone modifications. For example, intergenically, 
+state 1 may mark heterochromatin, which is characterized by H3K9 trimethylation 
+[12867029], which was not measured here. However, state 1 was also highly abundant
+in the gene bodies of expressed genes, but was associated with reduced expression.
+This could suggest differential distribution of heterochromatin across strains,
+or could represent an additional transcriptionally repressive state.
+
+**State 2 - repressed chromatin** was characterized by the presence of H3K27me3, 
+which has been shown previously to correlate with transcriptional silencing [REF]. 
+This state was not enriched in any particular functional element, but was associated 
+with strong downregulation of transcription.
+
+**State 3 - poised enhancer** was primarily characterized by the presence of 
+H3K27me3, a mark associated with polycomb silencing [REF], and H3K4me1 a mark 
+associated with enhancers [REF]. The co-occurence of these opposing marks has 
+previously been associated with a functional element known as a poised enhancer 
+[21160473]. 
+
+
+This element has been studied mostly in the context of 
+development. Bivalent promoters are abundant in undifferentiated cells, and are 
+resolved either to active promoters or silenced promoters as the cells differentiate 
+into their final state [REF]. These promoters have also been shown to be important 
+in the response of cancer cells to environmental disturbances such as hypoxia [REF].
+The presence of bivalent promoters in adult mouse hepatocytes is interesting. They 
+may mark genes poised for expression during liver regeneration, or for responding to
+a particular environmental stimulus. There were XXX genes that were marked with this
+bivalent promoter state at the TSS across all strains. This group of genes was enriched 
+for developmental processes as well as alcohol metabolism (Fig? Table?). 
+
+**State 4 - intragenic enhancer** was characterized by the presence of H3K4me1, 
+which is known to mark cell type-specific enhancers, both active and poised [REF]. 
+The presence of H3K4me1 alone, in the absence of H3K27ac, as it occurs in state 4, 
+has been shown to mark inactive, or poised enhancers [21106759]. The addition of 
+H3K27ac can then activate the enhancer to increase transcription. When present 
+within the gene body, this state acts as an intragenic enhancer, which acts as
+an alternative promoter, and can be transcribed bidirectionally to produce short
+RNAs known as eRNA [20393465]. This state was modestly enriched in known enhancers
+ and was associated with slightly increased 
+gene expression. The presence of H3K4me1 in the absence of H3K4me3 has been 
+shown to mark intragenic enhancers and to be associated with increased 
+transcription, as these regions can be transcribed independently of the
+full gene [Kowalczyk et al. 2012]. We annotated this state as a weak enhancer.
+
+**State 5 - active enhancer** was characterized by the co-occurence of H3K4me1, 
+which marks cell type-specific enhancers, and H3K27ac, which specifically marks 
+active enhancers [21106759, 21160473]. This state was strongly enriched in known 
+enhancers, and its presence had a strong postive effect on transcription. We thus 
+annotated this state as a strong enhancer.
+
+
+state 0100 (just H3K4me3 absence of others) - interesting abundance pattern. Just up and 
+downstream of the TSS, and just downstream of the TES. Associated with slight
+downregulation of expression. Could be antisense transcription [22768981]?
+This fits the negative association, but the position of the negative association
+is just downstream of the TSS. can't really find any other sources on this. 
+The probably with most studies is that they are looking only at a single mark,
+and not noting the absence of the other three marks.
+
+state 0110 - 
