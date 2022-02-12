@@ -904,13 +904,14 @@ mean.var.exp <- round(colMeans(imputation.results, na.rm = TRUE), 2)
 var.exp.cor <- round(cor(imputation.results, use = "pairwise.complete.obs"), 2)
 ```
 
-The overall distributions of variance explained by each feature across all 
-transcripts is shown in Figure XXX. These distributions show the haplotype effect 
-for the marker nearest each transcript compared with the maximum effect across the 
-gene body for each of the other imputed features. Overall, local haplotype explained 
+The overall distributions of variance explained by each feature across 
+all transcripts is shown in Figure \ref{fig:effect_distrubutions}. These 
+distributions show the haplotype effect for the marker nearest each 
+transcript compared with the maximum effect across the gene body for 
+each of the other imputed features. Overall, local haplotype explained 
 the largest amount of variance of gene expression in the DO 
-($R^2 = `r mean.var.exp["Haplotype_R2"]`$). The variance explained by local chromatin 
-state was very highly correlated with that of haplotype 
+($R^2 = `r mean.var.exp["Haplotype_R2"]`$). The variance explained by 
+local chromatin state was very highly correlated with that of haplotype 
 (Pearson $r = `r var.exp.cor["Haplotype_R2", "Chromatin_R2"]`$) and explained 
 almost as much variance in gene expression in the DO as local haplotype 
 ($R^2 = `r mean.var.exp["Chromatin_R2"]`$). 
@@ -919,41 +920,30 @@ The mean variance explained by SNPs was lower ($R^2 = `r mean.var.exp["SNP_R2"]`
 than that explained by haplotype and was not as highly correlated with local
 haplotype as chromatin state was (Pearson $r = `r var.exp.cor["Haplotype_R2", "SNP_R2"]`$). 
 DNA methylation, the lower bound for variance explained by a feature imputed 
-from local haplotype, explained the least amount of expression variance in the 
-DO population ($R^2 = `r mean.var.exp["Methylation_R2"]`$), and had a much lower
-correlation to haplotype than either chromatin state or SNPs 
+from local haplotype, explained the lowest amount of expression variance in 
+the DO population ($R^2 = `r mean.var.exp["Methylation_R2"]`$), and had a much 
+lower correlation to haplotype than either chromatin state or SNPs 
 (Pearson $r = `r var.exp.cor["Haplotype_R2", "Methylation_R2"]`$). 
 
 # Discussion
 
-work this paragraph in...
-That states `r heterochromatin.state` and `r repressor.state` were associated
-with reduced gene expression both within hepatocytes and across strains suggests
-that there may be differential epigenetic silencing of genes in hepatocytes 
-across strains. Further, the majority of chromatin states were associated 
-with variation in expression across strains, suggesting that epigenetic regulation 
-of gene expression through histone modification may contribute substantially to 
-variation in gene expression across genetically distinct individuals. That most 
-states have the same effects across genes within a cell type and across strains 
-suggests that the mechanisms that are used to regulate cell type specificity 
-also contribure to variation in genetically distinct individuals.
-
 In this sudy we showed that variation in histone modifications
 in inbred mice mirrors genetic variation, and we further showed
-that this variation was highly related to variation in gene expression
-across strains. These observations suggest that cell type-specific 
-patterns of histone modifications are determined by local genotype,
-and may be a major mechanism through which expression QTL (eQTL)
-are generated. This hypothesis was supported by the high concordance 
-between chromatin state, which was imputed from local genotype, and 
-gene expression in an independent outbred population of mice.
+that this variation was highly related to variation in gene 
+expression across strains. These observations suggest that cell 
+type-specific patterns of histone modifications are determined by 
+local genotype, and may be a major mechanism through which expression 
+QTL (eQTL) are generated. This hypothesis was supported by the high 
+concordance between chromatin state, which was imputed from local 
+genotype, and gene expression in an independent outbred population 
+of mice.
 
 The high resolution of the chromatin states combined with spatial
 patterns of abundance and effect on gene expression offers
 opportunities for the annotation of functional elements in and 
 around genes. For example, the chromatin state patterns in the 
-gene \textit{Pkd2}, suggest two enhancers--one at the TSS, and 
-the other just downstream of the TSS inside the gene body (Figure XXX).
+gene \textit{Pkd2}, suggest two enhancers -- one at the TSS, and 
+the other just downstream of the TSS inside the gene body.
 The positive effects of these putative enhancer regions in the 
 inbred mice were replicated in outbred mice suggesting that 
 these effects are robust and contribute to variation in gene 
@@ -965,26 +955,27 @@ modification is the primary mechanism through which gene expression
 is regulated by these regions. Further, the richness of the information
 in this chromatin state layer provides data with which to further
 annotate the effects of SNPs underlying these regions. There are 
-SNPs throughout the gene, as seen in Figure XXX, and many of them 
-are associated with variation in gene expression. However, while the 
-SNPs within the putative enhancer regions may change expression by 
-altering histone modifications placed in those regions, SNPs futher
-downstream may work through another mechanism, such as through directly 
-dirsupting transcription, or by altering the transcript such that it 
-is processed differently post transcriptionally. The intermediate 
-resolution of the chromatin state between that of SNPs and haplotype 
-thus provides a highly informative layer of information between genotype 
-and gene expression.
+SNPs throughout the gene, as seen in Figure \ref{fig:example_gene}, 
+and many of them are associated with variation in gene expression. 
+However, while the SNPs within the putative enhancer regions may 
+change expression by altering histone modifications placed in those 
+regions, SNPs futher downstream may work through another mechanism, 
+such as through directly dirsupting transcription, or by altering the 
+transcript such that it is processed differently post transcriptionally. 
+The intermediate resolution of the chromatin state between that of SNPs 
+and haplotype thus provides a highly informative layer of information 
+between genotype and gene expression.
 
 In contrast to chromatin state, percent DNA methylation was not 
 associated with variation in gene expression across inbred 
 strains or in the outbred population. This was largely due to a 
 lack of variation in methylation across strains. An example of this 
-observation is shown in panel D of Figure XXX. Despite strain variation 
-in both genotype and chromatin state at the TSS of \textit{Pkd2}, 
-DNA methylation is invariant -- the CpG island at the TSS is unmethylated 
-in all strains. Thus, although chromatin state appears to be highly 
-influenced by local genotype, percent DNA methylation is not.
+observation is shown in panel D of Figure \ref{fig:example_gene}. 
+Despite strain variation in both genotype and chromatin state at 
+the TSS of \textit{Pkd2}, DNA methylation is invariant -- the CpG 
+island at the TSS is unmethylated in all strains. Thus, although 
+chromatin state appears to be highly influenced by local genotype, 
+percent DNA methylation is not.
 
 Similar observations have been made in human studies [33931130]. Multiple
 twin studies have estimated the average heritability of individual CpG 
@@ -1109,6 +1100,17 @@ these links. Through this survey we are providing one of the first
 rigorous resources that explores the connection between genetic
 variation and epigenetic variation.
 
+work this paragraph in...
+That states `r heterochromatin.state` and `r repressor.state` were associated
+with reduced gene expression both within hepatocytes and across strains suggests
+that there may be differential epigenetic silencing of genes in hepatocytes 
+across strains. Further, the majority of chromatin states were associated 
+with variation in expression across strains, suggesting that epigenetic regulation 
+of gene expression through histone modification may contribute substantially to 
+variation in gene expression across genetically distinct individuals. That most 
+states have the same effects across genes within a cell type and across strains 
+suggests that the mechanisms that are used to regulate cell type specificity 
+also contribure to variation in genetically distinct individuals.
 
 # Acknowledgements
 This work was funded by XXX.
