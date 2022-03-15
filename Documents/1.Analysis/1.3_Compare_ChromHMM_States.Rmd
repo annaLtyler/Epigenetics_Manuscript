@@ -52,6 +52,10 @@ for(i in 1:length(state.num)){
 	prop.file <- list.files(path = state.num[state_order[i]], pattern = "Prop_full_gene_1000.RData", full.names = TRUE)
 	if(length(prop.file) > 0){all.prop[[i]] <- readRDS(prop.file)}
 }
+
+param <- read.delim(here("Data", "support_files", "param.txt"), header = FALSE, 
+    stringsAsFactors = FALSE, row.names = 1)
+ordered.marks <- strsplit(param["ordered_marks",], ",")[[1]]
 ```
 
 ```{r collect_expression}
@@ -282,6 +286,70 @@ for(i in 1:length(emission.mats)){
 ```
 
 ## Emissions and State Effects For All Models
+
+```{r all_aligned}
+state.mat <- t(sapply(0:15, function(x) number2binary(x, noBits = 4)))
+colnames(state.mat) <- ordered.marks
+
+fill.probs <- function(bin.mat, emissions.mat, threshold = 0.3){
+    #order the emissions mat to match the binary mat
+    col.order <- match(colnames(bin.mat), colnames(emissions.mat))
+    emissions.mat <- emissions.mat[,col.order]
+
+    #binarize the emissions mat
+    binarized.emissions <- emissions.mat
+    binarized.emissions[which(emissions.mat >= threshold)] <- 1
+    binarized.emissions[which(emissions.mat < threshold)] <- 0
+
+    matched.states <- apply(binarized.emissions, 1, function(x) apply(bin.mat, 1, function(y) all(x == y)))
+    state.idx <- apply(matched.states, 2, function(x) which(x))
+
+    aligned.emissions <- matrix(NA, nrow = nrow(bin.mat), ncol = ncol(bin.mat))
+    colnames(aligned.emissions) <- colnames(bin.mat)
+    rownames(aligned.emissions) <- 1:nrow(aligned.emissions)
+
+    aligned.emissions[state.idx,] <- emissions.mat[1:nrow(emissions.mat),]  
+    return(aligned.emissions)
+
+} 
+
+all.aligned.emissions <- lapply(all.state.effect, 
+    function(x) fill.probs(state.mat, as.matrix(x[,1:4]), 0.3))
+
+
+state.comparison <- lapply(1:nrow(state.mat), function(x) sapply(all.aligned.emissions, function(y) y[x,]))
+
+all.together <- Reduce("cbind", lapply(state.comparison, function(x) cbind(t(x), rep(NA, ncol(x)))))
+
+layout.mat <- matrix(c(1,2), nrow = 2)
+ref.states <- matrix(unlist(lapply(1:nrow(state.mat), function(x) c(state.mat[x,], NA))), nrow = 1)
+
+png(here("Documents", "3.Manuscript", "Figures", "Supplemental", 
+    "Supp_Fig3_all_state_emissions.png"), width = 15, height = 8, units = "in", 
+    res = 300)
+layout(layout.mat, heights = c(1, 0.2))
+
+par(mar = c(0,2,5,1))
+imageWithText(all.together, show.text = FALSE, use.pheatmap.colors = TRUE,
+    col.text.rotation = 90, row.text.shift = -88, col.text.shift = -13.8, 
+    row.text.cex = 1.5, row.text.adj = 0, col.text.adj = 0)
+text(y = 13:1, x = -0.5, rownames(all.together), cex = 1.5, adj = 1)
+segments(x0 = rep(0, 13), x1 = rep(ncol(all.together), 13), y0 = 13:1-0.5, col = "white", 
+    lwd = 2)
+draw.rectangle(min.x = 0.5, min.y = 2.5, max.x = ncol(all.together)+0.5, max.y = 3.5, 
+    lwd = 3)
+
+par(mar = c(5,2,0.5,1))
+imageWithText(ref.states, show.text = FALSE, use.pheatmap.colors = TRUE)
+par(xpd = NA)
+text(x = -1, y = 1, "Ref.", srt = 0, adj = 0.5, cex = 1.5)
+text(x = 1:ncol(all.together), y = 0.4, colnames(all.together), srt = 90, adj = 1)
+par(xpd = TRUE)
+
+dev.off()
+
+
+```
 
 ```{r all_states_all_models, fig.height = 16, fig.width = 5.5}
 

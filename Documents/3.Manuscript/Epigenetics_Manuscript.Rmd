@@ -75,40 +75,37 @@ imputation.results <- readRDS(file.path(results.dir, "All.Variance.Explained.RDS
 # Abstract
 It is well established that epigenetic features, such as 
 histone modifications and DNA methylation, are associated
-with variation in gene expression across cell types. 
-However, it is not well known how genetic variation 
-across individuals affects variation in epigenetic state,
+gene expression across cell types. However, it is not well 
+known how variation in genotype affects epigenetic state, 
 or to what extent such variation contributes to variation
-in gene expression across genetically distince individuals.
+in gene expression across genetically distinct individuals.
 Here we investigated the relationship between heritable
 epigenetic variation and gene expression in hepatocytes
-across nine inbred mouse strains. Eight strains were founders
-of the diversity outbred (DO) mice, and the ninth was DBA/2J, 
-which, along with C57Bl6/J, is one of the founders of the BxD 
-recombinant inbred panel of mice. We surveyed four histone 
-modifications, H3K4me1, H3K4me3, H3K27me3 and H3K27ac, as well 
-as DNA methylation. We used ChromHMM to identify `r num.states` 
-chromatin states representing unique combinatorial patterns 
-of the four measured histone modifications. We found that
-variation in chromatin state was common across the inbred
-strains. Furthermore, this variation was correlated with
-differences in gene expression across strains. To more 
-robustly guage the influence of local epigenetic state on
-gene expression, we imputed local states into an independent
-population of DO mice and found that the correlations between
-chromatin state and gene expression observed across inbred
-strains was replicated in DO mice. In contrast, we found 
-that DNA methylation did not vary across inbred strains
-and was not correlated with variation in expression in DO 
-mice. We have thus established that chromatin state is highly
-influenced by local genetics and may be a primary mode through
-which expression quantitative trait loci (eQTLs) are mediated.
-We further demonstrate that the resolution of chromatin states,
-between that of the fine-grained SNPs and broad haplotypes, 
+across nine inbred mouse strains. Eight of the inbred strains 
+were founders of the diversity outbred (DO) mice, and the ninth 
+was DBA/2J, which, along with C57Bl6/J, is one of the founders 
+of the BxD recombinant inbred panel of mice. We surveyed four 
+histone modifications, H3K4me1, H3K4me3, H3K27me3 and H3K27ac, 
+as well as DNA methylation. We used ChromHMM to identify 
+`r num.states` chromatin states representing distinct combinations 
+of the four measured histone modifications. We found that variation 
+in chromatin state mirrored genetic variation across the inbred 
+strains. Furthermore, epigenetic variation was correlated with gene 
+expression across strains. The correspondence between epigenetic 
+state and gene expression was replicated in an independent population 
+of DO mice in which we imputed local epigenetic state. In contrast, 
+we found that DNA methylation did not vary across inbred strains and 
+was not correlated with variation in expression in DO mice. This 
+work suggests that chromatin state is highly influenced by local 
+genotype and may be a primary mode through which expression 
+quantitative trait loci (eQTLs) are mediated. We further 
+demonstrate that the mid-range resolution of chromatin states, 
+between that of SNPs and haplotypes paired with gene expression, 
 is useful for annotation of functional regions of the mouse 
 genome. Finally, we provide, to our knowledge, the first data 
 resource to document variation in chromatin state across 
-genetically distinct individuals. 
+genetically distinct individuals.
+
 
 
 # Introduction
@@ -131,8 +128,8 @@ and responds to its environment, patterns of both histone modifications
 [citation] and of DNA methylation change [citation]. Such changes 
 have been linked to scenescence [Horvath clock] and cancer [citations].
 
-Epigenetic modifications coordinate the usage of a single genome to be 
-used for many different types of cells with diverse morphology and 
+Epigenetic modifications coordinate the usage of a single genome to 
+be used for many different types of cells with diverse morphology and 
 physiology. This amazing feature of epigenetic modifications has been 
 intensely studied, and the variation in epigenetic landscapes across 
 cell types has been extensively documented [citations]. Less well 
@@ -173,7 +170,7 @@ elements, like enhancers and insulators, in the genome [citation].
 Advances in chromatin immunoprecipitation (ChIP) and sequencing 
 technologies now enable genome-wide surveys of histone modifications 
 with relatively few cells [20077036], thus opening the door to the 
-possibility of cataloguing epigenetic variation across cell types 
+possibility of cataloging epigenetic variation across cell types 
 and individuals. Here, we performed a survey of epigenetic variation
 in hepatocytes across nine inbred mouse strains. We included the eight 
 founders of the Diversity Outbred/Collaborative Cross (DO/CC) [citation]
@@ -408,7 +405,7 @@ high-sucrose (HF/HS) diet (45\% fat, 40\% carbohydrates, and 15\% protein)
 diet for 26 weeks. 
 
 ### Genotyping
-All DO mice were genotyped as described in Svenson et al.~(2012) using
+All DO mice were genotyped as described in Svenson et al. (2012) using
 the Mouse Universal Genotyping Array (MUGA) (7854 markers), and the
 MegaMUGA (77,642 markers) (GeneSeek, Lincoln, NE). All animal procedures
 were approved by the Animal Care and Use Committee at The Jackson
@@ -468,16 +465,35 @@ the data were trimmed to include only protein-coding transcripts.
 ### ChIP-Seq quantification:
 
 After the ChIP-Seq sequencing data were mapped to the custom pseudogenomes, peaks 
-were called in each sample using MACS 1.4.2 [REF], with a significance threshold 
+were called in each sample using MACS 1.4.2 [18798982], with a significance threshold 
 of $p \leq 10^{-5}$. In order to compare peaks across strains, the MACS output 
-peak coordinates were converted to common B6 coordinates using g2g tools [REF]. 
-
-Annat's stuff to get fastq files to bam files
-bam to bed
-binarize bed files
+peak coordinates were converted to common B6 coordinates using g2g tools 
+(https://churchill-lab.github.io/g2gtools/). 
 
 ## Quantifying DNA methylation
-Annat's stuff to get bed files.
+RRBS data were processed using a bismark-based pipeline modified from 
+Thompson et al. 2018 [30348905]. The pipeline uses Trim Galore! 0.6.3 
+(https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/) for QC, 
+followed by the trimRRBSdiversityAdaptCustomers.py script from NuGen for 
+trimming the diversity adapters. This script is available at: 
+https://github.com/nugentechnologies/NuMetRRBS
+
+All of our samples had comparable quality levels and no outstanding flags. 
+Total number of reads was 45-90 million, with an average read length of about 
+50 bp. Quality scores were mostly above 30 (including error bars), with the 
+average above 38. Duplication level was reduced to $<2$ for about 95\% of 
+the sequences. 
+
+High quality reads were aligned to a custom strain pseudogenome, using 
+bowtie2 as implemented in Bismark 0.22 [21493656]. The pseudogenomes were
+created by incorporating strain-specific SNPs and indels into the reference 
+genome using g2gtools (https://github.com/churchill-lab/g2gtools), allowing 
+a more precise characterization of methylation patterns. Bismark methylation 
+extractor tool was then used for creating a bed file of estimated methylation 
+proportions for each animal, which was then translated to the reference mouse 
+genome (GRCm38) coordinates using g2gtools. Unlike other liftover tools, g2gtools 
+does not throw away alignments that land on indel regions. B6 samples were aligned 
+directly to the reference mouse genome.
 
 
 ## Analysis
@@ -498,30 +514,26 @@ RNA-Seq read counts across transcripts from the outbred mice.
 ## Analysis of histone modifications
 
 ### Identification of chromatin states
-We used ChromHMM [29120462] to identify *chromatin states*, which are
-unique combinations of the four chromatin modifications, for example, the
-presence of both H3K4me3 and H3K4me1, but the absence of the other two 
-modifications. We conducted all subsequent analyses at the level of the 
-chromatin state. 
+We used ChromHMM [29120462] to identify chromatin states, which are
+unique combinations of the four chromatin modifications, for example, 
+high levels of both H3K4me3 and H3K4me1, and low levels of the other 
+two modifications. We conducted all subsequent analyses at the level 
+of the chromatin state. 
 
 To ensure we were analyzing the most biologically meaningful chromatin 
 states, we calculated chromatin states for all numbers of states between 
-four and 16, which is the maximum number of states possible with four binary 
-chromatin modifications ($2^n$). We then investigated a number of features 
-of each state in each model: presence/absence of histone modifications, 
-distribution patterns across the genome, and the effect of each state on 
-gene expression. We compared chromatin states from the different models
-based on these analyses and selected the `r num.states`-state model. Each 
-of these analyses, and the model comparison, are described below.
-
-### Emission probabilities
-
-Emission probabilites are a primary output of ChromHMM (Figure XXXA). 
-They define the probability that each histone mark is present in each 
-detected state. Low probabilities suggest absence, or low levels of the mark, 
-and high probabilities suggest presence. To compare states to each other and
-to annotate states, we declared a histone mark to be present in a state if its 
-emission probability was 0.3 or higher. 
+four and 16, which is the maximum number of states possible with four 
+binary chromatin modifications ($2^n$). We aligned states across the models 
+by assigning each to one of the sixteen possible binary states using an 
+emissions probability of 0.3 as the threshold for presence/absence of the
+histone mark. We then investigated the stability of three features across
+all states: the emissions probabilities (Supp Fig1), the abundance of each 
+state across transcribed genes (Supp Fig2), and the effect of each state 
+on transcription (Supp Fig3). Methods for each of these analyses are 
+described separately below. All measures were remarkably consistent across
+all models, but the `r num.states`-state model was characterized by a wide
+range of relatively abundant states with relatively strong effects on 
+expression. We used this model for all subsequent analyses.
 
 ### Genome distribution of chromatin states
 
@@ -550,31 +562,28 @@ with the release of ChromHMM.
 
 In addition to these enrichments around individual elements, we also calculated 
 chromatin state abundance relative to the main anatomical features of a gene.
-For each transcribed gene, we generated a chromatin state matrix with genomic
-position in rows, and mouse strains in columns. Each cell contained the chromatin
-state assignment for a 200 base pair (bp) window, defined by ChromHMM, for each 
-strain. We normalized these bp positions for each gene, such that they ran from
-0 at the transcription start site (TSS) to 1 at the transcription end site (TES). 
-We also included 1000 bp upstream of the TSS and 1000 bp downstream of the TES,
-which were converted to values below 0 and above 1 respectively.
+For each transcribed gene, we normalized the base pair positions to the length
+of the gene such that the transcription start site (TSS) was fixed at 0, and the
+transcription end site (TES) was fixed at 1. We also included 1000 bp upstream of 
+the TSS and 1000 bp downstream of the TES, which were converted to values below 0 
+and above 1 respectively.
 
-To normalize the coordinates, we first centered all coordinates on the TSS of the
-gene by subtracting off the base pair position of the TSS. Centered positions were 
-then divided by the length of the gene in base pairs from the TSS to the TES. We then 
-binned the relative positions into 41 bins defined by the sequence from -2 to 2 
-incremented by 0.1. If a bin encompassed multiple positions in the gene, we assigned 
-the mean value of the feature of interest to the bin. To avoid potential contamination 
-from regulatory regions of nearby genes, we only included genes that were at least 2kb 
-from their nearest neighbor, for a final set of 14048 genes.
+To map chromatin states to the normalized positions, we binned the normalized
+positions into 41 bins defined by the sequence from -2 to 2 incremented by 0.1. 
+If a bin encompassed multiple positions in the gene, we assigned the mean value 
+of the feature of interest to the bin. To avoid potential contamination from 
+regulatory regions of nearby genes, we only included genes that were at least 
+2kb from their nearest neighbor, for a final set of 14048 genes.
 
 ### Chromatin state and gene expression
 
 We calculated the effect of each chromatin state on gene expression. 
-We did this both across genes and across strains. The first analysis 
-identifies states that are associated with high expression and low 
-expression within the hepatocytes, and the second analysis investigates 
-whether variation in chromatin state across strains contributes to 
-variation in gene expression across strains. 
+We did this both across genes and across strains. The across-gene 
+analysis identified states that are associated with high expression 
+and low expression within the hepatocytes independent of strain. The 
+across-strain analysis investigated whether variation in chromatin 
+state across strains contributed to variation in gene expression 
+across strains. 
 
 For each transcribed gene, we calculated the proportion of the gene body 
 that was assigned to each chromatin state. We then fit a linear model 
@@ -607,36 +616,39 @@ body, we also performed the same calculations in a position-based manner. This
 second analysis yielded an effect of each state at multiple points along the 
 gene body and a more nuanced view of the effect of each state.
 
+\color{lightgray}
 ### Selecting the most biologically meaningful model
 
 We performed the above analyses on all states from the four-state model to
 the 16-state model to find the most meaningful clustering of histone 
-modifications. Across all models, the states were remarkably stable 
-(Supplemental Figure XXX). As we increased the number of states detected
-by the model, new states appeared, but previously detected states were not 
-disrupted. This stability was apparent in all state measures: emissions 
-probability patterns, overall abundance, effect on expresssion, and 
-localization along the genome. The one exception to this stability was that 
-highly abundant state (present in 65\% of transcribed genes) detected first 
-in the four-state model was split into two distinct states in the 10-state 
-model. These states were also highly abundant (appearing in 40\% and 41\% 
-of transcribed genes), and had distinct genomic distributions and emissions 
-probabilities (Supplemental Figure XXX). These two states remained stable 
-with increasing numbers of clusters through to the 16-state model. States
-arising after the 10-state model were of lower abundance, appearing in 2\% 
-or less of transcribed genes. 
+modifications. Across all models, the states were remarkably stable. As 
+we increased the number of states detected by the model, new states 
+appeared, but previously detected states were not disrupted. This 
+stability was apparent in all state measures: emissions probability 
+(Supp Fig 1) patterns, overall abundance (Supp. Fig. 2), and effect on 
+expresssion (Supp Fig 3). This analysis revealed interesting patterns
+in the detected states. For example, one highly abundant state (present 
+in 65\% of transcribed genes) detected first in the four-state model 
+was split into two distinct states in the 10-state model. These resulting
+states were also highly abundant (appearing in 40\% and 41\% of transcribed 
+genes), and had distinct emissions probabilities (Supp. Fig. 1). These 
+two states remained stable with increasing numbers of clusters through 
+to the 16-state model. States arising after the 10-state model were of 
+lower abundance, appearing in 2\% or less of transcribed genes. 
 
 All of the higher abundance states were established in the 10-state model. 
 However, as we moved toward higher numbers of clusters, the resolution on 
-the lower-abundance states improved in terms of the emission probability 
+the lower-abundance states improved in terms of the emissions probabilities 
 profiles, and strength of the correlation with gene expression. For example, 
 the 14-state model better resolved a state that had appeared in the 10-state 
 model but was not strongly correlated with gene expression. In the 14-state 
 model, the emission patterns were closer to binary, and the strength of the 
 correlation with expression was increased. Beyond 14 clusters, the new states 
 identified were extremely rare (1\% of transcripts or less), and were not 
-strongly correlated with gene expression. We thus selected the `r num.states`-state 
-model and the model with the most biologically meaningful clusters. 
+strongly correlated with gene expression. We thus selected the 
+`r num.states`-state model and the model with the most biologically meaningful 
+clusters. 
+\color{black}
 
 ## Analysis of DNA methylation
 
@@ -660,11 +672,11 @@ site.
 
 ### Effects of DNA methylation on gene expression
 As with chromatin state, we assessed the effect of DNA methylation on gene
-expression both within strains (across genes), and across strains. We used
-the same linear model described above, except that $y_{s}$ became the rank 
-Z normalized percent methylation either across genes or across strains. 
-However, unlike with the chromatin states, we only calculated the effects
-of DNA methylation on gene expression in a position-dependent manner.
+expression both across genes and across strains. We used the same linear 
+model described above, except that $y_{s}$ became the rank Z normalized 
+percent methylation either across genes or across strains. Because the 
+effect of DNA methylation on gene expression is well-known to be dependent
+on position, we only calculated a position-dependent effect on expression.
 
 ## Imputation of genomic features in Diversity Outbred mice
 To assess the extent to which chromatin state and DNA methylation are 
@@ -676,20 +688,21 @@ the imputed epigenetic features to imputed SNPs.
 All imputations followed the same basic procedure: For each transcript, 
 we identified the haplotype probabilities in the DO mice at the genetic 
 marker nearest the gene transcription start site. This matrix held DO 
-individuals in rows and DO founder haplotypes in columns.
+individuals in rows and DO founder haplotypes in columns 
+(Supp. Fig. \ref{supp_fig:imputation}).
 
 For each transcript, we also generated a three-dimensional array representing 
 the genomic features derived from the DO founders. This array held DO founders
 in rows, feature state in columns, and genomic position in the third dimension. 
 The feature state for chromatin consisted of states one through `r num.states`, 
-for SNPs feature state consisted of the genotypes A,C,G, and T (Fig XXX?).
+for SNPs feature state consisted of the genotypes A,C,G, and T.
 
 We then multiplied the haplotype probabilities by each genomic feature array to 
 obtain the imputed genomic feature for each DO mouse. This final array held DO 
 individuals in rows, the genomic feature in the second dimension, and genomic 
 position in the third dimension. This array is analagous to the genoprobs object 
-in R/qtl2 (CITE). The genomic position dimension included all positions from 1 kb
-upstream of the TSS to 1 kb downstream of the TES. SNP data for the DO founders 
+in R/qtl2 [30591514]. The genomic position dimension included all positions from 
+1 kb upstream of the TSS to 1 kb downstream of the TES. SNP data for the DO founders 
 in mm10 coordinates were downloaded from the Sanger SNP database [1921910, 21921916], 
 on July 6, 2021.
 
@@ -708,7 +721,7 @@ a principal component plot of the hepatocyte transcriptome across strains
 \ref{fig:pc_plots}B) and individual histone modifications (Figure 
 \ref{fig:pc_plots}C-F) cluster in a similar pattern. This suggests
 that these epigenetic features may relate to gene expression in a
-manner that varies with genetic background.
+manner that is consistent with genetic background.
 
 ## Chromatin state overview
 
@@ -724,7 +737,7 @@ elements in the mouse genome (Figure \ref{fig:state_overview}B).
 The majority of the states were enriched around the TSS, and other 
 TSS-related functional elements, such as promoters and CpG islands. 
 Two states (states `r repressor.state` and `r heterochromatin.state`) 
-were primarily found in intergenic regions, three states 
+were primarily found in intergenic regions. Three states 
 (states `r weak.intragenic.enhancer`, `r strong.intragenic.enhancer`, 
 and `r tes.intragenic.enhancer`)  were enriched around known enhancers, 
 and one (state `r unknown.state`) was enriched predominantly near the 
@@ -732,18 +745,18 @@ TES. The majority of these states were also associated with variation
 in gene expression. The colored bars in Figure \ref{fig:state_overview}C) 
 show the effect of each state on gene expression across the inbred strains. 
 For reference, the paired tan bars show the effect of each chromatin 
-state on gene expression in hepatocytes. These effects are the same sign 
-as the across-strain effects, for the most part, and tend to be stronger.
+state on gene expression in hepatocytes. These effects tend to be of the
+same sign and greater magnitude than the across-strain effects.
 
 The states in Figure \ref{fig:state_overview} are shown in order of their
 effect on expression, which helps illustrate several patterns in the data. 
-The state with the most negative effect on gene expression, state 
+The state with the largest negative effect on gene expression, state 
 `r heterochromatin.state`, is the absence of all measured modifications. 
 The next few states all contain the repressive mark H3K27me3, and are 
-all associated with reduced gene expression. The states with the most 
+all associated with reduced gene expression. The states with the largest 
 positive effects on expression all have some combination of the activating 
 marks, H3K4me3, H3K4me1, and H3K27ac. The repressive mark is less commonly 
-seen in these active states. 
+seen in these activating states. 
 
 By merging the information from Figure \ref{fig:state_overview}A-C), we 
 were able to suggest annotations for many of the `r num.states` chromatin 
@@ -782,7 +795,7 @@ right at the TSS, whereas state `r active.enhancer.state` was
 more broadly abundant both upstream and downstream of the TSS. 
 Both were associated overall with increased expression in the 
 inbred mice (indicated by red shading), suggesting promoter or 
-enhancer functions. The state third state in this group of 
+enhancer functions. The third state in this group of 
 high-expressing states, state `r strong.intragenic.enhancer`, 
 was depleted nere the TSS, but enriched within the gene body, 
 suggesting that this state may mark active intragenic enhancers.
@@ -822,7 +835,7 @@ while in the other states effects were seen across the whole gene.
 The direction of the effects matched the overall effects of each 
 state seen previously (Figure \ref{fig:state_overview}). Remarkably, 
 the spatial effects were recapitulated for almost every state when 
-we looked across strains. That is, variation in chromatin state 
+we measured across strains. That is, variation in chromatin state 
 across strains contributed to variation in gene expression in the 
 same manner that cell-type expression was being established. One 
 notable exception was state `r weak.intragenic.enhancer`, whose 
@@ -839,7 +852,7 @@ methylation is used in gene regulation within a cell type, it is
 not heritable and does not contribute to variation in gene expression 
 across genetically diverse individuals. 
 
-## Imputed chromatin state explained varation in expression in diversity outbred mice
+## Imputed chromatin state explained expression variation in diversity outbred mice
 
 Thus far, we have used inbred strains of mice to identify correlations 
 between local chromatin state and gene expression. However, we cannot 
@@ -849,7 +862,7 @@ at a single locus with changes in gene expression. A mapping population
 also allows us to establish the extent to which variation in epigenetic 
 factors contributes to observed expression quantitative trait loci (eQTL).
 
-To compare the contribution of genetic and  epigenetic features to eQTLs in 
+To compare the contribution of genetic and epigenetic features to eQTLs in 
 a gentically diverse population, we imputed chromatin state, DNA methylation,
 and SNPs into a population of DO mice described previously [Svenson, Tyler]
 (Methods). Chromatin state is largely determined by local genotype, especially 
@@ -1260,5 +1273,66 @@ Blue lines show $y = x$. Each point is a single transcript.}
 \end{figure}
 
 \pagebreak
+
+# Supplemental Figure Legends
+
+\begin{figure}[ht]
+\centering
+\caption{Comparison of emissions probabilities across all ChromHMM models.
+Each row contains data for a single ChromHMM model fit to the number of
+states indicated on either side of the row. Each set of four columns shows
+data for each of the four histone modifications. Each set is separated from
+the next by a column of gray for ease of visualization. The bottom row, the
+reference row, shows the ideal state that all model states are being compared
+to. Blue indicates absence of the histone mark and red indicates presence.
+For each ChromHMM model, each state was assigned to one of the reference states
+using an emissions probability of 0.3 as a threshold for presence of the histone
+modification. If a state was not present in the given model, the corresponding
+area is shown in gray. Emissions probabilities near 0 are shown in blue, and 
+probabilities near 1 are shown in red. Orange and yellow indicate intermediate
+probabilities. Aligning the states across all models shows a remarkable 
+stability in the emissions across models, seen as vertical bars of consistent 
+color.}
+\label{supp_fig:model_emissions_comparison}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\caption{Comparison of state abundance across all ChromHMM models. The left-most column
+shows the annotation for each state. Unannotated states are marked with a dash. The 
+binary heatmap indicates which histone modifications were present in each state: 1 
+indicates presence, and 0 indicates absence. The histone modifications are labeled
+at the bottom of each column. The continuous heatmap shows the abundance of each state
+(in rows) in each ChromHMM model (in columns). The abundance is the proportion of 
+transcribed genes with the state present. Less abundant states are shaded blue, and 
+more abundant states are shaded yellow, orange, and red. The number of states in the
+model is indicated at the bottom of each column. The black box highlights the model
+used in this study -- the `r num.states`-state model. State abundance was remarkably
+stable across the different models.}
+\label{supp_fig:model_abundance_comparison}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\caption{Comparison of state effect across all ChromHMM models. This figure is 
+identical to Figure \ref{supp_fig:model_abundance_comparison}, except that the
+cells in the continuous heatmap show the effect of each state on gene expression
+across all ChromHMM models. The effect was the $\beta$ coefficient derived from
+a linear model. Similar to state abundance, the effects were remarkably stable
+across models.}
+\label{supp_fig:model_effect_comparison}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\caption{Schematic for imputation of histone modifications into the 
+DO mice. For a single transcript imputation was made by multiplying 
+a three-dimensional array, containing chromatin state by strain by
+position, by a two-dimensional array, contatining haplotype probabilities
+by DO individual, to create a three-dimensional array, containing 
+individual by position by chromatin state probability.}
+\label{supp_fig:imputation}
+\end{figure}
+
 
 # References {#references .unnumbered}

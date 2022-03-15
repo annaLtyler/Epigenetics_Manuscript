@@ -61,7 +61,10 @@ find_state <- function(all.states, bin.state, thresh = 0.2){
 ```
 
 ```{r emissions}
-histone.order <- c("H3K27me3", "H3K4me3", "H3K4me1", "H3K27ac")
+param <- read.delim(here("Data", "support_files", "param.txt"), header = FALSE, 
+    stringsAsFactors = FALSE, row.names = 1)
+histone.order <- strsplit(param["ordered_marks",], ",")[[1]]
+
 
 all.models <- list.files(here("Data", "ChromHMM"))
 state.num <- as.numeric(sapply(strsplit(all.models, "_"), function(x) x[1]))
@@ -146,15 +149,14 @@ layout.mat <- matrix(1:3, nrow = 1)
 layout(layout.mat, widths = c(0.2, 1, 0.1))
 par(mar = c(4,2,2,0))
 imageWithText(binary_states, global.color.scale = TRUE, global.max = 1, global.min = 0, 
-use.pheatmap.colors = TRUE, cex = 1, col.text.shift = -1)
+use.pheatmap.colors = TRUE, cex = 1, col.text.shift = -1, col.text.cex = 1.5)
 par(mar = c(4,0,2,2))
 imageWithText(round(abundance.grid, 2), global.color.scale = TRUE, global.max = 1, global.min = 0, 
 use.pheatmap.colors = TRUE, col.text.rotation = 0, cex = 1, col.text.shift = -0.5, col.text.adj = 0.5,
 col.text.cex = 1.5)
 par(mar = c(4,2,2,2))
 imageWithTextColorbar(abundance.grid, global.color.scale = TRUE, global.max = 1, global.min = 0, 
-use.pheatmap.colors = TRUE, cex = 1.5)
-
+use.pheatmap.colors = TRUE, cex = 1.5, axis.line = 0)
 ```
 
 ## State Effects
@@ -189,13 +191,13 @@ layout.mat <- matrix(1:3, nrow = 1)
 layout(layout.mat, widths = c(0.2, 1, 0.1))
 par(mar = c(4,2,2,0))
 imageWithText(binary_states, global.color.scale = TRUE, global.max = 1, global.min = 0, 
-use.pheatmap.colors = TRUE, cex = 1, col.text.shift = -1)
+use.pheatmap.colors = TRUE, cex = 1, col.text.shift = -1, col.text.cex = 1.5)
 par(mar = c(4,0,2,2))
 imageWithText(round(effect.grid, 2), use.pheatmap.colors = TRUE, 
 col.text.rotation = 0, cex = 1, col.text.shift = -0.5, col.text.adj = 0.5,
 col.text.cex = 1.5)
 par(mar = c(4,2,2,2))
-imageWithTextColorbar(effect.grid, use.pheatmap.colors = TRUE, cex = 1.5, axis.line = -2)
+imageWithTextColorbar(effect.grid, use.pheatmap.colors = TRUE, cex = 1.5, axis.line = 0)
 
 #plot(as.vector(abundance.grid), as.vector(effect.grid))
 #abline(h = 0)
