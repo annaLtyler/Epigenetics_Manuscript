@@ -1,0 +1,26 @@
+---
+title: "Excised Methods"
+author: Anna L Tyler
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  pdf_document:
+    toc: true
+---
+
+
+## Introduction
+
+This document holds information that was removed from the methods section
+in case we need to put anything back.
+
+## Mouse processing
+
+Mice were aged and processed in groups to maintain a 
+steady sample preparation workflow. Mice were housed, born, and aged 
+in the same mouse room, with uniformity in timing, diet, and all other
+possible conditions. Female mice were used for all experiments due to 
+potentially confounding effects from variation in testosterone among 
+males that can affect liver gene expression, as well general experience 
+that female expression is less variable than male in multiple tissues. 
+This will also facilitate the analysis of maternal effects on offspring 
+in later studies. 

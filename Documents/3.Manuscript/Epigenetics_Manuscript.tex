@@ -171,6 +171,31 @@
 
 
 % Pandoc citation processing
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+% for Pandoc 2.8 to 2.10.1
+\newenvironment{cslreferences}%
+  {}%
+  {\par}
+% For Pandoc 2.11+
+\newenvironment{CSLReferences}[2] % #1 hanging-ident, #2 entry spacing
+ {% don't indent paragraphs
+  \setlength{\parindent}{0pt}
+  % turn on hanging indent if param 1 is 1
+  \ifodd #1 \everypar{\setlength{\hangindent}{\cslhangindent}}\ignorespaces\fi
+  % set entry spacing
+  \ifnum #2 > 0
+  \setlength{\parskip}{#2\baselineskip}
+  \fi
+ }%
+ {}
+\usepackage{calc} % for calculating minipage widths
+\newcommand{\CSLBlock}[1]{#1\hfill\break}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{#1}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{#1}\break}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
 
 
 
@@ -238,7 +263,7 @@ to variation in gene expression across genetically distinct individuals.
 Here we investigated the relationship between heritable epigenetic
 variation and gene expression in hepatocytes across nine inbred mouse
 strains. Eight of the inbred strains were founders of the diversity
-outbred (DO) mice, and the ninth was DBA/2J, which, along with C57Bl6/J,
+outbred (DO) mice, and the ninth was DBA/2J, which, along with C57BL/6J,
 is one of the founders of the BxD recombinant inbred panel of mice. We
 surveyed four histone modifications, H3K4me1, H3K4me3, H3K27me3 and
 H3K27ac, as well as DNA methylation. We used ChromHMM to identify 14
@@ -253,24 +278,23 @@ not vary across inbred strains and was not correlated with variation in
 expression in DO mice. This work suggests that chromatin state is highly
 influenced by local genotype and may be a primary mode through which
 expression quantitative trait loci (eQTLs) are mediated. We further
-demonstrate that the mid-range resolution of chromatin states, between
-that of SNPs and haplotypes paired with gene expression, is useful for
-annotation of functional regions of the mouse genome. Finally, we
-provide, to our knowledge, the first data resource to document variation
-in chromatin state across genetically distinct individuals.
+demonstrate that strain variation in chromatin state, paired with gene
+expression is useful for annotation of functional regions of the mouse
+genome. Finally, we provide, to our knowledge, the first data resource
+that documents variation in chromatin state across genetically distinct
+individuals.
 
 \hypertarget{introduction}{%
 \section{Introduction}\label{introduction}}
 
 Epigenetic modifications to DNA and its associated histone proteins
 influence the accessibility of DNA to transcription machinery, and are
-associated with up- and down-regulation of gene expression {[}26704082,
-22641018, 22781841{]}. Across cell types, unique combinatorial patterns
-of histone modifications mark chromatin states that establish cell
-type-specific patterns of gene expression {[}20657582, 21441907{]}.
-Similarly, the methylation of CpG sites around gene promoters and
-enhancers influences transcription in a cell type-specific manner
-{[}21701563, 20720541{]}.
+associated with up- and down-regulation of gene expression {[}1--3{]}.
+Across cell types, unique combinatorial patterns of histone
+modifications mark chromatin states that establish cell type-specific
+patterns of gene expression {[}4{]}. Similarly, the methylation of CpG
+sites around gene promoters and enhancers influences transcription in a
+cell type-specific manner {[}6,7{]}.
 
 These patterns of histone modifications and DNA methylation are
 established during development. The result is a canonical epigenetic
@@ -322,20 +346,20 @@ elements, like enhancers and insulators, in the genome {[}citation{]}.
 
 Advances in chromatin immunoprecipitation (ChIP) and sequencing
 technologies now enable genome-wide surveys of histone modifications
-with relatively few cells {[}20077036{]}, thus opening the door to the
+with relatively few cells {[}8{]}, thus opening the door to the
 possibility of cataloging epigenetic variation across cell types and
 individuals. Here, we performed a survey of epigenetic variation in
 hepatocytes across nine inbred mouse strains. We included the eight
-founders of the Diversity Outbred/Collaborative Cross (DO/CC)
-{[}citation{]} mice, as well as DBA/2J, which, along with C57Bl/6J, is
-one of the founders of the widely used BxD recombinant inbred panel of
-mice {[}citation{]}. We assayed four histone modifications (H3K4me1,
-H3K4me3, H3K27me3, and H3K27ac), as well as DNA methylation. We used
-ChromHMM {[}citation{]} to identify 14 chromatin states, classified by
-unique combinations of the four histone marks, and investigated the
-association between variation in these states and variation in gene
-expression across the nine strains. We separately investigated the
-relationship between DNA methylation and gene expression across strains.
+founders of the Diversity Outbred/Collaborative Cross (DO/CC) {[}9{]}
+mice, as well as DBA/2J, which, along with C57BL/6J, is one of the
+founders of the widely used BxD recombinant inbred panel of mice
+{[}10{]}. We assayed four histone modifications (H3K4me1, H3K4me3,
+H3K27me3, and H3K27ac), as well as DNA methylation. We used ChromHMM
+{[}11{]} to identify 14 chromatin states, classified by unique
+combinations of the four histone marks, and investigated the association
+between variation in these states and variation in gene expression
+across the nine strains. We separately investigated the relationship
+between DNA methylation and gene expression across strains.
 
 We further investigated the relationship between epigenetic state and
 gene expression by imputing the 14 chromatin states and DNA methylation
@@ -349,118 +373,42 @@ epigenetic variation across a wide panel of genetically diverse mice.
 \hypertarget{materials-and-methods}{%
 \section{Materials and Methods}\label{materials-and-methods}}
 
+\hypertarget{ethics-statement}{%
+\subsection{Ethics Statement}\label{ethics-statement}}
+
+Ethics Statement All animal procedures followed Association for
+Assessment and Accreditation of Laboratory Animal Care guidelines and
+were approved by Institutional Animal Care and Use Committee (The
+Jackson Laboratory, Protocol XXX).
+
 \hypertarget{inbred-mice}{%
 \subsection{Inbred Mice}\label{inbred-mice}}
 
-information about housing, animal use, etc.
-
-\hypertarget{hepatocyte-acquisition}{%
-\subsubsection{Hepatocyte acquisition}\label{hepatocyte-acquisition}}
-
-Samples were taken from 12-week female mice of nine inbred mouse
-strains: 129S1/SvImJ, A/J, C57BL/6J, CAST/EiJ, DBA/2J NOD/ShiLtJ,
-NZO/HlLtJ, PWK/PhJ, and WSB/EiJ. Eight of these strains are the eight
-strains that served as founders of the Collaborative Cross/Diversity
-Outbred mice {[}REF{]}. The ninth strain, DBA/2J, will facilitate the
-interpretation of existing and forthcoming genetic mapping data obtained
-from the BxD recombinant inbred strain panel {[}REF{]}. Mice were aged
-and processed in groups to maintain a steady sample preparation
-workflow. Mice were housed, born, and aged in the same mouse room, with
-uniformity in timing, diet, and all other possible conditions. Female
-mice were used for all experiments due to potentially confounding
-effects from variation in testosterone among males that can affect liver
-gene expression, as well general experience that female expression is
-less variable than male in multiple tissues. This will also facilitate
-the analysis of maternal effects on offspring in later studies. Three
-mice were used from each strain.
+Three female mice from each of nine inbred strains were used. Eight of
+these strains (129S1/SvImJ, A/J, C57BL/6J, CAST/EiJ, NOD/ShiLtJ,
+NZO/HlLtJ, PWK/PhJ, and WSB/EiJ) are the eight strains that served as
+founders of the Collaborative Cross/Diversity Outbred mice {[}12{]}. The
+ninth strain, DBA/2J, will facilitate the interpretation of existing and
+forthcoming genetic mapping data obtained from the BxD recombinant
+inbred strain panel. Samples were harvested from the mice at 12 weeks of
+age.
 
 \hypertarget{liver-perfusion}{%
 \subsubsection{Liver perfusion}\label{liver-perfusion}}
 
 To purify hepatocytes from the liver cell population, the mouse livers
-were perfused with collagenase to digest the liver into a single-cell
-suspension, and then isolated using centrifugation. Mice were harvested
-at 9:00 AM and sacrificed by cervical dislocation. Mice were placed over
-a stack of paper towels in preparation to catch excess liquid, and the
-appendages were pinned out to hold the body in place. to keep the fur
-from contaminating the liver sample later, the fur was wiped down with
-70\% ethanol. The mouse skin was then cut open and peeled back to the
-appendages to allow clear access to the abdominal cavity. The fascia was
-cut open and back to the ribs, being careful to not nick the liver.
-Moving the intestines and stomach to the right side, the vena cava and
-hepatic portal vein should be clearly visible below the liver.
-
-For the perfusion, a 23G x \(\frac{3}{4}\)'\,' BD Vacutainer Safety-Lok
-needle (REF 367297) was attached to 1.6mm ID BioRad Tygon tubing
-(R-3603) connected to a Pharmacia peristaltic pump that allows a flow of
-up to 8 ml/min. The liver will be processed with three solutions: 5mM
-EGTA in Leffert's buffer, Leffert's buffer wash, and 87 CDU/mL Liberase
-collagenase with 0.02\% CaCl2 in Leffert's buffer. The three solutions
-were at 37\(^{\circ}\)C before perfusion.
-
-The needle was placed into the vena cava for the perfusion superior to
-the kidneys and inferior to the liver. With the peristaltic pump running
-slowly, the vena cava was pierced at shallow 15\(^{\circ}\) angle and
-the needle was inserted to a shallow depth (around 2-3mm of the needle
-tip in the vena cava). Once the needle is inserted into the vena cava,
-the volume on the peristaltic pump is increased to 5-7mL/min. The liver
-will immediately blanch, and the hepatic portal vein is immediately
-severed to allow flushing of the liver.
-
-The 1x EGTA buffer was used to flush the blood out of the liver and
-start the digestion of the desmosomes connecting the liver cells. To
-help with the perfusion, pressure was applied to the hepatic portal vein
-for 5 second intervals causing more solution to be forced through the
-liver, which can be seen visually by the liver swelling. After 35ml of
-the 1x EGTA solution is passed through the liver, the solution was
-switched to the 1x Leffert's buffer. The pump was turned off during the
-switch to prevent air from being sucked into the tubing while the tubing
-is transferred to the new solution. To wash, 7-10ml of the Leffert's
-buffer was passed through the liver to flush out the EGTA, which
-otherwise chelates the calcium ions necessary for collagenase activity
-in the next buffer. The pump was turned off again to switch to the
-Liberase solution. To digest the liver, 25-50mL of Liberase solution
-(\(\sim4.3\) wunsch units) was passed through the liver. Throughout the
-perfusion process, periodic pressure was applied to the hepatic portal
-vein to help pump the buffers more completely through the liver. As the
-liver was digested with the Liberase, it will swell and look soggy and
-limp. Over-digestion leads to increased contamination with
-non-hepatocyte cell types, and further reduces cell viability.
-
-After perfusion, which takes around 15-20min to complete, the liver was
-carefully cut out of the abdominal cavity and placed in a petri dish
-with 35 mL ice-cold Leffert's buffer with 0.02\% CaCl\(_{2}\). The
-digested liver was passed through Nitex 80 \(\mu\)m nylon mesh (cat
-\#03-80/37) into a 50mL conical, using additional ice-cold Leffert's
-buffer with 0.02\% CaCl2 if necessary, and a rubber policeman. After the
-liver cells from both animals were collected, they were put through two
-wash and spin cycles to purify the hepatocytes and remove other types of
-cells. To isolate the hepatocytes, the much larger size of the
-hepatocyte cells was exploited in very slow 4 min, 50 x g spins that
-leave smaller other cell types in suspension. After each spin, the
-solution was decanted as waste, and the enriched cell pellet of
-hepatocytes was resuspended in 30ml ice-cold Leffert's buffer with
-0.02\% CaCl\(_{2}\). After the second spin, the solution should be
-almost clear, indicating that other cell types have been removed. The
-hepatocytes are resuspended in room temperature PBS, counted, and volume
-adjusted to \(1 x 10^{6}\) cells/mL.
+were perfused with 87 CDU/mL Liberase collagenase with 0.02\% CaCl2 in
+Leffert's buffer to digest the liver into a single-cell suspension, and
+then isolated using centrifugation.
 
 We aliquoted \(5 x 10^{6}\) cells for each RNA-Seq and bisulfite
-sequencing, and the rest were cross-linked for ChIP assays. Two
-\(5 x 10^6\) aliquots (5mLs) of liver cells were removed into two 15mL
-conicals. These were spun down at 200 rpm for 5 min, and resuspended in
+sequencing, and the rest were cross-linked for ChIP assays. Both
+aliquots were spun down at 200 rpm for 5 min, and resuspended in
 \(1200\mu L\) RTL+BME (for RNA-Seq) or frozen as a cell pellet in liquid
-nitrogen (for bisulfite sequencing). Meanwhile, 37\% formaldehyde in
-methanol (VENDOR) were added to the remaining cells to a final
-concentration of 1\%. The cells were rotated at room temperature for 5
-min to cross-link protein complexes to the DNA bound to them. After
-cross-linking, 10x glycine (VENDOR) is added to a final concentration of
-125 mM and rotated for 5 min to quench the formaldehyde and stop
-cross-linking. The cells were spun down at 2000 rpm for 5 min, decanted,
-and resuspended in PBS to \(5 x 10^6\) cells/mL. The cells were divided
-into \(5x10^6\) aliquots in 2mL tubes. The tubes were spun down again at
-5000 x g for 5 min, decanted, and the cell pellets frozen in liquid
-nitrogen. All cell samples were stored at -80°C until used.
+nitrogen (for bisulfite sequencing). In the sample for ChIP-Seq, protein
+complexes were cross-linked to DNA using 37\% formaldehyde in methanol.
+All cell samples were stored at -80°C until used (See Supplemental
+Methods for more detail).
 
 \hypertarget{hepatocyte-histone-binding-and-gene-expression-assays}{%
 \subsubsection{Hepatocyte histone binding and gene expression
@@ -478,7 +426,7 @@ following assays:
 \item
   Reduced-representation bisulfate sequencing to identify methylation
   states of approximately two million CpG sites in the genome. The
-  average read depth is 20-30x.
+  average read depth was 20-30x.
 \item
   Chromatin immunoprecipitation and sequencing to assess binding of the
   following histone marks:
@@ -496,120 +444,41 @@ following assays:
 \item
   H3K27ac, to identify actively used enhancers
 \item
-  A negative control (input chromatin) Samples are sequenced with
-  \(\sim40\) million reads per sample.
+  A negative control (input chromatin)
 \end{enumerate}
 
-The samples for RNA-Seq in RTL+BME buffer were sent to The Jackson Lab
-Gene Expression Service for RNA extraction and library synthesis.
+Samples are sequenced with \(\sim40\) million reads per sample.
+
+The samples for RNA-Seq in RTL+BME buffer were sent to The Jackson
+Laboratory Gene Expression Service for RNA extraction and library
+synthesis.
 
 \hypertarget{histone-chromatin-immunoprecipitation-assays}{%
 \subsubsection{Histone chromatin immunoprecipitation
 assays}\label{histone-chromatin-immunoprecipitation-assays}}
 
-The H3K4me1 and H3K4me3 histone chromatin immunoprecipitation assays
-were performed on cross-linked hepatocytes using similar protocols. For
-all histone ChIP assays, the crosslinked chromatin was prepared the same
-way. First, the aliquot of \(5x10^6\) hepatocyte cells was lysed to
-release the nuclei by rotating the sample in hypotonic buffer for 20 min
-at \(4^\circ\)C. The cells were pelleted by spinning for 10min, 10K x G,
-at \(4^\circ\)C. The cells were resuspended in 130ul MNase buffer with
-1mM PMSF (VENDOR) and 1x protease inhibitor cocktail (Roche VENDOR) to
-prevent histone protein degradation, then digested with 15U of MNase.
-The micrococcal nuclease digests the exposed DNA, but leaves the
-nucleosome-bound DNA intact. After 10min of incubation at \(37^\circ\)C,
-the chromatin was digested into primarily mononucleosomes. This was
-confirmed by DNA-purification of the MNase-digested chromatin run out on
-an agarose gel, which yielded mostly 150bp fragments, and few 300bp
-fragments. The MNase digestion was stopped by adding EDTA to 10mM, and
-incubating on ice for 5 min. The digested chromatin was purified by
-spinning out insoluble parts at top speed for 10 min at \(4^\circ\)C.
-The chromatin was transferred to a new tube and spun again to further
-remove impurities and reduce background in the ChIP assays. The final
-chromatin was transferred to a fresh tube, and used immediately in the
-ChIP.
-
-To prepare for the ChIP, \(20\mu L/1x10^6\) cells Dynabead Protein G
-beads were aliquoted into an Eppendorf tube. A magnetic tube holder was
-used to attract the beads to the wall of the tube, and then the solution
-was carefully pipetted off, leaving only the beads behind. The beads
-were washed twice with buffer to prepare them for binding to the
-antibody. For this binding step and the chromatin binding step, the
-buffer used was either RIPA buffer for the H3K4me3 and K3K27me3 ChIPs,
-or ChIP buffer (VENDOR) for the H3K4me1 ChIP. The ChIP buffer was
-gentler and less stringent than RIPA buffer, which was better for the
-weaker binding of the H3K4me1 antibody that was used. The buffers were
-supplemented with 50 mg/mL BSA (VENDOR) and 0.5 mg/mL Herring Sperm DNA,
-both of which are blocking agents that reduce background and
-non-specific binding. The ChIP assays also varied in the amount of input
-chromatin and corresponding size of the reaction that was necessary to
-yield sufficient DNA for sequencing. H3K4me3 ChIP needed only
-\(1.5 x 10^6\) cells, and H3K4me1 and K3K27me3 ChIP used \(4 x 10^6\)
-cells. To perform the ChIP, \(20\mu\)L of Dynabeads per \(1 x 10^6\)
-cells is incubated with \(5\mu L\) of histone antibody for \(>20\)min in
-\(50\mu L/1x10^6\) cells RIPA (or ChIP) buffer supplemented with 50
-mg/mL BSA, 0.5 mg/mL Herring Sperm DNA, 1xPIC, and 1mM PMSF. The
-antibodies used were (XXX). Once the antibody was bound to the
-Dynabeads, the beads were washed twice with \(100\mu L/1x10^6\) cells
-RIPA buffer with BSA and Herring Sperm DNA.
-
-Next, the MNase-digested chromatin were added, which was at a
-concentration of \(1x10^6\) cells/\(25\mu L\). The ChIP reaction was
-incubated overnight with rotation at \(4^\circ\)C, to allow the histone
-protein to bind to the antibody, which was bound to the magnetic beads.
-In order to calculate enrichment for each ChIP sample, a known amount
-(\(10\) or \(20\mu L\)) of MNase-digested input chromatin was saved.\\
-The next morning, the ChIPs underwent a series of washes to remove
-unbound chromatin. The H3K4me3 and H3K27me3 ChIPs were washed 3x with
-\(100\mu L/1x10^6\) cells RIPA buffer, and the H3K4me1 ChIP was washed
-with a low salt wash (0.1\% SDS, 1\% Triton X-100, 2mM EDTA, 20mM
-Tris-HCl pH 8, 150 mM NaCl), a high salt wash (0.1\% SDS, 2\% Triton
-X-100, 2mM EDTA, 20mM, Tris-HCl, pH 8, 500mM NaCl), and a LiCl wash
-(0.25 MLiCl, 1\% IGEPAL-CA630, 1\% deoxycholic acid (sodium salt), 1 mM
-EDTA, 10 mM Tris-HCl pH 8). After three washes, the ChIPs were washed
-twice with TE buffer and transferred to a new tube during the last TE
-wash to reduce background. At this point, the histone of interest and
-the histone-bound DNA fragment had been purified from the
-MNase-digested, cross-linked chromatin, and was bound by
-histone-specific antibody to the magnetic Dynabeads. In the next step, a
-high-salt elution buffer is used to degrade the antibody binding
-interactions to the beads and the histone, and concurrently, proteinase
-K is added to digest the protein away from the DNA-protein complexes.
-The ChIP was incubated with the elution buffer and proteinase K at
-\(68^\circ\)C for \(>6\) hours to liberate the DNA. At the same time,
-the saved input chromatin was also digested in the same buffer.
-Afterwards, the beads were removed using the magnet, and the DNA was
-purified using the Qiagen PCR purification kit. Quantification was
-performed using the Qubit quantification system, which is accurate to
-\(0.02 ng/\mu L\) and only requires a small amount of sample to measure
-concentration. The ChIP sample was enriched for only DNA that was bound
-to the histone of interest. The goal for each ChIP was to yield 10 ng of
-ChIP DNA for sequencing. Not all samples met this criterion, and the
-H3K4me1 ChIPs often had a total yield of \(\sim 2 ng\) of DNA.
-
-To test the efficiency of the ChIPs, quantitative PCR using QuantiFAST
-was performed. Two sets of primers were used, one set in a known region
-of histone binding (positive control), and one set in a region without
-histone binding (negative control). The qPCR was performed both on the
-ChIP DNA and the input DNA. Then the relative enrichment of positive vs
-negative assays was compared between the ChIP and input DNA.
-
-The ChIP DNA was submitted to The Jackson Lab GES service for library
-preparation and sequencing. Libraries were made using the Kapa Hyper
-Prep kit with adapters at \(0.6\mu M\). The libraries were amplified by
-10 cycles of PCR. These libraries were not size selected, although most
-fragments were \(\sim150\) bp due to MNase-digestion. The samples were
-sequenced with 40 or more million reads per sample, which is almost 2x
-more reads than the ENCODE project, which sequenced using 20 million
-reads.
+After exdtraction, hepatocyte cells were lysed to release the nuclei,
+spun down, and resuspended in 130ul MNase buffer with 1mM PMSF and 1x
+protease inhibitor cocktail (Roche) to prevent histone protein
+degradation. The samples were then digested with 15U of micrococcal
+nuclease (MNase), which digests the exposed DNA, but leaves the
+nucleosome-bound DNA intact. We confirmed digestion of nucleosomes into
+150bp fragments with with agarose gel. The digestion reaction was
+stopped with EDTA and samples were used immediately in ChIP assay. The
+ChIP assay was performed with Dynabead Protein G beads and histone
+antibodies. After binding to antibodies, samples were washed to remove
+unboud chromatin and then eluted with high-salt buffer and proteinase K
+to digest protein away from DNA-protein complexes. The DNA was purified
+using the Qiagen PCR purification kit. Quantification was performed
+using the Qubit quantification system (See Supplemental Methods).
 
 \hypertarget{diversity-outbred-mice}{%
 \subsection{Diversity Outbred mice}\label{diversity-outbred-mice}}
 
-We used previously published data from a population of diversity outbred
-(DO) mice {[}Svenson et al.~2012{]} to compare to the data collected
-from the inbred mice. The DO population included males and females from
-DO generations four through 11. Mice were randomly assigned to either a
+We used previously published data from a population of 478 diversity
+outbred (DO) mice {[}9{]} to compare to the data collected from the
+inbred mice. The DO population included males and females from DO
+generations four through 11. Mice were randomly assigned to either a
 chow diet (6\% fat by weight, LabDiet 5K52, LabDiet, Scott Distributing,
 Hudson, NH), or a high-fat, high-sucrose (HF/HS) diet (45\% fat, 40\%
 carbohydrates, and 15\% protein) (Envigo Teklad TD.08811, Envigo,
@@ -618,16 +487,15 @@ Madison, WI). Mice were maintained on this diet for 26 weeks.
 \hypertarget{genotyping}{%
 \subsubsection{Genotyping}\label{genotyping}}
 
-All DO mice were genotyped as described in Svenson et al.~(2012) using
-the Mouse Universal Genotyping Array (MUGA) (7854 markers), and the
-MegaMUGA (77,642 markers) (GeneSeek, Lincoln, NE). All animal procedures
-were approved by the Animal Care and Use Committee at The Jackson
-Laboratory (Animal Use Summary \# 06006).
+All DO mice were genotyped as described in {[}9{]} using the Mouse
+Universal Genotyping Array (MUGA) (7854 markers), and the MegaMUGA
+(77,642 markers) (GeneSeek, Lincoln, NE). All animal procedures were
+approved by the Animal Care and Use Committee at The Jackson Laboratory
+(Animal Use Summary \# 06006).
 
 Founder haplotypes were inferred from SNPs using a Hidden Markov Model
-as described in Gatti\textsubscript{\textit{et~al.}}2014. The MUGA and
-MegaMUGA arrays were merged to create a final set of evenly spaced
-64,000 interpolated markers.
+as described in {[}13{]}. The MUGA and MegaMUGA arrays were merged to
+create a final set of evenly spaced 64,000 interpolated markers.
 
 \hypertarget{tissue-collection-and-gene-expression}{%
 \subsubsection{Tissue collection and gene
@@ -643,64 +511,41 @@ expectation maximization algorithm (EMASE) to estimate read counts
 \hypertarget{data-processing}{%
 \subsection{Data Processing}\label{data-processing}}
 
-\hypertarget{sequencing}{%
-\subsubsection{Sequencing}\label{sequencing}}
+\hypertarget{sequence-processing}{%
+\subsubsection{Sequence processing}\label{sequence-processing}}
 
 The raw sequencing data from both RNA-Seq and ChIP-Seq was put through
-the quality control program FastQC. FastQC identifies problems or biases
-in either the sequencer run or the starting library material. The FastQC
-readout includes total number of reads, sequence quality, duplication
-level, and overrepresented sequences. All of our samples had comparable
-quality levels and no outstanding flags. However, the ChIP-Seq data was
-flagged for having a high level of duplicate reads. This can be
-explained by the use of MNase to shear the DNA into 150 bp fragments. If
-the binding positions of nucleosomes are fixed, then the MNase enzyme
-will cleave the DNA in the same place in multiple cells, resulting in
-duplicate pieces of DNA. Despite evidence that the duplication rate has
-a biological explanation, duplicates were removed before downstream
-analysis, as is typical in sequencing workflows, to avoid potential
-biases caused by starting libraries that have less diversity.
+the quality control program FastQC (version), and duplicate sequences
+were removed before downstream analysis. Reads from each sample were
+mapped to strain-specific pseudogenomes, which integrate known SNPs and
+indels from each strain, and the B6 samples were aligned directly to the
+reference mouse genome. The pseudogenomes were created using EMASE
+\textbackslash url(https://github.com/churchill-lab/emase). We used
+Bowtie {[}14{]} to align and map reads from the RNA-Seq and ChIP-Seq
+experiments.
 
-For the sequence analysis, reads from each sample were mapped to
-strain-specific pseudogenomes that integrate known SNPs from each
-strain. While the B6 samples were aligned directly to the reference
-mouse genome, the other samples were from genetically different strains.
-Strain-specific sequence variation in transcripts can affect alignment
-quality and result in biased estimates of abundance. To counteract
-potential strain biases, sequencing data from each strain were aligned
-to a custom strain pseudogenome, allowing a more precise
-characterization of gene expression and histone binding. The
-pseudogenomes were created using the EMASE computational program
-{[}REF{]} designed to construct customized genomes based on known SNP
-and indel attributes. The resulting custom genomes are called
-pseudogenomes, because they are based on inserting small known
-variations into the reference genome, but do not attempt whole genome
-sequencing for each strain and complete rebuild the entire genomic
-sequence from the scaffold up. The strain-specific pseudogenomes were
-then used in the Bowtie mapping algorithm to align and map reads from
-the RNA-Seq and ChIP-Seq experiments.
+\hypertarget{transcript-quantification}{%
+\subsubsection{Transcript
+quantification}\label{transcript-quantification}}
 
-\hypertarget{quantifying-gene-expression}{%
-\subsection{Quantifying gene
-expression}\label{quantifying-gene-expression}}
+We quantified gene expression using edgeR {[}15{]}, and transcripts with
+less than 1 CPM in two or more replicates were filtered out. Transcripts
+were further filtered to include only protein-coding transcripts.
 
-Once the sequencing data was mapped to the custom genomes, edgeR is used
-to quantify transcripts. The edgeR program uses a Trimmed Mean of
-M-values (TMM), which adjusts each sample for library size and RNA
-composition using the assumption that most genes are not differentially
-expressed. The output is sample read count for each of the ENSMUSG
-transcript ID's. Next, transcripts with less than 1 CPM in two or more
-replicates were filtered to remove lowly expressed genes. Also, the data
-were trimmed to include only protein-coding transcripts.
+We used the R package sva {[}16{]} to perform a variance stabilizing
+transformation (vst) on the RNA-Seq read counts from both inbred and
+outbred mice. In the inbred mice we used a blind transformation, while
+in the outbred mice, we included DO wave and sex in the model. For eQTL
+mapping, we performed rank Z normalization on the RNA-Seq read counts
+across transcripts from the outbred mice.
 
 \hypertarget{chip-seq-quantification}{%
-\subsubsection{ChIP-Seq quantification:}\label{chip-seq-quantification}}
+\subsubsection{ChIP-Seq quantification}\label{chip-seq-quantification}}
 
-After the ChIP-Seq sequencing data were mapped to the custom
-pseudogenomes, peaks were called in each sample using MACS 1.4.2
-{[}18798982{]}, with a significance threshold of \(p \leq 10^{-5}\). In
-order to compare peaks across strains, the MACS output peak coordinates
-were converted to common B6 coordinates using g2g tools
+We used MACS 1.4.2 {[}17{]} to identify peaks in the ChIP-Seq sequencing
+data, with a significance threshold of \(p \leq 10^{-5}\). In order to
+compare peaks across strains, we converted the MACS output peak
+coordinates to common B6 coordinates using g2g tools
 (https://churchill-lab.github.io/g2gtools/).
 
 \hypertarget{quantifying-dna-methylation}{%
@@ -708,21 +553,21 @@ were converted to common B6 coordinates using g2g tools
 methylation}\label{quantifying-dna-methylation}}
 
 RRBS data were processed using a bismark-based pipeline modified from
-Thompson et al.~2018 {[}30348905{]}. The pipeline uses Trim Galore!
-0.6.3 (https://www.bioinformatics.babraham.ac.uk/projects/trim\_galore/)
-for QC, followed by the trimRRBSdiversityAdaptCustomers.py script from
-NuGen for trimming the diversity adapters. This script is available at:
+{[}18{]}. The pipeline uses Trim Galore! 0.6.3
+(https://www.bioinformatics.babraham.ac.uk/projects/trim\_galore/) for
+QC, followed by the trimRRBSdiversityAdaptCustomers.py script from NuGen
+for trimming the diversity adapters. This script is available at:
 https://github.com/nugentechnologies/NuMetRRBS
 
-All of our samples had comparable quality levels and no outstanding
-flags. Total number of reads was 45-90 million, with an average read
-length of about 50 bp. Quality scores were mostly above 30 (including
-error bars), with the average above 38. Duplication level was reduced to
-\(<2\) for about 95\% of the sequences.
+All samples had comparable quality levels and no outstanding flags.
+Total number of reads was 45-90 million, with an average read length of
+about 50 bp. Quality scores were mostly above 30 (including error bars),
+with the average above 38. Duplication level was reduced to \(<2\) for
+about 95\% of the sequences.
 
-High quality reads were aligned to a custom strain pseudogenome, using
-bowtie2 as implemented in Bismark 0.22 {[}21493656{]}. The pseudogenomes
-were created by incorporating strain-specific SNPs and indels into the
+High quality reads were aligned to a custom strain pseudogenomes, using
+bowtie2 as implemented in Bismark 0.22 {[}19{]}. The pseudogenomes were
+created by incorporating strain-specific SNPs and indels into the
 reference genome using g2gtools
 (https://github.com/churchill-lab/g2gtools), allowing a more precise
 characterization of methylation patterns. Bismark methylation extractor
@@ -732,23 +577,6 @@ mouse genome (GRCm38) coordinates using g2gtools. Unlike other liftover
 tools, g2gtools does not throw away alignments that land on indel
 regions. B6 samples were aligned directly to the reference mouse genome.
 
-\hypertarget{analysis}{%
-\subsection{Analysis}\label{analysis}}
-
-\hypertarget{filtering-transcripts}{%
-\subsection{Filtering transcripts}\label{filtering-transcripts}}
-
-For all gene expression data, we remove transcripts with extremely low
-read counts, by filtering out those whose mean read count across all
-individuals was less than five.
-
-We used the R package sva {[}REF{]} to perform a variance stabilizing
-transformation (vst) on the RNA-Seq read counts from both inbred and
-outbred mice. In the inbred mice we used a blind transformation, while
-in the outbred mice, we included DO wave and sex in the model. For eQTL
-mapping, we performed rank Z normalization on the RNA-Seq read counts
-across transcripts from the outbred mice.
-
 \hypertarget{analysis-of-histone-modifications}{%
 \subsection{Analysis of histone
 modifications}\label{analysis-of-histone-modifications}}
@@ -757,9 +585,9 @@ modifications}\label{analysis-of-histone-modifications}}
 \subsubsection{Identification of chromatin
 states}\label{identification-of-chromatin-states}}
 
-We used ChromHMM {[}29120462{]} to identify chromatin states, which are
-unique combinations of the four chromatin modifications, for example,
-high levels of both H3K4me3 and H3K4me1, and low levels of the other two
+We used ChromHMM {[}20{]} to identify chromatin states, which are unique
+combinations of the four chromatin modifications, for example, high
+levels of both H3K4me3 and H3K4me1, and low levels of the other two
 modifications. We conducted all subsequent analyses at the level of the
 chromatin state.
 
@@ -777,7 +605,8 @@ each of these analyses are described separately below. All measures were
 remarkably consistent across all models, but the 14-state model was
 characterized by a wide range of relatively abundant states with
 relatively strong effects on expression. We used this model for all
-subsequent analyses.
+subsequent analyses. For more details on how the different models were
+compared, see Supplemental Methods.
 
 \hypertarget{genome-distribution-of-chromatin-states}{%
 \subsubsection{Genome distribution of chromatin
@@ -792,8 +621,8 @@ genome. We analyzed the following features:
 \tightlist
 \item
   \textbf{Transcription start sites (TSS)} - Annotations of TSS in the
-  mouse genome were provided by RefSeq {[}26553804{]} and included with
-  the release of ChromHMM, which we downloaded on December 9, 2019
+  mouse genome were provided by RefSeq {[}21{]} and included with the
+  release of ChromHMM, which we downloaded on December 9, 2019
   {[}29120462{]}.
 \item
   \textbf{Transcription end sites (TES)} - Annotations of TES in the
@@ -801,19 +630,19 @@ genome. We analyzed the following features:
   ChromHMM.
 \item
   \textbf{Transcription factor binding sites (TFBS)} - We downloaded
-  TFBS coordinates from OregAnno {[}26578589{]} using the UCSC genome
-  browser {[}12045153{]} on May 4, 2021.
+  TFBS coordinates from OregAnno {[}22{]} using the UCSC genome browser
+  {[}23{]} on May 4, 2021.
 \item
   \textbf{Promoters} - We downloaded promoter coordinates provided by
-  the eukaryotic promoter database {[}27899657,25378343{]}, through the
-  UCSC genome browser on April 26, 2021.
+  the eukaryotic promoter database {[}24,24{]}, through the UCSC genome
+  browser on April 26, 2021.
 \item
   \textbf{Enhancers} - We downloaded annotated enhancers provided by
   ChromHMM through the UCSC genome browser on April 26, 2021.
 \item
   \textbf{Candidates of cis regulatory elements in the mouse genome
-  (cCREs)} - We downloaded cCRE annotations provided by ENCODE
-  {[}22955616{]} through the UCSC genome browser on April 26, 2021.
+  (cCREs)} - We downloaded cCRE annotations provided by ENCODE {[}25{]}
+  through the UCSC genome browser on April 26, 2021.
 \item
   \textbf{CpG Islands} - Annotations of CpG islands in the mouse genome
   were included with the release of ChromHMM.
@@ -843,7 +672,7 @@ expression}\label{chromatin-state-and-gene-expression}}
 We calculated the effect of each chromatin state on gene expression. We
 did this both across genes and across strains. The across-gene analysis
 identified states that are associated with high expression and low
-expression within the hepatocytes independent of strain. The
+expression within the hepatocytes and independent of strain. The
 across-strain analysis investigated whether variation in chromatin state
 across strains contributed to variation in gene expression across
 strains.
@@ -881,42 +710,6 @@ position-based manner. This second analysis yielded an effect of each
 state at multiple points along the gene body and a more nuanced view of
 the effect of each state.
 
-\color{lightgray}
-
-\hypertarget{selecting-the-most-biologically-meaningful-model}{%
-\subsubsection{Selecting the most biologically meaningful
-model}\label{selecting-the-most-biologically-meaningful-model}}
-
-We performed the above analyses on all states from the four-state model
-to the 16-state model to find the most meaningful clustering of histone
-modifications. Across all models, the states were remarkably stable. As
-we increased the number of states detected by the model, new states
-appeared, but previously detected states were not disrupted. This
-stability was apparent in all state measures: emissions probability
-(Supp Fig 1) patterns, overall abundance (Supp. Fig. 2), and effect on
-expresssion (Supp Fig 3). This analysis revealed interesting patterns in
-the detected states. For example, one highly abundant state (present in
-65\% of transcribed genes) detected first in the four-state model was
-split into two distinct states in the 10-state model. These resulting
-states were also highly abundant (appearing in 40\% and 41\% of
-transcribed genes), and had distinct emissions probabilities (Supp. Fig.
-1). These two states remained stable with increasing numbers of clusters
-through to the 16-state model. States arising after the 10-state model
-were of lower abundance, appearing in 2\% or less of transcribed genes.
-
-All of the higher abundance states were established in the 10-state
-model. However, as we moved toward higher numbers of clusters, the
-resolution on the lower-abundance states improved in terms of the
-emissions probabilities profiles, and strength of the correlation with
-gene expression. For example, the 14-state model better resolved a state
-that had appeared in the 10-state model but was not strongly correlated
-with gene expression. In the 14-state model, the emission patterns were
-closer to binary, and the strength of the correlation with expression
-was increased. Beyond 14 clusters, the new states identified were
-extremely rare (1\% of transcripts or less), and were not strongly
-correlated with gene expression. We thus selected the 14-state model and
-the model with the most biologically meaningful clusters. \color{black}
-
 \hypertarget{analysis-of-dna-methylation}{%
 \subsection{Analysis of DNA
 methylation}\label{analysis-of-dna-methylation}}
@@ -931,7 +724,7 @@ percent methylation across the three replicates in each strain. The
 final methylome contained 5,311,670 unique sites across the genome.
 Because methylated CpG sites can be fully methylated, unmethylated, or
 hemi-methylated, we rounded the average percent methylation at each site
-to the nearest 0, 50, or 100.
+to the nearest 0, 50, or 100\%.
 
 \hypertarget{distribution-of-cpg-sites}{%
 \subsubsection{Distribution of CpG
@@ -961,11 +754,11 @@ effect on expression.
 \subsection{Imputation of genomic features in Diversity Outbred
 mice}\label{imputation-of-genomic-features-in-diversity-outbred-mice}}
 
-To assess the extent to which chromatin state and DNA methylation are
+To assess the extent to which chromatin state and DNA methylation were
 responsible for local expression QTLs, we imputed local chromatin state
 and DNA methylation into a population of diversity outbred (DO) mice
-described above and in Svenson et al.~2012. We compared the effect of
-the imputed epigenetic features to imputed SNPs.
+described above and in {[}9{]}. We compared the effect of the imputed
+epigenetic features to imputed SNPs.
 
 All imputations followed the same basic procedure: For each transcript,
 we identified the haplotype probabilities in the DO mice at the genetic
@@ -984,11 +777,11 @@ We then multiplied the haplotype probabilities by each genomic feature
 array to obtain the imputed genomic feature for each DO mouse. This
 final array held DO individuals in rows, the genomic feature in the
 second dimension, and genomic position in the third dimension. This
-array is analagous to the genoprobs object in R/qtl2 {[}30591514{]}. The
+array is analagous to the genoprobs object in R/qtl2 {[}26{]}. The
 genomic position dimension included all positions from 1 kb upstream of
 the TSS to 1 kb downstream of the TES. SNP data for the DO founders in
 mm10 coordinates were downloaded from the Sanger SNP database
-{[}1921910, 21921916{]}, on July 6, 2021.
+{[}27,28{]}, on July 6, 2021.
 
 To calculate the effect of each imputed genomic feature on gene
 expression in the DO population, we fit a linear model. From this linear
@@ -1021,20 +814,20 @@ The states were distributed non-randomly around known functional
 elements in the mouse genome (Figure \ref{fig:state_overview}B). The
 majority of the states were enriched around the TSS, and other
 TSS-related functional elements, such as promoters and CpG islands. Two
-states (states 2 and 1) were primarily found in intergenic regions.
-Three states (states 9, 13, and 11) were enriched around known
-enhancers, and one (state 6) was enriched predominantly near the TES.
-The majority of these states were also associated with variation in gene
-expression. The colored bars in Figure \ref{fig:state_overview}C) show
-the effect of each state on gene expression across the inbred strains.
-For reference, the paired tan bars show the effect of each chromatin
-state on gene expression in hepatocytes. These effects tend to be of the
-same sign and greater magnitude than the across-strain effects.
+states (states 13 and 14) were primarily found in intergenic regions.
+Three states (states 6, 2, and 4) were enriched around known enhancers,
+and one (state 9) was enriched predominantly near the TES. The majority
+of these states were also associated with variation in gene expression.
+The colored bars in Figure \ref{fig:state_overview}C) show the effect of
+each state on gene expression across the inbred strains. For reference,
+the paired tan bars show the effect of each chromatin state on gene
+expression in hepatocytes. These effects tend to be of the same sign and
+greater magnitude than the across-strain effects.
 
 The states in Figure \ref{fig:state_overview} are shown in order of
 their effect on expression, which helps illustrate several patterns in
 the data. The state with the largest negative effect on gene expression,
-state 1, is the absence of all measured modifications. The next few
+state 14, is the absence of all measured modifications. The next few
 states all contain the repressive mark H3K27me3, and are all associated
 with reduced gene expression. The states with the largest positive
 effects on expression all have some combination of the activating marks,
@@ -1061,23 +854,22 @@ gene-level scale (Figure \ref{fig:state_abundance}C-D).
 The spatial patterns of the individual chromatin states are shown in
 (Figure \ref{fig:state_abundance}A), and an overlay of all states
 together (Figure \ref{fig:state_abundance}B) emphasizes the difference
-in abundance between the most abundant states (states 14, 12, and 1),
-and the remaining states, which were relatively rare.
+in abundance between the most abundant states (states 1, 3, and 14), and
+the remaining states, which were relatively rare.
 
 Each chromatin state had a characteristic distribution pattern relative
-to gene bodies. For example, state 1, which was characterized by the
+to gene bodies. For example, state 14, which was characterized by the
 absence of all measured histone modifications, was strongly depleted
 near the TSS, indicating that this region is commonly subject to histone
 modification. However, its abundance increased steadily through the gene
-to a peak at the TES. In contrast, states 12 and 14 were both
-concentrated at the TSS. State 12 was very narrowly concentrated right
-at the TSS, whereas state 14 was more broadly abundant both upstream and
-downstream of the TSS. Both were associated overall with increased
-expression in the inbred mice (indicated by red shading), suggesting
-promoter or enhancer functions. The third state in this group of
-high-expressing states, state 13, was depleted nere the TSS, but
-enriched within the gene body, suggesting that this state may mark
-active intragenic enhancers.
+to a peak at the TES. In contrast, states 3 and 1 were both concentrated
+at the TSS. State 3 was very narrowly concentrated right at the TSS,
+whereas state 1 was more broadly abundant both upstream and downstream
+of the TSS. Both were associated overall with increased expression in
+the inbred mice (indicated by red shading), suggesting promoter or
+enhancer functions. The third state in this group of high-expressing
+states, state 2, was depleted nere the TSS, but enriched within the gene
+body, suggesting that this state may mark active intragenic enhancers.
 
 States with weaker effects on expression (indicated by grayer shades)
 were of lower abundance. However, they still had distinct distribution
@@ -1116,19 +908,19 @@ effects matched the overall effects of each state seen previously
 recapitulated for almost every state when we measured across strains.
 That is, variation in chromatin state across strains contributed to
 variation in gene expression in the same manner that cell-type
-expression was being established. One notable exception was state 9,
+expression was being established. One notable exception was state 6,
 whose presence upregulated genes within hepatocytes, but did not
 contribute to expression variation across strains.
 
 We also examined the effect of percent DNA methylation across genes
 within hepatocytes, and across strains (Figure
-\ref{fig:DNA_methylation_effect}). As expected, hypomethylation at the
-TSS was associated with lower expression in hepatocytes. However,
-percent DNA methylation did not contribute at all to expression
-variation across strains, implying that although percent DNA methylation
-is used in gene regulation within a cell type, it is not heritable and
-does not contribute to variation in gene expression across genetically
-diverse individuals.
+\ref{fig:DNA_methylation_effect}). As expected, methylation at the TSS
+was associated with lower expression in hepatocytes. However, percent
+DNA methylation did not contribute at all to expression variation across
+strains, implying that although percent DNA methylation is used in gene
+regulation within a cell type, it is not heritable and does not
+contribute to variation in gene expression across genetically diverse
+individuals.
 
 \hypertarget{imputed-chromatin-state-explained-expression-variation-in-diversity-outbred-mice}{%
 \subsection{Imputed chromatin state explained expression variation in
@@ -1146,18 +938,17 @@ factors contributes to observed expression quantitative trait loci
 
 To compare the contribution of genetic and epigenetic features to eQTLs
 in a gentically diverse population, we imputed chromatin state, DNA
-methylation, and SNPs into a population of DO mice described previously
-{[}Svenson, Tyler{]} (Methods). Chromatin state is largely determined by
-local genotype, especially early in life {[}REF{]}, and can thus be
-reliably imputed from local genotype. Further, we have shown here that
-local chromatin state correlates with variation in gene expression
-across inbred strains. DNA methylation, on the other hand, is known not
-to be highly heritable {[}REF{]}, and thus cannot be reliably imputed
-from local genotype. We have also shown here that DNA methylation is not
-correlated with variation in gene expression across inbred strains. The
-imputation of DNA methylation thus serves as an estimate of a lower
-bound the ability of a feature imputed from local haplotype to explain
-gene expression in a new population.
+methylation, and SNPs into a population of DO mice (Methods). Chromatin
+state is largely determined by local genotype, especially early in life
+{[}REF{]}, and can thus be reliably imputed from local genotype.
+Further, we have shown here that local chromatin state correlates with
+variation in gene expression across inbred strains. DNA methylation, on
+the other hand, is known not to be highly heritable {[}REF{]}, and thus
+cannot be reliably imputed from local genotype. We have also shown here
+that DNA methylation is not correlated with variation in gene expression
+across inbred strains. The imputation of DNA methylation thus serves as
+an estimate of a lower bound the ability of a feature imputed from local
+haplotype to explain gene expression in a new population.
 
 For each transcript in the DO population, we imputed the local chromatin
 state across the gene body based on the gene's local founder haplotype
@@ -1283,21 +1074,21 @@ to individual histone modifications. To illustrate this point, consider
 the three states with the largest positive effects on transcription.
 Each of these three states had a distinct combination of the three
 histone marks associated with transcriptional activation: H3K4me1,
-H3K4me3, and H3K27ac. State 12 was characterized by high levels of
-H3K4me3 and H3K27ac, and low levels of H3K4me1. State 13 was
+H3K4me3, and H3K27ac. State 3 was characterized by high levels of
+H3K4me3 and H3K27ac, and low levels of H3K4me1. State 2 was
 characterized by high levels of H3K4me1 and H3K27ac, and low levels of
-H3K4me3. And state 14 was characterized by high levels of all three
+H3K4me3. And state 1 was characterized by high levels of all three
 activating marks (Figure XXX). Although all three states were associated
 with increased gene expression, each had a completely distinct spatial
-distribution. State 12 was distributed in a very narrow band centered on
-the TSS, while state 14 was distributed across a much broader region
-centered upstream of the TSS. State 13 had a completely different
+distribution. State 3 was distributed in a very narrow band centered on
+the TSS, while state 1 was distributed across a much broader region
+centered upstream of the TSS. State 2 had a completely different
 distribution -- it was depleted at the TSS, and most abundant within the
 gene body and near the TES. This variation in spatial distribution was
-mirrored in the spatial effects on transcription. State 12, which we
+mirrored in the spatial effects on transcription. State 3, which we
 annotated as an active promoter, was positively associated with
-transcription when it was present at the TSS. In contrast, states 13 and
-14, which we annotated as enhancers, were associated with increased
+transcription when it was present at the TSS. In contrast, states 2 and
+1, which we annotated as enhancers, were associated with increased
 transcription when present anywhere in the gene body (Figure XXX). We
 would not be able to detect such patterns if analyzing the histone
 modifications in isolation. These results highlight the complexity of
@@ -1307,19 +1098,19 @@ While we were able to annotate several states, particularly those with
 the strongest effects on gene expression, other states were more
 difficult to annotate. This raises the intruiguing possibility of
 identifying new modes of expression regulation through histone
-modification. One of these unannotated states, state 6, had a weak, but
+modification. One of these unannotated states, state 9, had a weak, but
 consistent negative effect on gene transcription centered within the
 gene body, downstream of the TSS. This state was characterized by high
 levels of H3K4me3 and low levels of the other three modifications.
 
 The modification H3K4me3 is most frequently associated with increased
-transcriptional activity {[}citation{]}, so the association with state 6
+transcriptional activity {[}citation{]}, so the association with state 9
 with reduced transcription is a deviation from the dominant paradigm.
 The physical distribution of this state is also interesting. It was
 depleted at the TSS, and enriched just upstream and just downstream of
 the TSS (Figuree XXX). It was also enriched just downstream of the TES,
 although it did not appear to influence transcription at this location
-(Figure XXX). The group of genes marked by state 6 were enriched for
+(Figure XXX). The group of genes marked by state 9 were enriched for
 functions such as stress response, DNA damage repair, and ncRNA
 processing suggesting that this state may be used to regulate subsets of
 genes involved in responses to environmental stimuli.
@@ -1330,7 +1121,7 @@ states, which are states that combine an activating histone modification
 and a repressing histone modificaction and are usually associated with
 undifferentiated cells {[}citation{]}. Here we identified two bivalent
 states in adult mouse hepatocytes, and annotated them as a poised
-enhancer (state 3) and a bivalent promoter (state 4). Both states were
+enhancer (state 12) and a bivalent promoter (state 11). Both states were
 associated with downregulation across inbred strains when present near
 the TSS; however this effect was not replicated in the outbred mice. The
 lack of replication was perhaps because the effect was too weak to
@@ -1347,7 +1138,7 @@ important in the response to changes in the environment. Their abundance
 increases in breast cancer cells in response to hypoxia {[}27800026{]}.
 Poised enhancers are also observed during differentiation and in
 differentiated cells {[}32432110{]}. In concordance with these previous
-observations, the genes marked by states 3 and 4 were enriched for
+observations, the genes marked by states 12 and 11 were enriched for
 vascular development and morphogenesis. That we identified these states
 in differentiated hepatocytes may indicate that a subset of
 developmental genes retain the ability to be activated under certain
@@ -1384,8 +1175,8 @@ links. Through this survey we are providing one of the first rigorous
 resources that explores the connection between genetic variation and
 epigenetic variation.
 
-work this paragraph in\ldots{} That states 1 and 2 were associated with
-reduced gene expression both within hepatocytes and across strains
+work this paragraph in\ldots{} That states 14 and 13 were associated
+with reduced gene expression both within hepatocytes and across strains
 suggests that there may be differential epigenetic silencing of genes in
 hepatocytes across strains. Further, the majority of chromatin states
 were associated with variation in expression across strains, suggesting
@@ -1420,7 +1211,7 @@ nine inbred strains of mouse. In all panels each point represents
 an individual mouse, and strain is indicated by color as shown in
 the legend at the bottom of the figure. Each panel is labeled with
 the data used to generate the PC plot. (A) Hepatocyte transcriptome - 
-all transcripts sequenced in isolated hepatocites. (B) DNA methylation - 
+all transcripts sequenced in isolated hepatocytes. (B) DNA methylation - 
 the percent methylation at all CpG sites shared across all individuals. 
 (C-F) Histone modifications - the peak heights of the indicated histone
 modification for sites shared across all individuals.}
@@ -1435,22 +1226,22 @@ probabilites for each histone modification in each chromatin state.
 Blue indicates the absence of the histone modification, and red 
 indicates the presence of the modification. The panel labeled
 genomic enrichment shows the distribution of each state around 
-functional elements in the genome. Red indicate that the
+functional elements in the genome. Red indicates that the
 state is more likely to be found near the annotated functional 
 element than expected by chance. Blue indicates that the state
 is less likely to be found near the annotated functional element
 than expected by chance. Abbreviations are as follows: TFBS = 
 transcription factor binding sites, cCRE = candidate cis-regulatory
-element [32728249], TSS = transcription start site, TES = transcription 
-end site. The panel labeled Expression Effects shows the effect of the 
-presence of each state on gene expression when it varies across strains. 
+element [@pmid32728249], TSS = transcription start site, 
+TES = transcription end site. The panel labeled Expression Effects 
+shows the effect of variation in the state on gene expression. 
 Bars are colored based on the size and direction the state's effect on
-expression. These colors are used throughout the paper. For reference, 
-we also show the overall effect of each state on gene expression across 
-genes within hepatocytes (tan). The final column of the figure shows 
-plausible annotations for each state based on combining the data in the 
-previous three panels. The numbers in parentheses indicate the percent of 
-the genome that was assigned to each state.}
+expression. Darker bars show the effects on expression of chromatin 
+state variation across strains. Tan bars show the effects on expression
+of chromatin state variation across genes. The final column of the figure 
+shows plausible annotations for each state based on combining the data in 
+the previous three panels. The numbers in parentheses indicate the percent 
+of the genome that was assigned to each state.}
 \label{fig:state_overview}
 \end{figure}
 
@@ -1462,13 +1253,11 @@ $y$-axis in each panel is the proportion of genes containing the state. Each
 panel has an independent $y$-axis to better show the shape of each curve.
 The $x$-axis is the relative gene position. The TSS and TES are marked as vertical
 gray dashed lines. B. The same data shown in panel A, but with all states overlayed
-onto a single $x$- and $y$-axis to show the relative abundance of the states. 
+onto a single set of axes to show the relative abundance of the states. 
 C. The density of CpG sites relative to the gene body. The $y$-axis shows the 
-distance, in base pairs, to the next CpG site. This number goes down to almost
-0 near the TSS showing that CpG sites are very densely packed in this region. 
-CpG sites are less dense within the gene body than in the intergenic space. 
-The blue polygon shows the 95\% confidence interval around the estimate. D. 
-Percent methylation relative to the gene body. The $y$-axis shows the median 
+number of CpG sites per base pair. The density is highest near the TSS. 
+CpG sites are less dense within the gene body and in the intergenic space. 
+D. Percent methylation relative to the gene body. The $y$-axis shows the median 
 percent methylation at CpG sites, and the $x$-axis shows relative gene position. 
 CpG sites near the TSS are unmethylated relative to intragenic and intergenic
 CpG sites.}
@@ -1477,23 +1266,24 @@ CpG sites.}
 
 \begin{figure}[ht]
 \centering
-\caption{Effects of chromatin states on gene expression. Each column shows the effect
-of each chromatin state on gene expression in a different context. The first
-column shows the effect across genes in the inbred mice showing how chromatin
-states are used within a single organism to increase the expression of some genes
-and decrease the expression of other genes. The second column shows the effect
-of chromatin state on gene expression across strains, showing how variation in
-chromatin state across strains leads to variation in expression of individual
-genes across strains. The third column shows the effect of imputed chromatin 
-state on gene expression in a population of diversity outbred mice showing the
-effect of variation in chromatin state across genetically diverse individuals
-on local gene expression. Each column of panels is plotted on a single scale
-for the $y$-axis so the magnitude of the effects in a single column can be 
+\caption{Effects of chromatin states on gene expression. Each column shows 
+the effect of each chromatin state on gene expression in a different 
+experimental context. The first column shows the effect across genes in 
+the inbred mice showing how chromatin states are used within a single 
+tissue to increase the expression of some genes and decrease the expression 
+of other genes. The second column shows the effect of chromatin state on 
+gene expression across strains, showing how variation in chromatin state 
+across strains leads to variation in expression of individual genes across 
+strains. The third column shows the effect of imputed chromatin state on 
+gene expression in a population of diversity outbred mice. These plots show 
+the effect on local gene expression of variation in chromatin state across 
+genetically diverse individuals. Each column of panels is plotted on a single 
+scale for the $y$-axis so the magnitude of the effects in a single column can be 
 compared directly to each other. Across a single row, the scale of the $y$-axis 
 varies to highlight the similarity of the shape of each curve in each different 
 setting. The final column shows the annotation of each state for comparison with
-its effects on gene expression. All $y$-axes is the $\beta$ coefficient from the 
-linear model shown in equation [REF]. All $x$-axes show the relative 
+its effects on gene expression. All $y$-axes show the $\beta$ coefficient from 
+the linear model shown in equation [REF]. All $x$-axes show the relative 
 position along the gene body running from just upstream of the TSS to just downstream 
 of the TES. Vertical gray dashed lines mark the TSS and TES in all panels.}
 \label{fig:state_effects}
@@ -1617,6 +1407,144 @@ individual by position by chromatin state probability.}
 \hypertarget{references}{%
 \section*{References}\label{references}}
 \addcontentsline{toc}{section}{References}
+
+\hypertarget{refs}{}
+\begin{cslreferences}
+\leavevmode\hypertarget{ref-lawrence2016lateral}{}%
+1. Lawrence M, Daujat S, Schneider R. Lateral thinking: How histone
+modifications regulate gene expression. Trends in Genetics. Elsevier;
+2016;32: 42--56.
+
+\leavevmode\hypertarget{ref-jones2012functions}{}%
+2. Jones PA. Functions of dna methylation: Islands, start sites, gene
+bodies and beyond. Nature Reviews Genetics. Nature Publishing Group;
+2012;13: 484--492.
+
+\leavevmode\hypertarget{ref-moore2013dna}{}%
+3. Moore LD, Le T, Fan G. DNA methylation and its basic function.
+Neuropsychopharmacology. Nature Publishing Group; 2013;38: 23--38.
+
+\leavevmode\hypertarget{ref-pmid20657582}{}%
+4. Ernst J, Kellis M. Discovery and characterization of chromatin states
+for systematic annotation of the human genome. Nat Biotechnol. 2010;28:
+817--825.
+
+\leavevmode\hypertarget{ref-pmid21441907}{}%
+5. Ernst J, Kheradpour P, Mikkelsen TS, Shoresh N, Ward LD, Epstein CB,
+et al. Mapping and analysis of chromatin state dynamics in nine human
+cell types. Nature. 2011;473: 43--49.
+
+\leavevmode\hypertarget{ref-pmid21701563}{}%
+6. Wiench M, John S, Baek S, Johnson TA, Sung MH, Escobar T, et al. DNA
+methylation status predicts cell type-specific enhancer activity. EMBO
+J. 2011;30: 3028--3039.
+
+\leavevmode\hypertarget{ref-pmid20720541}{}%
+7. Ji H, Ehrlich LI, Seita J, Murakami P, Doi A, Lindau P, et al.
+Comprehensive methylome map of lineage commitment from haematopoietic
+progenitors. Nature. 2010;467: 338--342.
+
+\leavevmode\hypertarget{ref-pmid20077036}{}%
+8. Collas P. The current state of chromatin immunoprecipitation. Mol
+Biotechnol. 2010;45: 87--100.
+
+\leavevmode\hypertarget{ref-Svenson:2012hq}{}%
+9. Svenson KL, Gatti DM, Valdar W, Welsh CE, Cheng R, Chesler EJ, et al.
+High-resolution genetic mapping using the Mouse Diversity outbred
+population. Genetics. 2012;190: 437--447.
+
+\leavevmode\hypertarget{ref-Ashbrook:2019bd}{}%
+10. Ashbrook DG, Arends D, Prins P, Mulligan MK, Roy S, Williams EG, et
+al. The expanded BXD family of mice: A cohort for experimental systems
+genetics and precision medicine. bioRxiv. 2019;139: 387--64.
+
+\leavevmode\hypertarget{ref-Ernst:2012ii}{}%
+11. Ernst J, Kellis M. ChromHMM: automating chromatin-state discovery
+and characterization. Nature Publishing Group. 2012;9: 215--216.
+
+\leavevmode\hypertarget{ref-Chesler:2008ge}{}%
+12. Chesler EJ, Miller DR, Branstetter LR, Galloway LD, Jackson BL,
+Philip VM, et al. The Collaborative Cross at Oak Ridge National
+Laboratory: developing a powerful resource for systems genetics.
+Mammalian Genome. 2008;19: 382--389.
+
+\leavevmode\hypertarget{ref-Gatti:2014ko}{}%
+13. Gatti DM, Svenson KL, Shabalin A, Wu L-Y, Valdar W, Simecek P, et
+al. Quantitative trait locus mapping methods for diversity outbred mice.
+G3 (Bethesda, Md). 2014;4: 1623--1633.
+
+\leavevmode\hypertarget{ref-pmid21154709}{}%
+14. Langmead B. Aligning short sequencing reads with Bowtie. Curr Protoc
+Bioinformatics. 2010;Chapter 11: Unit 11.7.
+
+\leavevmode\hypertarget{ref-pmid19910308}{}%
+15. Robinson MD, McCarthy DJ, Smyth GK. edgeR: a Bioconductor package
+for differential expression analysis of digital gene expression data.
+Bioinformatics. 2010;26: 139--140.
+
+\leavevmode\hypertarget{ref-sva}{}%
+16. Leek JT, Johnson WE, Parker HS, Fertig EJ, Jaffe AE, Zhang Y, et al.
+Sva: Surrogate variable analysis. 2020.
+
+\leavevmode\hypertarget{ref-pmid18798982}{}%
+17. Zhang Y, Liu T, Meyer CA, Eeckhoute J, Johnson DS, Bernstein BE, et
+al. Model-based analysis of ChIP-Seq (MACS). Genome Biol. 2008;9: R137.
+
+\leavevmode\hypertarget{ref-pmid30348905}{}%
+18. Thompson MJ, Chwiałkowska K, Rubbi L, Lusis AJ, Davis RC, Srivastava
+A, et al. A multi-tissue full lifespan epigenetic clock for mice. Aging
+(Albany NY). 2018;10: 2832--2854.
+
+\leavevmode\hypertarget{ref-pmid21493656}{}%
+19. Krueger F, Andrews SR. Bismark: a flexible aligner and methylation
+caller for Bisulfite-Seq applications. Bioinformatics. 2011;27:
+1571--1572.
+
+\leavevmode\hypertarget{ref-pmid29120462}{}%
+20. Ernst J, Kellis M. Chromatin-state discovery and genome annotation
+with ChromHMM. Nat Protoc. 2017;12: 2478--2492.
+
+\leavevmode\hypertarget{ref-pmid26553804}{}%
+21. O'Leary NA, Wright MW, Brister JR, Ciufo S, Haddad D, McVeigh R, et
+al. Reference sequence (RefSeq) database at NCBI: current status,
+taxonomic expansion, and functional annotation. Nucleic Acids Res.
+2016;44: D733--745.
+
+\leavevmode\hypertarget{ref-pmid26578589}{}%
+22. Lesurf R, Cotto KC, Wang G, Griffith M, Kasaian K, Jones SJ, et al.
+ORegAnno 3.0: a community-driven resource for curated regulatory
+annotation. Nucleic Acids Res. 2016;44: D126--132.
+
+\leavevmode\hypertarget{ref-pmid12045153}{}%
+23. Kent WJ, Sugnet CW, Furey TS, Roskin KM, Pringle TH, Zahler AM, et
+al. The human genome browser at UCSC. Genome Res. 2002;12: 996--1006.
+
+\leavevmode\hypertarget{ref-pmid27899657}{}%
+24. Dreos R, Ambrosini G, Groux R, Cavin Périer R, Bucher P. The
+eukaryotic promoter database in its 30th year: focus on non-vertebrate
+organisms. Nucleic Acids Res. 2017;45: D51--D55.
+
+\leavevmode\hypertarget{ref-pmid22955616}{}%
+25. Dunham I, Kundaje A, Aldred SF, Collins PJ, Davis CA, Doyle F, et
+al. An integrated encyclopedia of DNA elements in the human genome.
+Nature. 2012;489: 57--74.
+
+\leavevmode\hypertarget{ref-pmid30591514}{}%
+26. Broman KW, Gatti DM, Simecek P, Furlotte NA, Prins P, Sen Ś, et al.
+R/qtl2: Software for Mapping Quantitative Trait Loci with
+High-Dimensional Data and Multiparent Populations. Genetics. 2019;211:
+495--502.
+
+\leavevmode\hypertarget{ref-pmid1921910}{}%
+27. Jockenhövel F, Grandt D, Weber F, Fritschka E, Philipp T. {[}Plasma
+exchange as therapy of recurrent hemolytic-uremic syndrome (HUS) in
+adults{]}. Med Klin (Munich). 1991;86: 419--422.
+
+\leavevmode\hypertarget{ref-pmid21921916}{}%
+28. Yalcin B, Wong K, Agam A, Goodson M, Keane TM, Gan X, et al.
+Sequence-based characterization of structural variation in the mouse
+genome. Nature. 2011;477: 326--329.
+\end{cslreferences}
 
 \nolinenumbers
 

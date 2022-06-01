@@ -76,7 +76,7 @@ line.color = "gray", state.cols = NULL, empty.cell.color = "lightgray"){
     xmid <- mean(c(xmin, xmax))
     ymin <- plot.dim[3]
     ymax <- plot.dim[4]
-    yseg <- segment.region(ymin, ymax, num.states+1, alignment = "ends")
+    yseg <- segment.region(ymax, ymin, num.states+1, alignment = "ends")
     par(xpd = TRUE)
     for(i in 1:(length(yseg)-1)){
         draw.rectangle(xmin, xmax, yseg[i], yseg[i+1], fill = state.cols[i], 
