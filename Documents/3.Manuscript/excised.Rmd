@@ -180,3 +180,17 @@ other types of modifications [26704082]. Different modifications
 at different positions along these tails have markedly different
 effects on the transcription of local genes [citations]. Whereas 
 trimethylation of the ...
+
+## Discussion
+
+work this paragraph in...
+That states `r nomark.state` and `r repressor.state` were associated
+with reduced gene expression both within hepatocytes and across strains suggests
+that there may be differential epigenetic silencing of genes in hepatocytes 
+across strains. Further, the majority of chromatin states were associated 
+with variation in expression across strains, suggesting that epigenetic regulation 
+of gene expression through histone modification may contribute substantially to 
+variation in gene expression across genetically distinct individuals. That most 
+states have the same effects across genes within a cell type and across strains 
+suggests that the mechanisms that are used to regulate cell type specificity 
+also contribure to variation in genetically distinct individuals.

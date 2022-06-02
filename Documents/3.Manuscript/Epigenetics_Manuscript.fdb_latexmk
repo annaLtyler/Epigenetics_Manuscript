@@ -1,6 +1,6 @@
 # Fdb version 3
-["pdflatex"] 1652975896 "/Users/atyler/Documents/Projects/Epigenetics/Epigenetics_Manuscript/Documents/3.Manuscript/Epigenetics_Manuscript.tex" "Epigenetics_Manuscript.pdf" "Epigenetics_Manuscript" 1652975897
-  "/Users/atyler/Documents/Projects/Epigenetics/Epigenetics_Manuscript/Documents/3.Manuscript/Epigenetics_Manuscript.tex" 1652975891 77500 6fcf5c938fdd58fcfcf0f261100e8d7d ""
+["pdflatex"] 1654190115 "/Users/atyler/Documents/Projects/Epigenetics/Epigenetics_Manuscript/Documents/3.Manuscript/Epigenetics_Manuscript.tex" "Epigenetics_Manuscript.pdf" "Epigenetics_Manuscript" 1654190117
+  "/Users/atyler/Documents/Projects/Epigenetics/Epigenetics_Manuscript/Documents/3.Manuscript/Epigenetics_Manuscript.tex" 1654190110 84963 37b578fb9e837ef716ec0e399560800c ""
   "/Users/atyler/Library/TinyTeX/texmf-dist/fonts/tfm/jknappen/ec/tcrm1000.tfm" 1136768653 1536 e07581a4bb3136ece9eeb4c3ffab8233 ""
   "/Users/atyler/Library/TinyTeX/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmex7.tfm" 1246382020 1004 54797486969f23fa377b128694d548df ""
   "/Users/atyler/Library/TinyTeX/texmf-dist/fonts/tfm/public/amsfonts/symbols/msam10.tfm" 1246382020 916 f87d7c45f9c908e672703b83b72241a3 ""
@@ -59,7 +59,6 @@
   "/Users/atyler/Library/TinyTeX/texmf-dist/tex/latex/base/atbegshi-ltx.sty" 1636758526 3034 3bfb87122e6fa8758225c0dd3cbaceba ""
   "/Users/atyler/Library/TinyTeX/texmf-dist/tex/latex/base/atveryend-ltx.sty" 1636758526 2462 754d6b31b2ab5a09bb72c348ace2ec75 ""
   "/Users/atyler/Library/TinyTeX/texmf-dist/tex/latex/base/inputenc.sty" 1622581934 5049 969aec05d5f39c43f8005910498fcf90 ""
-  "/Users/atyler/Library/TinyTeX/texmf-dist/tex/latex/base/omscmr.fd" 1622581934 2469 ed49302eacbaebdd899d39dedcd25393 ""
   "/Users/atyler/Library/TinyTeX/texmf-dist/tex/latex/base/size10.clo" 1636758526 8448 96f18c76bf608a36ee6fbf021ac1dd32 ""
   "/Users/atyler/Library/TinyTeX/texmf-dist/tex/latex/base/textcomp.sty" 1622581934 2894 55431114fc0e491ecee275edafd6c881 ""
   "/Users/atyler/Library/TinyTeX/texmf-dist/tex/latex/caption/caption.sty" 1647548653 54291 b8e5c600d4aa37b48a740dd2a6c26163 ""
@@ -113,13 +112,13 @@
   "/Users/atyler/Library/TinyTeX/texmf-dist/tex/latex/url/url.sty" 1388531844 12796 8edb7d69a20b857904dd0ea757c14ec9 ""
   "/Users/atyler/Library/TinyTeX/texmf-dist/tex/latex/xcolor/xcolor.sty" 1635798903 56029 3f7889dab51d620aa43177c391b7b190 ""
   "/Users/atyler/Library/TinyTeX/texmf-dist/web2c/texmf.cnf" 1646502317 40171 cdab547de63d26590bebb3baff566530 ""
-  "/Users/atyler/Library/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1652968115 435762 1540b7576d395f468a24f2698c2efad7 ""
+  "/Users/atyler/Library/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1654187071 435762 1540b7576d395f468a24f2698c2efad7 ""
   "/Users/atyler/Library/TinyTeX/texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1000.600pk" 1652899967 11524 b5582786d0f7f7368d81ceba721c10c6 ""
-  "/Users/atyler/Library/TinyTeX/texmf-var/web2c/pdftex/pdflatex.fmt" 1652899936 1409260 e444acc5cb6d3a15b41c508252d3a441 ""
+  "/Users/atyler/Library/TinyTeX/texmf-var/web2c/pdftex/pdflatex.fmt" 1654187079 1410192 8b07b0b7d4c5f81a7d70021f79d41415 ""
   "/Users/atyler/Library/TinyTeX/texmf.cnf" 1652899796 708 85fd07691b6294ba94c59dbc62380410 ""
-  "Epigenetics_Manuscript.aux" 1652975897 30443 4ceb6b1ccdcff8995a546784416e9e95 "pdflatex"
-  "Epigenetics_Manuscript.out" 1652975897 7223 0bb8a8940bb51761b620b4fbb56c5f06 "pdflatex"
-  "Epigenetics_Manuscript.tex" 1652975891 77500 6fcf5c938fdd58fcfcf0f261100e8d7d ""
+  "Epigenetics_Manuscript.aux" 1654190117 31181 bd9a737656ab7952d3230f14397eb18f "pdflatex"
+  "Epigenetics_Manuscript.out" 1654190117 7223 c391f5a11d1b7cd66fbea3fa19ab06f3 "pdflatex"
+  "Epigenetics_Manuscript.tex" 1654190110 84963 37b578fb9e837ef716ec0e399560800c ""
   (generated)
   "Epigenetics_Manuscript.aux"
   "Epigenetics_Manuscript.log"
