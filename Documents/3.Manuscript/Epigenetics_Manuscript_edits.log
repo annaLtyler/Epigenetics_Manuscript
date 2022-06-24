@@ -3,8 +3,8 @@ entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
  %&-line parsing enabled.
-**Epigenetics_Manuscript.tex
-(./Epigenetics_Manuscript.tex
+**Epigenetics_Manuscript_edits.tex
+(./Epigenetics_Manuscript_edits.tex
 LaTeX2e <2020-02-02> patch level 5
 L3 programming layer <2020-03-06>
 (/usr/local/texlive/2020/texmf-dist/tex/latex/base/article.cls
@@ -460,30 +460,83 @@ Package: forarray 2008/06/20 Version 1.01 -- Using array structures in LaTeX
 )
 Package: xstring 2019/02/06 v1.83 String manipulations (CT)
 )
+(/usr/local/texlive/2020/texmf-dist/tex/generic/ulem/ulem.sty
+\UL@box=\box50
+\UL@hyphenbox=\box51
+\UL@skip=\skip72
+\UL@hook=\toks32
+\UL@height=\dimen175
+\UL@pe=\count292
+\UL@pixel=\dimen176
+\ULC@box=\box52
+Package: ulem 2019/11/18
+\ULdepth=\dimen177
+)
+(/usr/local/texlive/2020/texmf-dist/tex/latex/oberdiek/settobox.sty
+Package: settobox 2016/05/16 v1.5 Assign box dimensions to length registers (HO
+)
+)
+\DIFdelgraphicsbox=\box53
+\DIFdelgraphicswidth=\skip73
+\DIFdelgraphicsheight=\skip74
+LaTeX Info: Redefining \DIFaddbegin on input line 277.
+LaTeX Info: Redefining \DIFaddend on input line 278.
+LaTeX Info: Redefining \DIFdelbegin on input line 279.
+LaTeX Info: Redefining \DIFdelend on input line 280.
+LaTeX Info: Redefining \DIFaddbeginFL on input line 285.
+LaTeX Info: Redefining \DIFaddendFL on input line 286.
+LaTeX Info: Redefining \DIFdelbeginFL on input line 287.
+LaTeX Info: Redefining \DIFdelendFL on input line 288.
+
+(/usr/local/texlive/2020/texmf-dist/tex/latex/listings/listings.sty
+\lst@mode=\count293
+\lst@gtempboxa=\box54
+\lst@token=\toks33
+\lst@length=\count294
+\lst@currlwidth=\dimen178
+\lst@column=\count295
+\lst@pos=\count296
+\lst@lostspace=\dimen179
+\lst@width=\dimen180
+\lst@newlines=\count297
+\lst@lineno=\count298
+\lst@maxwidth=\dimen181
+
+(/usr/local/texlive/2020/texmf-dist/tex/latex/listings/lstmisc.sty
+File: lstmisc.sty 2020/03/24 1.8d (Carsten Heinz)
+\c@lstnumber=\count299
+\lst@skipnumbers=\count300
+\lst@framebox=\box55
+)
+(/usr/local/texlive/2020/texmf-dist/tex/latex/listings/listings.cfg
+File: listings.cfg 2020/03/24 1.8d listings configuration
+))
+Package: listings 2020/03/24 1.8d (Carsten Heinz)
+
 (/usr/local/texlive/2020/texmf-dist/tex/latex/l3backend/l3backend-pdfmode.def
 File: l3backend-pdfmode.def 2020-03-12 L3 backend support: PDF mode
-\l__kernel_color_stack_int=\count292
-\l__pdf_internal_box=\box50
+\l__kernel_color_stack_int=\count301
+\l__pdf_internal_box=\box56
 )
-(./Epigenetics_Manuscript.aux)
-\openout1 = `Epigenetics_Manuscript.aux'.
+(./Epigenetics_Manuscript_edits.aux)
+\openout1 = `Epigenetics_Manuscript_edits.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 219.
-LaTeX Font Info:    ... okay on input line 219.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 219.
-LaTeX Font Info:    ... okay on input line 219.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 219.
-LaTeX Font Info:    ... okay on input line 219.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 219.
-LaTeX Font Info:    ... okay on input line 219.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 219.
-LaTeX Font Info:    ... okay on input line 219.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 219.
-LaTeX Font Info:    ... okay on input line 219.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 219.
-LaTeX Font Info:    ... okay on input line 219.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 219.
-LaTeX Font Info:    ... okay on input line 219.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 307.
+LaTeX Font Info:    ... okay on input line 307.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 307.
+LaTeX Font Info:    ... okay on input line 307.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 307.
+LaTeX Font Info:    ... okay on input line 307.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 307.
+LaTeX Font Info:    ... okay on input line 307.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 307.
+LaTeX Font Info:    ... okay on input line 307.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 307.
+LaTeX Font Info:    ... okay on input line 307.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 307.
+LaTeX Font Info:    ... okay on input line 307.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 307.
+LaTeX Font Info:    ... okay on input line 307.
 
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
@@ -522,24 +575,24 @@ LaTeX Font Info:    ... okay on input line 219.
 (/usr/local/texlive/2020/texmf-dist/tex/latex/ucs/ucsencs.def
 File: ucsencs.def 2011/01/21 Fixes to fontencodings LGR, T3
 )
-\AtBeginShipoutBox=\box51
-Package hyperref Info: Link coloring OFF on input line 219.
-LaTeX Info: Redefining \ref on input line 219.
-LaTeX Info: Redefining \pageref on input line 219.
-LaTeX Info: Redefining \nameref on input line 219.
+\AtBeginShipoutBox=\box57
+Package hyperref Info: Link coloring OFF on input line 307.
+LaTeX Info: Redefining \ref on input line 307.
+LaTeX Info: Redefining \pageref on input line 307.
+LaTeX Info: Redefining \nameref on input line 307.
 
-(./Epigenetics_Manuscript.out) (./Epigenetics_Manuscript.out)
+(./Epigenetics_Manuscript_edits.out) (./Epigenetics_Manuscript_edits.out)
 \@outlinefile=\write3
-\openout3 = `Epigenetics_Manuscript.out'.
+\openout3 = `Epigenetics_Manuscript_edits.out'.
 
-LaTeX Info: Redefining \microtypecontext on input line 219.
+LaTeX Info: Redefining \microtypecontext on input line 307.
 Package microtype Info: Generating PDF output.
 Package microtype Info: Character protrusion enabled (level 2).
 Package microtype Info: Using default protrusion set `alltext'.
 Package microtype Info: Automatic font expansion enabled (level 2),
 (microtype)             stretch: 20, shrink: 20, step: 1, non-selected.
 Package microtype Info: Using default expansion set `basictext'.
-LaTeX Info: Redefining \showhyphens on input line 219.
+LaTeX Info: Redefining \showhyphens on input line 307.
 Package microtype Info: No adjustment of tracking.
 Package microtype Info: No adjustment of interword spacing.
 Package microtype Info: No adjustment of character kerning.
@@ -550,24 +603,26 @@ File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman
 )
 (/usr/local/texlive/2020/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count293
-\scratchdimen=\dimen175
-\scratchbox=\box52
-\nofMPsegments=\count294
-\nofMParguments=\count295
-\everyMPshowfont=\toks32
-\MPscratchCnt=\count296
-\MPscratchDim=\dimen176
-\MPnumerator=\count297
-\makeMPintoPDFobject=\count298
-\everyMPtoPDFconversion=\toks33
+\scratchcounter=\count302
+\scratchdimen=\dimen182
+\scratchbox=\box58
+\nofMPsegments=\count303
+\nofMParguments=\count304
+\everyMPshowfont=\toks34
+\MPscratchCnt=\count305
+\MPscratchDim=\dimen183
+\MPnumerator=\count306
+\makeMPintoPDFobject=\count307
+\everyMPtoPDFconversion=\toks35
 )
 Package caption Info: Begin \AtBeginDocument code.
+Package caption Info: listings package is loaded.
 Package caption Info: End \AtBeginDocument code.
 Package lastpage Info: Please have a look at the pageslts package at
 (lastpage)             https://www.ctan.org/pkg/pageslts
-(lastpage)             ! on input line 219.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 233
+(lastpage)             ! on input line 307.
+\c@lstlisting=\count308
+LaTeX Font Info:    Trying to load font information for U+msa on input line 325
 .
  (/usr/local/texlive/2020/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
@@ -575,7 +630,7 @@ File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 (/usr/local/texlive/2020/texmf-dist/tex/latex/microtype/mt-msa.cfg
 File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 233
+LaTeX Font Info:    Trying to load font information for U+msb on input line 325
 .
 
 (/usr/local/texlive/2020/texmf-dist/tex/latex/amsfonts/umsb.fd
@@ -584,7 +639,7 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 (/usr/local/texlive/2020/texmf-dist/tex/latex/microtype/mt-msb.cfg
 File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 )
-\fe@count@abs@i=\count299
+\fe@count@abs@i=\count309
 Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `cmss' (encoding: OT1).
 (microtype)             For optimal results, create family-specific settings.
@@ -603,29 +658,29 @@ Package microtype Info: Loading generic protrusion settings for font family
 [5] [6] [7] [8] [9] [10] [11] [12] [13] [14] [15] [16] [17] [18]
 (/usr/local/texlive/2020/texmf-dist/tex/latex/ucs/data/uni-1.def
 File: uni-1.def 2013/05/13 UCS: Unicode data U+0100..U+01FF
-) [19]
+) [19] [20]
 
 AED: lastpage setting LastPage
-[20]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1751.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 1751.
- (./Epigenetics_Manuscript.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1751.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1751.
+[21]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1897.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 1897.
+ (./Epigenetics_Manuscript_edits.aux)
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1897.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1897.
 
-Package rerunfilecheck Info: File `Epigenetics_Manuscript.out' has not changed.
-
+Package rerunfilecheck Info: File `Epigenetics_Manuscript_edits.out' has not ch
+anged.
 (rerunfilecheck)             Checksum: 4FD51F88BB7BD786EBF1BF364B587925;2634.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1751.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1897.
  ) 
 Here is how much of TeX's memory you used:
- 12842 strings out of 480608
- 192250 string characters out of 5903631
- 539410 words of memory out of 5000000
- 28280 multiletter control sequences out of 15000+600000
- 538521 words of font info for 70 fonts, out of 8000000 for 9000
+ 14325 strings out of 480608
+ 213248 string characters out of 5903631
+ 588769 words of memory out of 5000000
+ 29741 multiletter control sequences out of 15000+600000
+ 538627 words of font info for 71 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 41i,11n,45p,1687b,508s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 41i,11n,45p,1855b,508s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/local/texlive/2020/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc
 }</usr/local/texlive/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb>
 </usr/local/texlive/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb><
@@ -639,11 +694,12 @@ exlive/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/te
 xlive/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texl
 ive/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texli
 ve/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/local/texliv
-e/2020/texmf-dist/fonts/type1/public/cm-super/sfrm1000.pfb>
-Output written on Epigenetics_Manuscript.pdf (20 pages, 217408 bytes).
+e/2020/texmf-dist/fonts/type1/public/amsfonts/latxfont/lasy6.pfb></usr/local/te
+xlive/2020/texmf-dist/fonts/type1/public/cm-super/sfrm1000.pfb>
+Output written on Epigenetics_Manuscript_edits.pdf (21 pages, 235935 bytes).
 PDF statistics:
- 512 PDF objects out of 1000 (max. 8388607)
- 472 compressed objects within 5 object streams
- 183 named destinations out of 1000 (max. 500000)
+ 523 PDF objects out of 1000 (max. 8388607)
+ 481 compressed objects within 5 object streams
+ 184 named destinations out of 1000 (max. 500000)
  11041 words of extra memory for PDF output out of 12000 (max. 10000000)
 
