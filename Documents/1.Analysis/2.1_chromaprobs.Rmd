@@ -249,6 +249,8 @@ scan_gene_transcript <- function(gene.id){
   expr.locale <- which(colnames(expr) == gene.id)
   chrom.locale <- which(names(chrom.mats) == gene.id)
 
+  if(is.na(expr.locale) || is.na(chrom.locale)){return(NA)}
+
   geno.geno <- get_one_geno(gene.name, transcript.info, transcript.haplotypes, 
       chrom.states, strain.key, geno_type = "genotype")
 
