@@ -160,6 +160,8 @@ if(file.exists(chrom.coef.file)){
 scan_chrom_transcript <- function(gene.id, perm.order = NULL){
 
   gene.name <- transcript.info[which(transcript.info[,"ensembl_gene_id"] == gene.id),"external_gene_name"][1]
+  if(is.na(gene.name)){return(NA)}
+
   expr.locale <- which(colnames(expr) == gene.id)
   chrom.locale <- which(names(chrom.mats) == gene.id)
 
@@ -304,7 +306,7 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
   #for(i in 201:300){
   for(i in start.at:length(common.transcripts)){
     print(i)
-    if(i == 11140 || i == 11162){next()} #for debugging
+    if(i == 11140){next()} #for debugging
 
     if(is.interactive){report.progress(i, length(common.transcripts))}
     
