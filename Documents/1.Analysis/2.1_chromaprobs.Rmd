@@ -297,12 +297,15 @@ scan_gene_transcript <- function(gene.id){
 ```
 
 ```{r run_remaining}
+stop()
 if(start.at < length(common.transcripts)){ #if we haven't scanned all the transcripts yet
   sink(file.path(results.dir, "progress.txt"))
   #for each remaining transcript
   #for(i in 201:300){
   for(i in start.at:length(common.transcripts)){
     print(i)
+    if(i == 11140 || i == 11162){next()}
+
     if(is.interactive){report.progress(i, length(common.transcripts))}
     
     chrom.results <- scan_chrom_transcript(gene.id = common.transcripts[i])
