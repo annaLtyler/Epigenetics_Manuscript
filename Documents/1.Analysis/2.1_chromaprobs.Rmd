@@ -358,7 +358,7 @@ sink(NULL)
 ```
 
 
-```{r perm}
+```{r perm, warning = FALSE}
 
 #select a set of permutations for which none of the chromatin
 #states get assigned to their original haplotype.
@@ -387,9 +387,11 @@ if(!file.exists(perm.lod.file)){
       #report.progress(p, nperm)
       perm.chrom.results <- scan_chrom_transcript(gene.id = gene.id, 
         perm.order = perm.mat[perm.rows[p],])
-      perm.chrom.effect[[p]] <- perm.chrom.results$prop.effect
-      perm.chrom.lod[[p]] <- perm.chrom.results$chrom.lod.table
-      perm.chrom.r2[[p]] <- perm.chrom.results$chrom.r2.results
+      if(length(perm.chrom.results) > 1){
+        perm.chrom.effect[[p]] <- perm.chrom.results$prop.effect
+        perm.chrom.lod[[p]] <- perm.chrom.results$chrom.lod.table
+        perm.chrom.r2[[p]] <- perm.chrom.results$chrom.r2.results
+      }
     }
 
     #keep the maximum values from each permutation.
