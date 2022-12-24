@@ -1,0 +1,577 @@
+%% BioMed_Central_Tex_Template_v1.06
+%%                                      %
+%  bmc_article.tex            ver: 1.06 %
+%                                       %
+
+%%IMPORTANT: do not delete the first line of this template
+%%It must be present to enable the BMC Submission system to
+%%recognise this template!!
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                     %%
+%%  LaTeX template for BioMed Central  %%
+%%     journal article submissions     %%
+%%                                     %%
+%%          <8 June 2012>              %%
+%%                                     %%
+%%                                     %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                                                 %%
+%% For instructions on how to fill out this Tex template           %%
+%% document please refer to Readme.html and the instructions for   %%
+%% authors page on the biomed central website                      %%
+%% https://www.biomedcentral.com/getpublished                      %%
+%%                                                                 %%
+%% Please do not use \input{...} to include other tex files.       %%
+%% Submit your LaTeX manuscript as one .tex document.              %%
+%%                                                                 %%
+%% All additional figures and files should be attached             %%
+%% separately and not embedded in the \TeX\ document itself.       %%
+%%                                                                 %%
+%% BioMed Central currently use the MikTex distribution of         %%
+%% TeX for Windows) of TeX and LaTeX.  This is available from      %%
+%% https://miktex.org/                                             %%
+%%                                                                 %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% additional documentclass options:
+%  [doublespacing]
+%  [linenumbers]   - put the line numbers on margins
+
+%%% loading packages, author definitions
+
+%\documentclass[twocolumn]{bmcart}% uncomment this for twocolumn layout and comment line below
+\documentclass{bmcart}
+
+%%% Load packages
+\usepackage{amsthm,amsmath}
+%\RequirePackage[numbers]{natbib}
+%\RequirePackage[authoryear]{natbib}% uncomment this for author-year bibliography
+%\RequirePackage{hyperref}
+\usepackage[utf8]{inputenc} %unicode support
+%\usepackage[applemac]{inputenc} %applemac support if unicode package fails
+%\usepackage[latin1]{inputenc} %UNIX support if unicode package fails
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                             %%
+%%  If you wish to display your graphics for   %%
+%%  your own use using includegraphic or       %%
+%%  includegraphics, then comment out the      %%
+%%  following two lines of code.               %%
+%%  NB: These line *must* be included when     %%
+%%  submitting to BMC.                         %%
+%%  All figure files must be submitted as      %%
+%%  separate graphics through the BMC          %%
+%%  submission process, not included in the    %%
+%%  submitted article.                         %%
+%%                                             %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\includegraphic{}
+\def\includegraphics{}
+
+%%% Put your definitions there:
+\startlocaldefs
+\endlocaldefs
+
+%%% Begin ...
+\begin{document}
+
+%%% Start of article front matter
+\begin{frontmatter}
+
+\begin{fmbox}
+\dochead{Research}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                          %%
+%% Enter the title of your article here     %%
+%%                                          %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{Variation in histone configurations correlates with gene expression across nine inbred strains of mice}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                          %%
+%% Enter the authors here                   %%
+%%                                          %%
+%% Specify information, if available,       %%
+%% in the form:                             %%
+%%   <key>={<id1>,<id2>}                    %%
+%%   <key>=                                 %%
+%% Comment or delete the keys which are     %%
+%% not used. Repeat \author command as much %%
+%% as required.                             %%
+%%                                          %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\author[
+  addressref={aff1},                   % id's of addresses, e.g. {aff1,aff2}
+% noteref={n1},                        % id's of article notes, if any
+  email={anna.tyler@jax.org}   % email address
+]{\inits{A.L.}\fnm{Anna L.} \snm{Tyler}}
+\author[
+  addressref={aff1},
+  email={catrina.spruce@jax.org}
+]{\inits{C.}\fnm{Catrina} \snm{Spruce}}
+\author[
+  addressref={aff1},
+  email={romy.kursawe@jax.org}
+]{\inits{R.}\fnm{Romy} \snm{Kursawe}}
+\author[
+  addressref={aff2},
+  email={annat.haber@jax.org}
+]{\inits{A.}\fnm{Annat} \snm{Haber}}
+\author[
+  addressref={aff1},
+  email={roby.ball@jax.org}
+]{\inits{R.L.}\fnm{Robyn L.} \snm{Ball}}
+\author[
+  addressref={aff1},
+  email={wendy.pitman@jax.org}
+]{\inits{W.A.}\fnm{Wendy A.} \snm{Pitman}}
+\author[
+  addressref={aff1},
+  email={narayanan.ragupathy@jax.org}
+]{\inits{N.}\fnm{Narayanan} \snm{Raghupathy}}
+\author[
+  addressref={aff1},
+  email={michael.walker@jax.org}
+]{\inits{M.}\fnm{Michael} \snm{Walker}}
+\author[
+  addressref={aff1},
+  email={vivek.philip@jax.org}
+]{\inits{V.M.}\fnm{Vivek M.} \snm{Philip}}
+\author[
+  addressref={aff1},
+  email={matt.mahoney@jax.org}
+]{\inits{J.M.}\fnm{J. Matthew} \snm{Mahoney}}
+\author[
+  addressref={aff1},
+  email={gary.churchill@jax.org}
+]{\inits{G.A}\fnm{Gary A.} \snm{Churchill}}
+\author[
+  addressref={aff1},
+  email={jennifer.trowbridge@jax.org}
+]{\inits{J.J.}\fnm{Jennifer J.} \snm{Trowbridge}}
+\author[
+  addressref={aff1},
+  email={michael.stitzel@jax.org}
+]{\inits{M.L.}\fnm{Michael L.} \snm{Stitzel}}
+\author[
+  addressref={aff1},
+  email={ken.paigen@jax.org}
+]{\inits{K.}\fnm{Kenneth} \snm{Paigen}}
+\author[
+  addressref={aff1},
+  email={christopher.baker@jax.org}
+]{\inits{C.L.}\fnm{Christopher L.} \snm{Baker}}
+\author[
+  addressref={aff1},
+  corref={aff1},
+  email={petko.petkov@jax.org}
+]{\inits{P.}\fnm{Petko} \snm{Petkov}}
+\author[
+  addressref={aff1},
+  corref={aff1},
+  email={gregory.carter@jax.org}
+]{\inits{G.W.}\fnm{Gregory W.} \snm{Carter}}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                          %%
+%% Enter the authors' addresses here        %%
+%%                                          %%
+%% Repeat \address commands as much as      %%
+%% required.                                %%
+%%                                          %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\address[id=aff1]{%                           % unique id
+  \orgdiv{},             % department, if any
+  \orgname{The Jackson Laboratory for Mammalian Genetics},          % university, etc
+  \city{Bar Harbor},                              % city
+  \state{Maine},
+  \cny{USA}                                    % country
+}
+\address[id=aff2]{%
+  \orgdiv{},
+  \orgname{The Jackson Laboratory for Genomic Medicine},
+  %\street{},
+  %\postcode{}
+  \city{Farmington},
+  \state{Connecticut},
+  \cny{USA}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                          %%
+%% Enter short notes here                   %%
+%%                                          %%
+%% Short notes will be after addresses      %%
+%% on first page.                           %%
+%%                                          %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\begin{artnotes}
+%%\note{Sample of title note}     % note to the article
+%\note[id=n1]{Equal contributor} % note, connected to author
+%\end{artnotes}
+
+\end{fmbox}% comment this for two column layout
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                           %%
+%% The Abstract begins here                  %%
+%%                                           %%
+%% Please refer to the Instructions for      %%
+%% authors on https://www.biomedcentral.com/ %%
+%% and include the section headings          %%
+%% accordingly for your article type.        %%
+%%                                           %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{abstractbox}
+
+\begin{abstract} % abstract
+\parttitle{Background} %if any
+It is well established that epigenetic features, such as 
+histone modifications and DNA methylation, are associated with
+gene expression across cell types. However, it is not well 
+known how variation in genotype affects epigenetic state, 
+or to what extent such variation contributes to variation
+in gene expression across genetically distinct individuals.
+
+\parttitle{Methods}
+Here we investigated the relationship between heritable
+epigenetic variation and gene expression in hepatocytes across nine
+inbred mouse strains. Eight of the inbred strains were founders of the
+diversity outbred (DO) mice, and the ninth was DBA/2J, which, along with
+C57BL/6J, is one of the founders of the BxD recombinant inbred panel of
+mice. We surveyed four histone modifications, H3K4me1, H3K4me3, H3K27me3
+and H3K27ac, as well as DNA methylation. We used ChromHMM to identify 14
+chromatin states representing distinct combinations of the four measured
+histone modifications. 
+
+\parttitle{Results} %if any
+We found that variation in chromatin state
+mirrored genetic variation across the inbred strains. Furthermore,
+epigenetic variation was correlated with gene expression across strains.
+The correspondence between epigenetic state and gene expression was
+replicated in an independent population of DO mice in which we imputed
+local epigenetic state. In contrast, we found that DNA methylation did
+not vary across inbred strains and was not correlated with variation in
+expression in DO mice. 
+
+\parttitle{Conclusion}
+This work suggests that chromatin state is highly
+influenced by local genotype and may be a primary mode through which
+expression quantitative trait loci (eQTLs) are mediated. We further
+demonstrate that strain variation in chromatin state, paired with gene
+expression is useful for annotation of functional regions of the mouse
+genome. Finally, we provide a data resource that documents variation in
+chromatin state across genetically distinct individuals.
+
+\end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                          %%
+%% The keywords begin here                  %%
+%%                                          %%
+%% Put each keyword in separate \kwd{}.     %%
+%%                                          %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{keyword}
+\kwd{epigenetics}
+\kwd{histone modification}
+\kwd{DNA methylation}
+\kwd{expression quantitative trait locus}
+\kwd{genetic diversity}
+\kwd{mice}
+\kwd{strain survey}
+\end{keyword}
+
+% MSC classifications codes, if any
+%\begin{keyword}[class=AMS]
+%\kwd[Primary ]{}
+%\kwd{}
+%\kwd[; secondary ]{}
+%\end{keyword}
+
+\end{abstractbox}
+%
+%\end{fmbox}% uncomment this for two column layout
+
+\end{frontmatter}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                            %%
+%% The Main Body begins here                  %%
+%%                                            %%
+%% Please refer to the instructions for       %%
+%% authors on:                                %%
+%% https://www.biomedcentral.com/getpublished %%
+%% and include the section headings           %%
+%% accordingly for your article type.         %%
+%%                                            %%
+%% See the Results and Discussion section     %%
+%% for details on how to create sub-sections  %%
+%%                                            %%
+%% use \cite{...} to cite references          %%
+%%  \cite{koon} and                           %%
+%%  \cite{oreg,khar,zvai,xjon,schn,pond}      %%
+%%                                            %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%% start of article main body
+% <put your article body there>
+
+%%%%%%%%%%%%%%%%
+%% Background %%
+%%
+\section*{Background}
+Epigenetic modifications to DNA and its associated histone proteins
+influence the accessibility of DNA to transcription machinery, and are
+associated with up- and down-regulation of gene expression {[}1--3{]}.
+Across cell types, unique combinatorial patterns of histone
+modifications mark chromatin states that establish cell type-specific
+patterns of gene expression {[}4{]}. Similarly, the methylation of CpG
+sites around gene promoters and enhancers influences transcription in a
+cell type-specific manner {[}6,7{]}.
+
+Patterns of histone modifications and DNA methylation are established
+during development. The result is a canonical epigenetic landscape for
+coordination of major patterns of gene expression for each cell type
+(for review, see {[}8,9{]}). As an organism ages and responds to its
+environment, patterns of both histone modifications {[}10--13{]} and of
+DNA methylation {[}14,15{]} change. Variation in epigenetic
+modifications have been linked to premature aging {[}16,17{]}, autism
+{[}18,19{]}, cancer {[}20,21{]}, and neurological diseases among others
+{[}22{]}.
+
+Although variation in epigenetic landscapes across cell types has been
+extensively documented {[}5,23{]}, epigenetic variation across
+genetically distinct individuals has not been thoroughly explored.
+Across genetically distinct organisms, gene expression varies within the
+global constraints of each cell type. Variation in gene expression has
+been extensively mapped to variation in genetic loci, or expression
+quantitative trait loci (eQTL). Large, coordinated efforts, such as the
+Genotype-Tissue Expression (GTEx) Project {[}24{]} have identified and
+catalogued many such loci in humans, and countless independent studies
+have identified eQTL in mice and other model organisms.
+
+Although the link between genetic variation and gene expression has been
+well studied, there is relatively little known about inter-individual
+variation in epigenetic modifications, and how these variations are
+related to variations in genotype and gene expression. The generation of
+a more complete picture of inter-individual variation in epigenetic
+modifications will increase our understanding of the mechanisms of gene
+regulation, provide insights into the mechanisms establishing cell
+type-specific epigenetic landscapes, and improve the functional
+annotation of the genome as it relates to the regulation of gene
+expression. The vast majority of SNPs associated with human disease
+traits are located in non-coding regions, suggesting that they influence
+gene regulation, rather than protein function {[}26,27{]}. However,
+annotation of these regions is difficult without additional genomic
+features, such as histone modifictions and DNA methylation. Overlaying a
+map of variation in epigenetic features has the potential to provide a
+picture of how genetic variation changes functional elements, like
+enhancers and insulators, in the genome {[}4,28{]}.
+
+Advances in chromatin immunoprecipitation (ChIP) and sequencing
+technologies now enable genome-wide surveys of histone modifications
+with relatively few cells {[}29{]}, thus opening the door to the
+possibility of cataloging epigenetic variation across more cell types
+and individuals. Here, we performed a survey of epigenetic variation in
+hepatocytes across nine inbred mouse strains. We included the eight
+founders of the Diversity Outbred/Collaborative Cross (DO/CC) {[}30{]}
+mice, as well as DBA/2J, which, along with C57BL/6J, is one of the
+founders of the widely used BxD recombinant inbred panel of mice
+{[}31{]}. We assayed four histone modifications (H3K4me1, H3K4me3,
+H3K27me3, and H3K27ac), as well as DNA methylation. We used ChromHMM
+{[}32{]} to identify 14 chromatin states, classified by unique
+combinations of the four histone marks, and investigated the association
+between variation in these states and variation in gene expression
+across the nine strains. We separately investigated the relationship
+between DNA methylation and gene expression across strains.
+
+We further investigated the relationship between epigenetic state and
+gene expression by imputing the 14 chromatin states and DNA methylation
+into a population of DO mice. We then mapped gene expression to the
+imputed epigenetic states to assess the extent to which eQTLs were
+driven by variation in epigenetic modification. We found that
+histone-defined chromatin states were highly predictive of gene
+expression while DNA methylation was not, thus linking genetically
+controlled variation in epigentic modifications to variation in gene
+expression in mice.
+
+\section*{Section title}
+Text for this section\ldots
+\subsection*{Sub-heading for section}
+Text for this sub-heading\ldots
+\subsubsection*{Sub-sub heading for section}
+Text for this sub-sub-heading\ldots
+\paragraph*{Sub-sub-sub heading for section}
+Text for this sub-sub-sub-heading\ldots
+
+In this section we examine the growth rate of the mean of $Z_0$, $Z_1$ and $Z_2$. In
+addition, we examine a common modeling assumption and note the
+importance of considering the tails of the extinction time $T_x$ in
+studies of escape dynamics.
+We will first consider the expected resistant population at $vT_x$ for
+some $v>0$, (and temporarily assume $\alpha=0$)
+%
+\[
+E \bigl[Z_1(vT_x) \bigr]=
+\int_0^{v\wedge
+1}Z_0(uT_x)
+\exp (\lambda_1)\,du .
+\]
+%
+If we assume that sensitive cells follow a deterministic decay
+$Z_0(t)=xe^{\lambda_0 t}$ and approximate their extinction time as
+$T_x\approx-\frac{1}{\lambda_0}\log x$, then we can heuristically
+estimate the expected value as
+%
+\begin{equation}\label{eqexpmuts}
+\begin{aligned}[b]
+&      E\bigl[Z_1(vT_x)\bigr]\\
+&\quad      = \frac{\mu}{r}\log x
+\int_0^{v\wedge1}x^{1-u}x^{({\lambda_1}/{r})(v-u)}\,du .
+\end{aligned}
+\end{equation}
+%
+Thus we observe that this expected value is finite for all $v>0$ (also see \cite{koon,xjon,marg,schn,koha,issnic}).
+
+
+\section*{Appendix}
+Text for this section\ldots
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                          %%
+%% Backmatter begins here                   %%
+%%                                          %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{backmatter}
+
+\section*{Acknowledgements}%% if any
+Text for this section\ldots
+
+\section*{Funding}%% if any
+Text for this section\ldots
+
+\section*{Abbreviations}%% if any
+Text for this section\ldots
+
+\section*{Availability of data and materials}%% if any
+Text for this section\ldots
+
+\section*{Ethics approval and consent to participate}%% if any
+Text for this section\ldots
+
+\section*{Competing interests}
+The authors declare that they have no competing interests.
+
+\section*{Consent for publication}%% if any
+Text for this section\ldots
+
+\section*{Authors' contributions}
+Text for this section \ldots
+
+\section*{Authors' information}%% if any
+Text for this section\ldots
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                  The Bibliography                       %%
+%%                                                         %%
+%%  Bmc_mathpys.bst  will be used to                       %%
+%%  create a .BBL file for submission.                     %%
+%%  After submission of the .TEX file,                     %%
+%%  you will be prompted to submit your .BBL file.         %%
+%%                                                         %%
+%%                                                         %%
+%%  Note that the displayed Bibliography will not          %%
+%%  necessarily be rendered by Latex exactly as specified  %%
+%%  in the online Instructions for Authors.                %%
+%%                                                         %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% if your bibliography is in bibtex format, use those commands:
+\bibliographystyle{bmc-mathphys} % Style BST file (bmc-mathphys, vancouver, spbasic).
+\bibliography{bmc_article}      % Bibliography file (usually '*.bib' )
+% for author-year bibliography (bmc-mathphys or spbasic)
+% a) write to bib file (bmc-mathphys only)
+% @settings{label, options="nameyear"}
+% b) uncomment next line
+%\nocite{label}
+
+% or include bibliography directly:
+% \begin{thebibliography}
+% \bibitem{b1}
+% \end{thebibliography}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                               %%
+%% Figures                       %%
+%%                               %%
+%% NB: this is for captions and  %%
+%% Titles. All graphics must be  %%
+%% submitted separately and NOT  %%
+%% included in the Tex document  %%
+%%                               %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%
+%% Do not use \listoffigures as most will included as separate files
+
+\section*{Figures}
+  \begin{figure}[h!]
+  \caption{Sample figure title}
+\end{figure}
+
+\begin{figure}[h!]
+  \caption{Sample figure title}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                               %%
+%% Tables                        %%
+%%                               %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Use of \listoftables is discouraged.
+%%
+\section*{Tables}
+\begin{table}[h!]
+\caption{Sample table title. This is where the description of the table should go}
+  \begin{tabular}{cccc}
+    \hline
+    & B1  &B2   & B3\\ \hline
+    A1 & 0.1 & 0.2 & 0.3\\
+    A2 & ... & ..  & .\\
+    A3 & ..  & .   & .\\ \hline
+  \end{tabular}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                               %%
+%% Additional Files              %%
+%%                               %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section*{Additional Files}
+  \subsection*{Additional file 1 --- Sample additional file title}
+    Additional file descriptions text (including details of how to
+    view the file, if it is in a non-standard format or the file extension).  This might
+    refer to a multi-page table or a figure.
+
+  \subsection*{Additional file 2 --- Sample additional file title}
+    Additional file descriptions text.
+
+\end{backmatter}
+\end{document}

@@ -217,11 +217,13 @@ n.ax.ticks = NULL, hadj = NA, padj = NA, bounding.box = TRUE){
 
         num.mat <- as.matrix(as.numeric(col.key[,1]), ncol = 1)
         if(orientation == "h"){
-            image(x = as.vector(num.mat), y = 1, z = num.mat, col = col.key[,2], xlab="",
+            image(x = as.vector(num.mat), y = 1, 
+				z = num.mat, col = col.key[,2], xlab="",
                 ylab="", yaxt = "n", cex.axis = cex, axes = FALSE)
             }else{
             # Original
-            image(x = 1, y = as.vector(num.mat), z = t(num.mat), col= col.key[,2], xlab="",
+            image(x = 1, y = as.vector(num.mat), 
+				z = t(num.mat), col= col.key[,2], xlab="",
                 ylab="",xaxt="n", cex.axis = cex, axes = FALSE)
             }
         axis(axis.side, line = axis.line, cex.axis = cex, at = at, padj = padj, hadj = hadj)

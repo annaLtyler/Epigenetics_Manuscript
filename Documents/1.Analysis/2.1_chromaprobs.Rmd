@@ -29,7 +29,8 @@ args <- commandArgs(trailingOnly=T)
 num.states <- as.numeric(args[1])
 delete.previous <- as.logical(args[2])
 
-if(is.na(num.states)){num.states = 10;delete.previous = FALSE}
+
+if(is.na(num.states)){num.states = 14; delete.previous = FALSE}
 
 needed.packages <- c("here", "qtl2")
 for(i in 1:length(needed.packages)){library(needed.packages[i], character.only = TRUE)}
@@ -67,9 +68,6 @@ chrom.state.file <- file.path(results.dir, "Expanded_Chromatin.RDS") #generated 
 chrom.states <- readRDS(chrom.state.file)
 chrom.mats <- readRDS(file.path(results.dir, paste0("Chromatin_States_", num.states, "_full_gene_1000.RData")))
 
-#not all of the transcripts are in the chromatin state
-#object. We should go back to the beginning and re-run
-#everything with the new expression object as a reference
 common.transcripts <- intersect(colnames(expr), names(chrom.states)) #transcripts that are shared between chromatin and DO expression data
 hf.locale <- which(covar[,"diethf"] == 1)
 chow.locale <- which(covar[,"diethf"] == 0)
@@ -82,7 +80,7 @@ strain.key <- read.table(here("Data", "support_files", "strain.color.table.txt")
 sep = "\t", stringsAsFactors = FALSE, comment.char = "*")
 ```
 
-For transcript we perform the following steps. To reduce memory
+For transcripts we perform the following steps. To reduce memory
 requirements, we do all steps for each transcript and keep only the
 LOD score and coefficient scores for each transcript.
 
@@ -156,57 +154,38 @@ if(file.exists(chrom.coef.file)){
 ```
 
 
-```{r run_remaining}
-if(start.at < length(common.transcripts)){ #if we haven't scanned all the transcripts yet
-  sink(file.path(results.dir, "progress.txt"))
-  #for each remaining transcript
-  #for(i in 201:300){
-  for(i in start.at:length(common.transcripts)){
-    print(i)
-    if(is.interactive){report.progress(i, length(common.transcripts))}
-    #gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == "Irf5"),"ensembl_gene_id"][1]
-    #i <- which(common.transcripts == gene.id)
-    gene.id <- common.transcripts[i]
-    gene.name <- transcript.info[which(transcript.info[,"ensembl_gene_id"] == gene.id),"external_gene_name"][1]
-    expr.locale <- which(colnames(expr) == gene.id)
-    chrom.locale <- which(names(chrom.mats) == gene.id)
+```{r stat_wrapper}
+#a wrapper for imputing chromatin states in the DO and calculating
+#the associations with gene expression. 
+scan_chrom_transcript <- function(gene.id, perm.order = NULL){
 
-    #chromatin scan
-    chrom.geno <- get_one_geno(gene.name, transcript.info, transcript.haplotypes, 
-        chrom.states, strain.key, geno_type = "chromatin")
+  gene.name <- transcript.info[which(transcript.info[,"ensembl_gene_id"] == gene.id),"external_gene_name"][1]
+  expr.locale <- which(colnames(expr) == gene.id)
+  chrom.locale <- which(names(chrom.mats) == gene.id)
+
+  #impute chromatin states for DO
+  #using local haplotypes
+  chrom.geno <- get_one_geno(gene.name, transcript.info, transcript.haplotypes, 
+      chrom.states, strain.key, geno_type = "chromatin", perm.order = perm.order)
     
-    #chrom.locale <- which(names(chrom.mats) == gene.id)
-    #plot.chrom.mat(t(chrom.mats[[chrom.locale]]), num.states = 9)
-    #test <- Reduce("+", lapply(1:dim(chrom.geno[[1]])[1], function(x) chrom.geno[[1]][x,,]))
-    #quartz();pheatmap(test, cluster_rows = FALSE, cluster_cols = FALSE)
-    if(is.na(chrom.geno)){next()}
+  #test <- get_one_geno(gene.name, transcript.info, transcript.haplotypes, chrom.states, strain.key, geno_type = "chromatin")
+
+
+    if(is.na(chrom.geno)){return(NA)}
 
     #check for variation
     test.var <- round(apply(chrom.geno[[1]], 3, function(x) apply(x, 2, function(y) var(y))), 2)
     no.var <- length(which(apply(test.var, 1, function(x) length(unique(x))) > 1)) <= 1
     
-    if(no.var){next()}
+    if(no.var){return(NA)}
    
     #calculate proportion of each state
     prop.state <- lapply(1:num.states, function(x) rowMeans(chrom.geno[[1]][,x,]))
     prop.effect <- sapply(1:num.states, function(x) if(var(signif(prop.state[[x]], 4)) > 0){plot.with.model(prop.state[[x]], 
     expr[,expr.locale], confidence = 0.95, plot.results = FALSE)}else{rep(NA, 5)})
 
-    chrom.effect[[i]] <- prop.effect
-    #barplot(t(prop.effect["slope.fit",]), names = 1:num.states)
-    #par(mfrow = c(3,3))
-    #for(i in 1:9){if(var(prop.state[[i]]) > 0){plot.with.model(prop.state[[i]], expr[,expr.locale], xlab = i, ylab = "Expression")}}
-    #test.mat <- cbind(Reduce("cbind", prop.state), expr[,expr.locale])
-    #colnames(test.mat) <- c(1:9, "expr")
-    #expr.order <- order(expr[,expr.locale])
-    #has.var <- apply(test.mat, 2, var)
-    #pheatmap(test.mat[expr.order,which(has.var > 0)], scale = "column", show_rownames = FALSE, cluster_rows = FALSE)
-    #state.col <- colors.from.values(1:9, use.pheatmap.colors = TRUE)
-    #par(mfrow = c(3,3))
-    #for(i in 1:9){
-    #  plot(expr[expr.order,expr.locale], test.mat[expr.order,i], col = state.col[i], type = "p", lwd = 2)
-    #  }
-
+    #chrom.effect[[i]] <- prop.effect
+    
     #calculate chromatin LOD scores
     chrom.lod.add <- scan1(chrom.geno, expr[,expr.locale], addcovar = covar)
     chrom.lod.int <- scan1(chrom.geno, expr[,expr.locale], addcovar = covar, intcovar = covar[,2,drop=FALSE])
@@ -215,7 +194,7 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
     chrom.lod.table <- cbind(chrom.lod.add, chrom.lod.int, chrom.chow.lod, chrom.hf.lod)
     colnames(chrom.lod.table) <- model.names
     #boxplot(chrom.lod.table)
-    chrom.lod[[i]] <- chrom.lod.table
+    #chrom.lod[[i]] <- chrom.lod.table
 
     #calculate chromatin coefficients
     chrom.add.coef <- scan1coef(genoprobs = chrom.geno, pheno = expr[,expr.locale], 
@@ -228,7 +207,7 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
     addcovar = covar[hf.locale,])
     chrom.coef.list <- list(chrom.add.coef[,1:num.states], chrom.int.coef[,1:num.states], chrom.chow.coef[,1:8], chrom.hf.coef[,1:num.states])
     names(chrom.coef.list) <- model.names
-    chrom.coef[[i]] <- chrom.coef.list
+    #chrom.coef[[i]] <- chrom.coef.list
 
     #calculate chromatin R2
     #adjust expression for covariates first, so we don't include 
@@ -249,52 +228,103 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
     #plot(ch.hf.r2)
     chrom.r2.results <- cbind(ch.add.r2, ch.int.r2, ch.chow.r2, ch.hf.r2)
     colnames(chrom.r2.results) <- model.names
-    chrom.r2[[i]] <- chrom.r2.results
-    #barplot(apply(chrom.r2.results, 2, function(x) max(x, na.rm = TRUE)))
-    #boxplot(chrom.r2.results)
-    #pairs(chrom.r2.results)
+    #chrom.r2[[i]] <- chrom.r2.results
+  
+  results <- list("prop.effect" = prop.effect, "chrom.lod.table" = chrom.lod.table, 
+    "chrom.coef.list" = chrom.coef.list, "chrom.r2.results" = chrom.r2.results)
 
+  return(results)
+}
+
+scan_gene_transcript <- function(gene.id){
     #Calculate the same statistics for the genetic model
-    geno.geno <- get_one_geno(gene.name, transcript.info, transcript.haplotypes, 
-        chrom.states, strain.key, geno_type = "genotype")
+    #as for the chromatin state.
 
-    #LOD scores for genetics
-    geno.lod.add <- scan1(geno.geno, expr[,expr.locale], addcovar = covar)
-    geno.lod.int <- scan1(geno.geno, expr[,expr.locale], addcovar = covar, intcovar = int.covar)
-    geno.lod.chow <- scan1(geno.geno, expr[,expr.locale], addcovar = covar[chow.locale,])
-    geno.lod.hf <- scan1(geno.geno, expr[,expr.locale], addcovar = covar[hf.locale,])
-    geno.lod.results <- c(geno.lod.add, geno.lod.int, geno.lod.chow, geno.lod.hf)
-    names(geno.lod.results) <- model.names
-    #barplot(geno.lod.results)
-    geno.lod[i,] <- geno.lod.results
+  gene.name <- transcript.info[which(transcript.info[,"ensembl_gene_id"] == gene.id),"external_gene_name"][1]
+  expr.locale <- which(colnames(expr) == gene.id)
+  chrom.locale <- which(names(chrom.mats) == gene.id)
 
-    geno.coef.add <- scan1coef(genoprobs = geno.geno, pheno = expr[,expr.locale], 
-    addcovar = covar)
-    geno.coef.int <- scan1coef(genoprobs = geno.geno, pheno = expr[,expr.locale], 
-    addcovar = covar, intcovar = int.covar)
-    #barplot(geno.coef.add[,LETTERS[1:8]])
-    geno.coef.chow <- scan1coef(genoprobs = geno.geno, pheno = expr[,expr.locale], 
-    addcovar = covar[chow.locale,])
-    geno.coef.hf <- scan1coef(genoprobs = geno.geno, pheno = expr[,expr.locale], 
-    addcovar = covar[hf.locale,])
-    geno.coef.results <- rbind(geno.coef.add[,c(LETTERS[1:8], "diethf")],
-                              geno.coef.int[,c(LETTERS[1:8], "diethf")],
-                              c(geno.coef.chow[,LETTERS[1:8]], NA),
-                              c(geno.coef.hf[,LETTERS[1:8]], NA))
-    rownames(geno.coef.results) <- model.names
-    #quartz();pheatmap(geno.coef.results, cluster_rows = FALSE, cluster_cols = FALSE)
-    geno.coef[[i]] <- geno.coef.results
+  geno.geno <- get_one_geno(gene.name, transcript.info, transcript.haplotypes, 
+      chrom.states, strain.key, geno_type = "genotype")
 
-    #haplotype coefficients for genetics
-    geno.r2.add <- summary(lm(adj.expr~geno.geno[[1]][,,1]))$adj.r.squared
-    geno.r2.int <- summary(lm(adj.expr~geno.geno[[1]][,,1]*int.covar))$adj.r.squared
-    geno.r2.chow <- summary(lm(adj.expr[chow.locale,]~+geno.geno[[1]][chow.locale,,1]))$adj.r.squared
-    geno.r2.hf <- summary(lm(adj.expr[hf.locale,]~geno.geno[[1]][hf.locale,,1]))$adj.r.squared
-    geno.r2.results <- c(geno.r2.add, geno.r2.int, geno.r2.chow, geno.r2.hf)
-    names(geno.r2.results) <- model.names
-    #barplot(geno.r2.results)
-    geno.r2[i,] <- geno.r2.results
 
+  #LOD scores for genetics
+  geno.lod.add <- scan1(geno.geno, expr[,expr.locale], addcovar = covar)
+  geno.lod.int <- scan1(geno.geno, expr[,expr.locale], addcovar = covar, intcovar = int.covar)
+  geno.lod.chow <- scan1(geno.geno, expr[,expr.locale], addcovar = covar[chow.locale,])
+  geno.lod.hf <- scan1(geno.geno, expr[,expr.locale], addcovar = covar[hf.locale,])
+  geno.lod.results <- c(geno.lod.add, geno.lod.int, geno.lod.chow, geno.lod.hf)
+  names(geno.lod.results) <- model.names
+  #barplot(geno.lod.results)
+  #geno.lod[i,] <- geno.lod.results
+
+  geno.coef.add <- scan1coef(genoprobs = geno.geno, pheno = expr[,expr.locale], 
+  addcovar = covar)
+  geno.coef.int <- scan1coef(genoprobs = geno.geno, pheno = expr[,expr.locale], 
+  addcovar = covar, intcovar = int.covar)
+  #barplot(geno.coef.add[,LETTERS[1:8]])
+  geno.coef.chow <- scan1coef(genoprobs = geno.geno, pheno = expr[,expr.locale], 
+  addcovar = covar[chow.locale,])
+  geno.coef.hf <- scan1coef(genoprobs = geno.geno, pheno = expr[,expr.locale], 
+  addcovar = covar[hf.locale,])
+  geno.coef.results <- rbind(geno.coef.add[,c(LETTERS[1:8], "diethf")],
+                            geno.coef.int[,c(LETTERS[1:8], "diethf")],
+                            c(geno.coef.chow[,LETTERS[1:8]], NA),
+                            c(geno.coef.hf[,LETTERS[1:8]], NA))
+  rownames(geno.coef.results) <- model.names
+  #quartz();pheatmap(geno.coef.results, cluster_rows = FALSE, cluster_cols = FALSE)
+  #geno.coef[[i]] <- geno.coef.results
+
+  #haplotype coefficients for genetics
+  adj.expr <- adjust(expr[,expr.locale,drop=FALSE], covar)
+  geno.r2.add <- summary(lm(adj.expr~geno.geno[[1]][,,1]))$adj.r.squared
+  geno.r2.int <- summary(lm(adj.expr~geno.geno[[1]][,,1]*int.covar))$adj.r.squared
+  geno.r2.chow <- summary(lm(adj.expr[chow.locale,]~+geno.geno[[1]][chow.locale,,1]))$adj.r.squared
+  geno.r2.hf <- summary(lm(adj.expr[hf.locale,]~geno.geno[[1]][hf.locale,,1]))$adj.r.squared
+  geno.r2.results <- c(geno.r2.add, geno.r2.int, geno.r2.chow, geno.r2.hf)
+  names(geno.r2.results) <- model.names
+  #barplot(geno.r2.results)
+    #geno.r2[i,] <- geno.r2.results
+
+    results <- list("geno.lod.results" = geno.lod.results, 
+      "geno.coef.results" = geno.coef.results, "geno.r2.results" = geno.r2.results)
+    return(results)
+}
+
+```
+
+```{r run_remaining}
+if(start.at < length(common.transcripts)){ #if we haven't scanned all the transcripts yet
+  sink(file.path(results.dir, "progress.txt"))
+  #for each remaining transcript
+  #for(i in 201:300){
+  for(i in start.at:length(common.transcripts)){
+    print(i)
+    if(is.interactive){report.progress(i, length(common.transcripts))}
+    
+    chrom.results <- scan_chrom_transcript(gene.id = common.transcripts[i])
+    if(length(chrom.results) > 1){
+      chrom.effect[[i]] <- chrom.results$prop.effect
+      chrom.lod[[i]] <- chrom.results$chrom.lod.table
+      chrom.coef[[i]] <- chrom.results$chrom.coef.list
+      chrom.r2[[i]] <- chrom.results$chrom.r2.results
+    }else{
+      chrom.effect[[i]] <- NA
+      chrom.lod[[i]] <- NA
+      chrom.coef[[i]] <- NA
+      chrom.r2[[i]] <- NA
+    }
+
+    gene.results <- scan_gene_transcript(gene.id = common.transcripts[i])
+    if(length(gene.results) > 1){
+      geno.lod[i,] <- gene.results$geno.lod.results
+      geno.coef[[i]] <- gene.results$geno.coef.results
+      geno.r2[i,] <- gene.results$geno.r2.results
+    }else{
+      geno.lod[i,] <- NA
+      geno.coef[[i]] <- NA
+      geno.r2[i,] <- NA
+    }
     if(is.interactive){
       plot.chrom.effects(gene.name, expr, covar, chrom.mats, 
       transcript.info, transcript.haplotypes, chrom.states, strain.key)
@@ -324,6 +354,55 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
 sink(NULL)
 ```
 
+
+```{r perm}
+
+#select a set of permutations for which none of the chromatin
+#states get assigned to their original haplotype.
+#these are called derrangements
+perm.mat <- derrangements(8)
+nperm = 100
+
+perm.lod <- perm.r2 <- matrix(NA, nrow = length(common.transcripts), ncol = nperm)
+rownames(perm.lod) <- rownames(perm.r2) <- common.transcripts
+
+perm.lod.file <- file.path(results.dir, "Perm.LOD.RDS")
+perm.r2.file <- file.path(results.dir, "Perm.R2.RDS")
+
+if(!file.exists(perm.lod.file)){
+  sink(results.dir, "progress.txt")
+  for(tr in 1:length(common.transcripts)){
+    print(tr)
+    #sample a random set of derraangements to use
+    perm.rows <- sample(1:nrow(perm.mat), nperm)
+    gene.id <- common.transcripts[tr]
+
+    perm.chrom.effect <- perm.chrom.lod <- perm.chrom.r2 <- vector(mode = "list", length = nperm)
+    gene.idx <- which(rownames(geno.lod) == gene.id)
+
+    for(p in 1:nperm){
+      #report.progress(p, nperm)
+      perm.chrom.results <- scan_chrom_transcript(gene.id = gene.id, 
+        perm.order = perm.mat[perm.rows[p],])
+      perm.chrom.effect[[p]] <- perm.chrom.results$prop.effect
+      perm.chrom.lod[[p]] <- perm.chrom.results$chrom.lod.table
+      perm.chrom.r2[[p]] <- perm.chrom.results$chrom.r2.results
+    }
+
+    #keep the maximum values from each permutation.
+    perm.lod[tr,] <- t(sapply(perm.chrom.lod, function(x) max(x[,"Additive"])))
+    perm.r2[tr,] <- t(sapply(perm.chrom.r2, function(x) max(x[,"Additive"])))
+  }
+  saveRDS(perm.lod, perm.lod.file)
+  saveRDS(perm.r2, perm.r2.file)
+}else{
+  perm.lod <- readRDS(perm.lod.file)
+  perm.r2 <- readRDS(perm.r2.file)
+}
+
+
+```
+
 ## Bulk State Effects
 
 We can also look at the overall effects of each state on gene expression
@@ -333,6 +412,6 @@ gene expression using chromatin state.
 
 Actually, maybe we can't. I've been calculating genoprobs for each gene
 individually because there isn't enough memory anywhere to calculate them
-all at once. We also have more data here than n the inbreds so we should 
+all at once. We also have more data here than in the inbreds so we should 
 be able to get a pretty good estimate of the effects using one gene
 at a time...

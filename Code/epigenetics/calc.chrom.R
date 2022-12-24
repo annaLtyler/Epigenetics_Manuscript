@@ -2,8 +2,9 @@
 
 
 calc.chrom <- function(gene.name, transcript.info, transcript.haplotypes, 
-chrom.states, strain.key){
-    gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == gene.name),"ensembl_gene_id"][1]
+chrom.states, strain.key, perm.order = NULL){
+    
+  gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == gene.name),"ensembl_gene_id"][1]
 
     if(length(gene.id) == 0){
         return(NA)
@@ -21,6 +22,13 @@ chrom.states, strain.key){
   if(length(haps) == 1){return(NA)}
   if(length(chrom.states[[chrom.idx]]) == 1){return(NA)}
 
+  #if we want a permuted imputed chromatin state, permute
+  #the chromatin states associated with each haplotype
+  if(!is.null(perm.order)){
+    haps <- haps[,perm.order,,drop=FALSE]
+    colnames(haps) <- LETTERS[1:8]
+  }
+
   ref.chroms <- chrom.states[[chrom.idx]][chrom.order,,]
 
   chrom.array <- array(NA, dim = c(nrow(haps), ncol(ref.chroms), dim(ref.chroms)[3]))
@@ -30,18 +38,8 @@ chrom.states, strain.key){
   
   for(p in 1:dim(ref.chroms)[3]){ #for each position
     chrom.mat <- ref.chroms[,,p]
-
-    for(i in 1:dim(chrom.array)[1]){ #for each individual
-      ind.hap <- haps[i,,1]
-      #barplot(ind.hap)
-      mult.mat <- apply(chrom.mat, 2, function(x) x*ind.hap)
-      #pheatmap(mult.mat, cluster_rows = FALSE, cluster_cols = FALSE)
-      ind.state <- colSums(mult.mat)
-      #barplot(ind.state)
-      #print(signif(ind.state, 2))
-      chrom.array[i,,p] <- ind.state
+    chrom.array[,,p] <- haps[,,1] %*% chrom.mat
     }
-  }
   
   return(chrom.array)
 }

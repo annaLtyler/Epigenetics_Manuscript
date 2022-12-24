@@ -1,0 +1,6 @@
+PWD /Users/atyler/Documents/Projects/Epigenetics/Epigenetics_Manuscript/Documents/Manuscript_Submission/bmc_template
+INPUT /Users/atyler/Library/TinyTeX/texmf.cnf
+INPUT /Users/atyler/Library/TinyTeX/texmf-dist/web2c/texmf.cnf
+INPUT /Users/atyler/Library/TinyTeX/texmf-var/web2c/pdftex/pdflatex.fmt
+INPUT /Users/atyler/Documents/Projects/Epigenetics/Epigenetics_Manuscript/Documents/Manuscript_Submission/bmc_template/bmc_article.tex
+OUTPUT bmc_article.log

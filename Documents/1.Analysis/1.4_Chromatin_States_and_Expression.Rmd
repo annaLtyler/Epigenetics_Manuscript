@@ -391,7 +391,6 @@ whereas the presence of states 1 and 2 is correlated
 with lowly expressed genes.
 
 ```{r within_strain}
-
 has.expr <- which(sapply(strain.mean.expr, length) == 9)
 has.chrom <- which(sapply(chrom.state.props, length) > 1)
 common.genes <- intersect(names(strain.mean.expr)[has.expr], names(chrom.state.props)[has.chrom])
@@ -404,6 +403,85 @@ colnames(all.state.conf) <- c("r", "p.value", "slope.fit", "slope.lwr", "slope.u
 rownames(all.state.conf) <- 1:num.states
 
 strain.expr.mat <- t(sapply(strain.mean.expr[common.expr.locale], function(x) x))
+```
+
+
+```{r multi, eval = FALSE}
+#normalize state proportions and concatenate for all strains
+#use strain as a random effect and fit all state effects
+#at the same time.
+lin.expr <- as.vector(apply(strain.expr.mat, 2, rankZ)) #linearize the expression matrix, normalizing within each strain
+lin.strain.label <- as.factor(rep(colnames(strain.expr.mat), each = nrow(strain.expr.mat))) #linearize the strain labels for random effects
+
+multi.state.mat <- matrix(NA, ncol = num.states, nrow = length(lin.expr))
+colnames(multi.state.mat) <- paste0("State", 1:ncol(multi.state.mat))
+for(state in 1:num.states){    
+    strain.chrom.mat <- t(sapply(chrom.state.props[common.chrom.locale], 
+    function(x) x[state,chrom.order]))
+    lin.strain <- as.vector(apply(strain.chrom.mat, 2, rankZ)) #linearize the state matrix, normalizing within each strain
+    multi.state.mat[,state] <- lin.strain
+}
+
+library(lme4)
+#library(lmerTest)
+full.mat <- data.frame(lin.strain.label,lin.expr, multi.state.mat)
+colnames(full.mat)[1:2] <- c("Strain", "Expression")
+
+#fmla <- paste("Expression ~", paste(colnames(multi.state.mat), collapse = " + "), " + (1|Strain)")
+#model <- lmer(as.formula(fmla), data = full.mat)
+#coef.model <- as.matrix(coef(model)[[1]])
+#barplot(coef.model[1,2:ncol(coef.model)], las = 2)
+
+fmla <- paste("Expression ~", paste(colnames(multi.state.mat), collapse = " + "))
+model <- lm(as.formula(fmla), data = full.mat)
+model.coef <- summary(model)$coefficients
+t.crit <- qt(p = 0.05/num.states, df = nrow(multi.state.mat)-1, lower.tail = FALSE)
+ci.high <- model.coef[,"Estimate"] + (t.crit*model.coef[,"Std. Error"])
+ci.low <- model.coef[,"Estimate"] - (t.crit*model.coef[,"Std. Error"])
+
+ymin <- -0.2;ymax = 0.4
+state.col <- read.table(here("Data", "support_files", "state_colors.txt"), comment.char = "!")[,1]
+#barplot(1:length(state.col), col = state.col)
+conf.lwr <- min(ci.low)
+conf.upr <- max(ci.high)
+if(is.interactive){quartz(width = 7, height = 5)}
+plot.new()
+plot.window(xlim = c(1, num.states), ylim = c(ymin, ymax))
+#add grid lines
+abline(v = 1:num.states, h = seq(-0.6, 0.6, 0.2), col = "gray80")
+for(state in 1:num.states){
+    line.col <- state.col[state]
+    points(state, model.coef[state+1,"Estimate"], pch = 16, col = line.col, cex = 1.5)
+    segments(x0 = state-0.2, x1 = state+0.2, y0 = ci.low[state+1],
+        col = line.col, lwd = 4) #lower confidence interval
+    segments(x0 = state-0.2, x1 = state+0.2, y0 = ci.high[state+1],
+        col = line.col, lwd = 4) #upper confidence interval
+    segments(x0 = state, y0 = ci.low[state+1], 
+        y1 = ci.high[state+1], col = line.col, lwd = 4) #vertical bar
+}
+abline(h = 0)
+axis(2, at = round(seq(ymin, ymax, 0.2), 1))
+par(xpd = TRUE)
+text(x = 1:num.states, y = rep((ymin*1.1), num.states), labels = 1:num.states)
+par(xpd = FALSE)
+mtext(side = 2, "Effect", line = 2.5)
+mtext(side = 3, "Within-Strain State Effects with 95% Confidence Intervals", line = 2.5)
+
+all.state.conf <- cbind(model.coef[2:nrow(model.coef),c(1,4, 1)], ci.low[2:length(ci.low)], ci.high[2:length(ci.low)])
+colnames(all.state.conf) <- c("r", "p.value", "slope.fit", "slope.lwr", "slope.upr")
+saveRDS(all.state.conf, file.path(results.dir, "State.Effects.Within.Strain.RDS"))
+
+```
+
+```{r simple}
+#or test each state individually
+#the marginal tests are almost identical to the multiple regression,
+#except for the state with all marks, which reverses sign. It is a 
+#rare state that is correlated with suppressing states. It's marginal 
+#effect is negative, but in the multiple regression it appears to have
+#a huge positive effect. We feel that this is misrepresentative of the 
+#effect of the state and we are thus going to use the marginal effects
+#from the simple regression.
 
 for(state in 1:num.states){    
     strain.chrom.mat <- t(sapply(chrom.state.props[common.chrom.locale], 
@@ -873,4 +951,21 @@ for(state in 1:num.states){
     abline(v = c(0,1), lty = 2, col = "darkgray")
 }
 
+```
+
+## States Across Strains
+
+How many states are there across the strains in the regions 
+we are looking at?
+
+```{r strain_states}
+do.col <- c(1:4, 6:9) #use only DO founder strains
+states.per.pos <- lapply(chrom.mats, function(x) if(length(x) > 1){apply(x[,do.col], 1, function(y) length(unique(y)))})
+all.states.per.pos <- unlist(states.per.pos)
+num.strain <- 8
+state.counts <- sapply(1:num.strain, function(x) length(which(all.states.per.pos == x)))
+par(mar = c(4,8,4,4))
+barplot_with_num(state.counts, names = 1:num.strain, main = "Number of States Per Position",
+    xlab = "Number of States")
+mtext("Total", side = 2, line = 5)
 ```

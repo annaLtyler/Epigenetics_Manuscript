@@ -78,12 +78,16 @@ norm.peakomes <- lapply(peakomes, norm_fun)
 Plot the decompositions of the normalized data.
 
 ```{r plot_decomp, fig.width = 5, fig.height = 5}
+library(Rdimtools)
 all.decomp <- vector(mode = "list", length = length(norm.peakomes))
 names(all.decomp) <- names(norm.peakomes)
 
 for(i in 1:length(norm.peakomes)){
     peak.decomp <- plot.decomp(t(norm.peakomes[[i]]), mean.center = FALSE, scale.col = FALSE, 
     cols = sample.colors[[i]], main = names(norm.peakomes)[i], label.points = TRUE)
+
+    #test_dim_red(norm.peakomes[[i]], col = sample.colors[[i]], paste0("~/Desktop/", names(norm.peakomes)[i], ".pdf"))
+ 
     strain.pc <- peak.decomp$u
     var.exp <- round(peak.decomp$var.exp*100, 1)[1:ncol(strain.pc)]
     rownames(strain.pc) <- samples[[i]]

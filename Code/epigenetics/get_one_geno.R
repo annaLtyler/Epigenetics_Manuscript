@@ -1,5 +1,6 @@
 get_one_geno  <- function(gene.name, transcript.info, transcript.haplotypes, 
-chrom.states, strain.key, geno_type = c("chromatin", "genotype")){
+chrom.states, strain.key, geno_type = c("chromatin", "genotype"), 
+perm.order = NULL){
   
   gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == gene.name),"ensembl_gene_id"][1]
 
@@ -13,7 +14,7 @@ chrom.states, strain.key, geno_type = c("chromatin", "genotype")){
 
   if(geno_type == "chromatin"){
     one.geno <- list(calc.chrom(gene.name, transcript.info, transcript.haplotypes, 
-    chrom.states, strain.key = strain.key))
+    chrom.states, strain.key = strain.key, perm.order = perm.order))
   }else{
     gene.locale <- which(names(transcript.haplotypes) == gene.id)
     one.geno <- list(transcript.haplotypes[[gene.locale]])

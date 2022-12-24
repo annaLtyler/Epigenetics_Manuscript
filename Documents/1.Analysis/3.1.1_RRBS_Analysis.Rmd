@@ -126,7 +126,8 @@ measured values across all strains.
 all.present <- lapply(all_sites, function(x) x[which(apply(x, 1, function(y) all(!is.na(y)))),])
 full.methylome <- Reduce("rbind", all.present)
 full.methylome.decomp.file <- here("Results", "RRBS", "Full.Methylome.Decomposition.RDS") #keep just the PC values for the individuals
-if(!file.exists(full.methylome.decomp.file))
+
+if(!file.exists(full.methylome.decomp.file)){
   full.methyl.decomp <- plot.decomp(t(full.methylome))
   methyl.strain.pc <- full.methyl.decomp$u
   var.exp <- round(full.methyl.decomp$var.exp[1:ncol(methyl.strain.pc)]*100, 1)
@@ -140,6 +141,8 @@ if(!file.exists(full.methylome.decomp.file))
 strain.labels <- substr(rownames(methyl.strain.pc), 1, nchar(rownames(methyl.strain.pc))-2)
 strain.col <- col.table[match(strain.labels, col.table[,6]),3]
 plot(methyl.strain.pc, col = strain.col, pch = 16)
+
+#test_dim_red(full.methylome, strain.col, "~/Desktop/methylome.pdf")
 ```
 
 There are `r total.sites` unique sites in this methylome.
