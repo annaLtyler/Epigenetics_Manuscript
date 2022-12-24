@@ -366,15 +366,30 @@ sink(NULL)
 perm.mat <- derrangements(8)
 nperm = 100
 
-perm.lod <- perm.r2 <- matrix(NA, nrow = length(common.transcripts), ncol = nperm)
-rownames(perm.lod) <- rownames(perm.r2) <- common.transcripts
-
 perm.lod.file <- file.path(results.dir, "Perm.LOD.RDS")
 perm.r2.file <- file.path(results.dir, "Perm.R2.RDS")
 
-if(!file.exists(perm.lod.file)){
+if(file.exists(perm.lod.file)){
+  perm.lod <- readRDS(perm.lod.file)
+  perm.r2 <- readRDS(perm.r2.file)
+
+  #figure out where we left off.
+  not.na <- which(!is.na(perm.lod[,1]))  
+  left.off <- max(not.na)
+  start.at <- left.off + 1
+}else{
+  start.at <- 1
+  #if we are at the beginning, intialize all the objects for holding
+  #results. 
+  perm.lod <- perm.r2 <- matrix(NA, nrow = length(common.transcripts), ncol = nperm)
+  rownames(perm.lod) <- rownames(perm.r2) <- common.transcripts
+
+}
+
+
+if(start.at < length(common.transcripts)){
   sink(results.dir, "progress.txt")
-  for(tr in 1:length(common.transcripts)){
+  for(tr in start.at:length(common.transcripts)){
     print(tr)
     #sample a random set of derraangements to use
     perm.rows <- sample(1:nrow(perm.mat), nperm)
@@ -397,10 +412,18 @@ if(!file.exists(perm.lod.file)){
     #keep the maximum values from each permutation.
     perm.lod[tr,] <- t(sapply(perm.chrom.lod, function(x) max(x[,"Additive"])))
     perm.r2[tr,] <- t(sapply(perm.chrom.r2, function(x) max(x[,"Additive"])))
+
+    if(i %% save.every == 0){
+    saveRDS(perm.lod, perm.lod.file)
+    saveRDS(perm.r2, perm.r2.file)
+    }
+
   }
+  #also save at the end
   saveRDS(perm.lod, perm.lod.file)
   saveRDS(perm.r2, perm.r2.file)
 }else{
+  #if we've done all the permutations, read in the files.
   perm.lod <- readRDS(perm.lod.file)
   perm.r2 <- readRDS(perm.r2.file)
 }
