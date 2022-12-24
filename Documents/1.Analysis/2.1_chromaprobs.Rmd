@@ -165,6 +165,10 @@ scan_chrom_transcript <- function(gene.id, perm.order = NULL){
   expr.locale <- which(colnames(expr) == gene.id)
   chrom.locale <- which(names(chrom.mats) == gene.id)
 
+  if(length(expr.locale) == 0 || length(chrom.locale) == 0){
+    return(NA)
+  }
+
   #impute chromatin states for DO
   #using local haplotypes
   chrom.geno <- get_one_geno(gene.name, transcript.info, transcript.haplotypes, 
