@@ -400,7 +400,7 @@ if(file.exists(perm.lod.file)){
 
 
 if(start.at < length(common.transcripts)){
-  sink(results.dir, "progress.txt")
+  sink(file.path(results.dir, "progress.txt"))
   for(tr in start.at:length(common.transcripts)){
     print(tr)
     #sample a random set of derraangements to use
@@ -425,15 +425,16 @@ if(start.at < length(common.transcripts)){
     perm.lod[tr,] <- t(sapply(perm.chrom.lod, function(x) max(x[,"Additive"])))
     perm.r2[tr,] <- t(sapply(perm.chrom.r2, function(x) max(x[,"Additive"])))
 
-    if(i %% save.every == 0){
-    saveRDS(perm.lod, perm.lod.file)
-    saveRDS(perm.r2, perm.r2.file)
+    if(tr %% save.every == 0){
+      saveRDS(perm.lod, perm.lod.file)
+      saveRDS(perm.r2, perm.r2.file)
     }
 
   }
   #also save at the end
   saveRDS(perm.lod, perm.lod.file)
   saveRDS(perm.r2, perm.r2.file)
+  sink()
 }else{
   #if we've done all the permutations, read in the files.
   perm.lod <- readRDS(perm.lod.file)
