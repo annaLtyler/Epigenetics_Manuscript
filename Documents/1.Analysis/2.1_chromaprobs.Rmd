@@ -32,7 +32,7 @@ delete.previous <- as.logical(args[2])
 
 if(is.na(num.states)){num.states = 14; delete.previous = FALSE}
 
-needed.packages <- c("here", "qtl2")
+needed.packages <- c("here", "qtl2", "gtools")
 for(i in 1:length(needed.packages)){library(needed.packages[i], character.only = TRUE)}
 results.dir <- here("Results", "ChromHMM", paste0(num.states, "_states_C"))
 #barplot(1:length(chrom.colors), col = chrom.colors)
