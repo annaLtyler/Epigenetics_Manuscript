@@ -371,6 +371,9 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
 sink(NULL)
 ```
 
+```{r select_nperm}
+nperm = 100
+```
 
 ```{r perm_files}
 perm.lod.file <- file.path(results.dir, "Perm.LOD.RDS")
@@ -403,7 +406,6 @@ if(file.exists(perm.lod.file)){
 #states get assigned to their original haplotype.
 #these are called derrangements
 perm.mat <- derrangements(8)
-nperm = 100
 
 #sample a random set of derraangements to use
 #for all transcripts
