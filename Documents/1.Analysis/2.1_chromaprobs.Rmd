@@ -38,7 +38,6 @@ args <- commandArgs(trailingOnly=T)
 num.states <- as.numeric(args[1])
 delete.previous <- as.logical(args[2])
 
-
 if(is.na(num.states)){num.states = 14; delete.previous = FALSE}
 
 needed.packages <- c("qtl2", "gtools", "parallel", "doParallel")
@@ -161,7 +160,7 @@ if(file.exists(chrom.coef.file)){
 ```{r stat_wrapper}
 #a wrapper for imputing chromatin states in the DO and calculating
 #the associations with gene expression. 
-scan_chrom_transcript <- function(gene.id, perm.order = NULL, testing = FALSE){
+scan_chrom_transcript <- function(gene.id, perm.order = NULL){
 
   gene.name <- transcript.info[which(transcript.info[,"ensembl_gene_id"] == gene.id),"external_gene_name"][1]
   if(is.na(gene.name)){return(NA)}
@@ -402,7 +401,26 @@ if(file.exists(perm.lod.file)){
 ```
 
 
-```{r do_perm, warning = FALSE}
+```{r set_cl, warning = FALSE}
+#set up the clusters
+
+to.export <- c("scan_chrom_transcript", "transcript.info", 
+  "transcript.haplotypes", "expr", "covar", "chrom.states", 
+  "chrom.mats", "common.transcripts", "scan1", "scan1coef",
+  "get_one_geno", "get_one_geno", "match.order", "strain.key", 
+  "perm.mat", "perm.rows", "num.states", "adjust")
+
+#create and register multiple cores for parallele permutations
+cl <- makeCluster(n.cores)
+registerDoParallel(cl)
+#export everything we need to the cluster
+#this takes time upfront, but the parallelization
+#saves a huge amount of time overall
+clusterExport(cl, to.export) 
+```
+
+
+```{r do_perm}
 #select a set of permutations for which none of the chromatin
 #states get assigned to their original haplotype.
 #these are called derrangements
@@ -412,18 +430,11 @@ perm.mat <- derrangements(8)
 #for all transcripts
 perm.rows <- sample(1:nrow(perm.mat), nperm)
 
-#create and register multiple cores for parallele permutations
-cl <- makeCluster(n.cores)
-registerDoParallel(cl)
-#export everything we need to the cluster
-#this takes time upfront, but the parallelization
-#saves a huge amount of time overall
-env.var <- c(ls(), "scan1", "scan1coef")
-clusterExport(cl, c(env.var)) 
-
 if(start.at < length(common.transcripts)){
   sink(file.path(results.dir, "progress.txt"))
+
   for(tr in start.at:length(common.transcripts)){
+  #for(tr in 1:10){
     print(tr)
 
     #gene.name = "Pkd2"
@@ -432,6 +443,9 @@ if(start.at < length(common.transcripts)){
 
     gene.id <- common.transcripts[tr]
     #gene.name <- transcript.info[which(transcript.info[,"ensembl_gene_id"] == gene.id)[1],"external_gene_name"]
+
+    #send the new gene ID to the clusters
+    clusterExport(cl, "gene.id")
 
     gene.idx <- which(rownames(geno.lod) == gene.id)
 
@@ -465,11 +479,13 @@ if(start.at < length(common.transcripts)){
   stopCluster(cl)
   saveRDS(perm.lod, perm.lod.file)
   saveRDS(perm.r2, perm.r2.file)
+  saveRDS(perm.coef, perm.coef.file)
   sink()
 }else{
   #if we've done all the permutations, read in the files.
   perm.lod <- readRDS(perm.lod.file)
   perm.r2 <- readRDS(perm.r2.file)
+  perm.coef <- readRDS(perm.coef.file)
 }
 ```
 
@@ -489,8 +505,21 @@ the null distribution.
 
 ```{r assess_perm, eval = FALSE}
 
+#calculate p values for the coefficients of each state at each 
+#position in each transcript.
+for(tr in 1:length(chrom.coef)){
+  tr.chrom.coef <- chrom.coef[[tr]]$Additive
+  tr.perm.coef <- perm.coef[[tr]]
+  tr.coef.p <- matrix(NA, nrow = nrow(tr.chrom.coef), ncol = ncol(tr.chrom.coef))
+  dimnames(tr.coef.p) <- dimnames(tr.chrom.coef)
+  for(st in 1:num.states){
+    has.coef <- which(apply(tr.perm.coef[[st]], 1, function(x) length(unique(x)) > 1))
+    if(length(has.coef) > 0){
+      state.p <- sapply(has.coef, function(x) calc.emp.p(tr.chrom.coef[x,st], tr.perm.coef[[st]][x,]))
+    }
+  }
 
-
+}
 
 #library(pheatmap)
 obs.chrom.results <- scan_chrom_transcript(gene.id = gene.id, perm.order = NULL)
