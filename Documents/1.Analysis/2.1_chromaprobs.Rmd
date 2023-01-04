@@ -372,7 +372,7 @@ sink(NULL)
 ```
 
 ```{r select_nperm}
-nperm = 100
+nperm = 1000
 ```
 
 ```{r perm_files}
