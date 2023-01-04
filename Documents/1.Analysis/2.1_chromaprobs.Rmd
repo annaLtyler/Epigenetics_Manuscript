@@ -513,9 +513,12 @@ the null distribution.
 
 #calculate p values for the coefficients of each state at each 
 #position in each transcript.
+all.coef.p <- vector(mode = "list", length = length(common.transcripts))
+names(all.coef.p) <- common.transcripts
 for(tr in 1:length(chrom.coef)){
   tr.chrom.coef <- chrom.coef[[tr]]$Additive
   tr.perm.coef <- perm.coef[[tr]]
+  if(is.null(tr.perm.coef)){next()}
   tr.coef.p <- matrix(NA, nrow = nrow(tr.chrom.coef), ncol = ncol(tr.chrom.coef))
   dimnames(tr.coef.p) <- dimnames(tr.chrom.coef)
   for(st in 1:num.states){
@@ -525,76 +528,29 @@ for(tr in 1:length(chrom.coef)){
     }
   }
 
-  #pheatmap(t(-log10(tr.coef.p+1e-2)), cluster_rows = FALSE, cluster_cols = FALSE)
+  all.coef.p[[tr]] <- tr.coef.p
 }
 
-#library(pheatmap)
-obs.chrom.results <- scan_chrom_transcript(gene.id = gene.id, perm.order = NULL)
-
-obs.coef <- t(obs.chrom.results$chrom.coef.list[[1]])
-pheatmap(obs.coef, cluster_rows = FALSE, cluster_cols = FALSE)
-
-st.coef <- perm.coef[[tr]]
-
-pdf("~/Desktop/state.coef.pdf")
-state.coef.p <- matrix(NA, nrow = num.states, ncol = ncol(st.coef[[st]]))
-rownames(state.coef.p) <- 1:num.states
-x <- as.numeric(colnames(obs.coef))
-for(st in 1:num.states){
-  if(!all(is.na(st.coef[[st]]))){
-    boxplot(t(st.coef[[st]]), main = paste("State", st), at = x)
-    abline(h = 0)
-    points(x, obs.coef[st,], pch = "*", col = "red")
-
-    state.coef.p[st,] <- sapply(1:ncol(st.coef[[st]]), function(x) if(length(unique(st.coef[[st]][,x])) > 1){calc.emp.p(obs.coef[st,x], st.coef[[st]][,x])}else{NA})
+sig.coef <- lapply(chrom.coef, function(x) if(length(x) > 1){x$Additive}else{NA})
+for(tr in 1:length(sig.coef)){
+  if(length(all.coef.p[[tr]]) == 0){
+    sig.coef[[tr]] <- NA
   }
+  if(length(chrom.coef[[tr]]) > 1){
+    non.sig.locale <- which(all.coef.p[[tr]] > 0)
+    na.p <- which(is.na(all.coef.p[[tr]]))
+    #pheatmap(t(-log10(all.coef.p[[tr]]+1e-2)), cluster_rows = FALSE, cluster_cols = FALSE)
+    sig.coef[[tr]][non.sig.locale] <- NA
+    sig.coef[[tr]][na.p] <- NA
+    #pheatmap(t(sig.coef[[tr]]), cluster_rows = FALSE, cluster_cols = FALSE)
+  }
+
 }
+
+sig.coef.by.state <- lapply(1:num.states, function(x) unlist(lapply(sig.coef, function(y) if(length(y) > 1){y[,x]}else{NA})))
+pdf("~/Desktop/sig.coef.pdf")
+boxplot(sig.coef.by.state)
+abline(h = 0)
 dev.off()
 
-pheatmap(-log10(state.coef.p+1e-2), cluster_rows = FALSE, cluster_cols = FALSE)
-plot(x, -log10(state.coef.p[6,]+1e-2))
-
-
-
-add.lod <- sapply(chrom.lod, function(x) if(length(x) > 1){max(x[,"Additive"])}else{NA})
-add.r2 <- sapply(chrom.r2, function(x) if(length(x) > 1){max(x[,"Additive"])}else{NA})
-emp.p <- sapply(1:length(add.lod), 
-  function(x) if(!all(is.na(perm.lod[x,]))){calc.emp.p(add.lod[x], perm.lod[x,])}else{NA})
-hist(emp.p)
-qqunif.plot(emp.p)
-
-max.rnd <- sapply(1:nrow(perm.lod), function(x) if(!all(is.na(perm.lod[x,]))){max(perm.lod[x,])}else{NA})
-rnd.better <- apply(cbind(max.rnd, add.lod), 1, function(x) x[1] > x[2])
-
-for(i in 1:nrow(perm.lod)){
-  xmin <- min(c(perm.lod[i,], add.lod[i]), na.rm = TRUE)
-  xmax <- max(c(perm.lod[i,], add.lod[i]), na.rm = TRUE)
-  p = calc.emp.p(add.lod[i], perm.lod[i,])
-  hist(perm.lod[i,], xlim = c(xmin, xmax*1.1), breaks = 100)
-  abline(v = add.lod[i], col = "red")
-}
-
-
-for(i in 1:nrow(perm.lod)){
-  xmin <- min(c(perm.lod[i,], add.lod[i]), na.rm = TRUE)
-  xmax <- max(c(perm.lod[i,], add.lod[i]), na.rm = TRUE)
-  p = calc.emp.p(add.r2[i], perm.r2[i,])
-  hist(perm.r2[i,])
-  abline(v = add.r2[i], col = "red")
-}
-
-
 ```
-
-## Bulk State Effects
-
-We can also look at the overall effects of each state on gene expression
-in the DO, as we did in the inbred strains. To do this, we aggregate 
-all genes with a given state at each position, and fit a model to explain
-gene expression using chromatin state. 
-
-Actually, maybe we can't. I've been calculating genoprobs for each gene
-individually because there isn't enough memory anywhere to calculate them
-all at once. We also have more data here than in the inbreds so we should 
-be able to get a pretty good estimate of the effects using one gene
-at a time...
