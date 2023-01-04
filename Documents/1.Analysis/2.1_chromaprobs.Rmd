@@ -47,7 +47,8 @@ results.dir <- here("Results", "ChromHMM", paste0(num.states, "_states_C"))
 #barplot(1:length(chrom.colors), col = chrom.colors)
 is.interactive = FALSE
 #is.interactive = TRUE
-n.cores = detectCores() - 1
+#n.cores = detectCores() - 1
+n.cores = 19
 
 data(CCcolors)
 chrom.colors <- colors.from.values(1:num.states, use.pheatmap.colors = TRUE)
