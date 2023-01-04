@@ -24,6 +24,14 @@ The basic pipeline for mapping chromatin to genotype is as follows:
 2. Use the haplotypes to calculate the chromatin states for each DO individual.
 3. Calculate chromatin effects on transcript abundance using qtl2.
 
+```{r source_code}
+all.code.dir <- list.files(here("Code"), full.names = TRUE)
+for(i in 1:length(all.code.dir)){
+	all.fun <- list.files(all.code.dir[i], full.names = TRUE)
+	for(j in 1:length(all.fun)){source(all.fun[j])}
+}
+```
+
 ```{r load_libraries, message = FALSE, warning = FALSE, error = FALSE}
 args <- commandArgs(trailingOnly=T)
 num.states <- as.numeric(args[1])
@@ -33,20 +41,14 @@ delete.previous <- as.logical(args[2])
 if(is.na(num.states)){num.states = 14; delete.previous = FALSE}
 
 needed.packages <- c("here", "qtl2", "gtools", "parallel", "doParallel")
-for(i in 1:length(needed.packages)){library(needed.packages[i], character.only = TRUE)}
+load_libraries(needed.packages, personal.library = TRUE)
+
 results.dir <- here("Results", "ChromHMM", paste0(num.states, "_states_C"))
 #barplot(1:length(chrom.colors), col = chrom.colors)
 is.interactive = FALSE
 #is.interactive = TRUE
 n.cores = detectCores() - 1
-```
 
-```{r source_code}
-all.code.dir <- list.files(here("Code"), full.names = TRUE)
-for(i in 1:length(all.code.dir)){
-	all.fun <- list.files(all.code.dir[i], full.names = TRUE)
-	for(j in 1:length(all.fun)){source(all.fun[j])}
-}
 data(CCcolors)
 chrom.colors <- colors.from.values(1:num.states, use.pheatmap.colors = TRUE)
 ```
