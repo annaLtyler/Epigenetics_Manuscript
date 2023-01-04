@@ -521,10 +521,11 @@ for(tr in 1:length(chrom.coef)){
   for(st in 1:num.states){
     has.coef <- which(apply(tr.perm.coef[[st]], 1, function(x) length(unique(x)) > 1))
     if(length(has.coef) > 0){
-      state.p <- sapply(has.coef, function(x) calc.emp.p(tr.chrom.coef[x,st], tr.perm.coef[[st]][x,]))
+      tr.coef.p[has.coef,st] <- sapply(has.coef, function(x) calc.emp.p(tr.chrom.coef[x,st], tr.perm.coef[[st]][x,]))
     }
   }
 
+  #pheatmap(t(-log10(tr.coef.p+1e-2)), cluster_rows = FALSE, cluster_cols = FALSE)
 }
 
 #library(pheatmap)
