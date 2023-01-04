@@ -11,7 +11,7 @@ chrom.states, strain.key, perm.order = NULL){
     }
     
   chrom.order <- match.order(colnames(transcript.haplotypes[[1]]),
-  rownames(chrom.states[[1]]), strain.key)
+    rownames(chrom.states[[1]]), strain.key)
 
   gene.idx <- which(names(transcript.haplotypes) == gene.id)
   chrom.idx <- which(names(chrom.states) == gene.id)
@@ -22,14 +22,15 @@ chrom.states, strain.key, perm.order = NULL){
   if(length(haps) == 1){return(NA)}
   if(length(chrom.states[[chrom.idx]]) == 1){return(NA)}
 
-  #if we want a permuted imputed chromatin state, permute
-  #the chromatin states associated with each haplotype
-  if(!is.null(perm.order)){
-    haps <- haps[,perm.order,,drop=FALSE]
-    colnames(haps) <- LETTERS[1:8]
-  }
-
   ref.chroms <- chrom.states[[chrom.idx]][chrom.order,,]
+
+  #if we want a permuted imputed chromatin state, shuffle 
+  #the relationship between founder strain and chromatin
+  #state vector
+  if(!is.null(perm.order)){
+    ref.chroms <- ref.chroms[perm.order,,]
+    rownames(ref.chroms) <- rownames(chrom.states[[chrom.idx]][chrom.order,,])
+  }
 
   chrom.array <- array(NA, dim = c(nrow(haps), ncol(ref.chroms), dim(ref.chroms)[3]))
   rownames(chrom.array) <- rownames(haps)

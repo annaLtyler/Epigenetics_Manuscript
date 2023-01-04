@@ -32,12 +32,13 @@ delete.previous <- as.logical(args[2])
 
 if(is.na(num.states)){num.states = 14; delete.previous = FALSE}
 
-needed.packages <- c("here", "qtl2", "gtools")
+needed.packages <- c("here", "qtl2", "gtools", "parallel", "doParallel")
 for(i in 1:length(needed.packages)){library(needed.packages[i], character.only = TRUE)}
 results.dir <- here("Results", "ChromHMM", paste0(num.states, "_states_C"))
 #barplot(1:length(chrom.colors), col = chrom.colors)
 is.interactive = FALSE
 #is.interactive = TRUE
+n.cores = detectCores() - 1
 ```
 
 ```{r source_code}
@@ -157,7 +158,7 @@ if(file.exists(chrom.coef.file)){
 ```{r stat_wrapper}
 #a wrapper for imputing chromatin states in the DO and calculating
 #the associations with gene expression. 
-scan_chrom_transcript <- function(gene.id, perm.order = NULL){
+scan_chrom_transcript <- function(gene.id, perm.order = NULL, testing = FALSE){
 
   gene.name <- transcript.info[which(transcript.info[,"ensembl_gene_id"] == gene.id),"external_gene_name"][1]
   if(is.na(gene.name)){return(NA)}
@@ -174,9 +175,6 @@ scan_chrom_transcript <- function(gene.id, perm.order = NULL){
   chrom.geno <- get_one_geno(gene.name, transcript.info, transcript.haplotypes, 
       chrom.states, strain.key, geno_type = "chromatin", perm.order = perm.order)
     
-  #test <- get_one_geno(gene.name, transcript.info, transcript.haplotypes, chrom.states, strain.key, geno_type = "chromatin")
-
-
     if(is.na(chrom.geno)){return(NA)}
 
     #check for variation
@@ -186,34 +184,33 @@ scan_chrom_transcript <- function(gene.id, perm.order = NULL){
     if(no.var){return(NA)}
    
     #calculate proportion of each state
-    prop.state <- lapply(1:num.states, function(x) rowMeans(chrom.geno[[1]][,x,]))
-    prop.effect <- sapply(1:num.states, function(x) if(var(signif(prop.state[[x]], 4)) > 0){plot.with.model(prop.state[[x]], 
-    expr[,expr.locale], confidence = 0.95, plot.results = FALSE)}else{rep(NA, 5)})
-
-    #chrom.effect[[i]] <- prop.effect
+    #prop.state <- lapply(1:num.states, function(x) rowMeans(chrom.geno[[1]][,x,]))
+    #prop.effect <- sapply(1:num.states, function(x) if(var(signif(prop.state[[x]], 4)) > 0){plot.with.model(prop.state[[x]], 
+      #expr[,expr.locale], confidence = 0.95, plot.results = FALSE)}else{rep(NA, 5)})
     
     #calculate chromatin LOD scores
-    chrom.lod.add <- scan1(chrom.geno, expr[,expr.locale], addcovar = covar)
-    chrom.lod.int <- scan1(chrom.geno, expr[,expr.locale], addcovar = covar, intcovar = covar[,2,drop=FALSE])
-    chrom.chow.lod <- scan1(chrom.geno, expr[,expr.locale], addcovar = covar[chow.locale,])
-    chrom.hf.lod <- scan1(chrom.geno, expr[,expr.locale], addcovar = covar[hf.locale,])
-    chrom.lod.table <- cbind(chrom.lod.add, chrom.lod.int, chrom.chow.lod, chrom.hf.lod)
-    colnames(chrom.lod.table) <- model.names
+    chrom.lod.table <- scan1(chrom.geno, expr[,expr.locale], addcovar = covar)
+    colnames(chrom.lod.table) <- "Additive"
+    #chrom.lod.int <- scan1(chrom.geno, expr[,expr.locale], addcovar = covar, intcovar = covar[,2,drop=FALSE])
+    #chrom.chow.lod <- scan1(chrom.geno, expr[,expr.locale], addcovar = covar[chow.locale,])
+    #chrom.hf.lod <- scan1(chrom.geno, expr[,expr.locale], addcovar = covar[hf.locale,])
+    #chrom.lod.table <- cbind(chrom.lod.add, chrom.lod.int, chrom.chow.lod, chrom.hf.lod)
+    #colnames(chrom.lod.table) <- model.names
     #boxplot(chrom.lod.table)
-    #chrom.lod[[i]] <- chrom.lod.table
 
-    #calculate chromatin coefficients
+    #calculate chromatin state coefficients
     chrom.add.coef <- scan1coef(genoprobs = chrom.geno, pheno = expr[,expr.locale], 
-    addcovar = covar)
-    chrom.int.coef <- scan1coef(genoprobs = chrom.geno, pheno = expr[,expr.locale], 
-    addcovar = covar, intcovar = int.covar)
-    chrom.chow.coef <- scan1coef(genoprobs = chrom.geno, pheno = expr[,expr.locale], 
-    addcovar = covar[chow.locale,])
-    chrom.hf.coef <- scan1coef(genoprobs = chrom.geno, pheno = expr[,expr.locale], 
-    addcovar = covar[hf.locale,])
-    chrom.coef.list <- list(chrom.add.coef[,1:num.states], chrom.int.coef[,1:num.states], chrom.chow.coef[,1:8], chrom.hf.coef[,1:num.states])
-    names(chrom.coef.list) <- model.names
-    #chrom.coef[[i]] <- chrom.coef.list
+      addcovar = covar)
+    #chrom.int.coef <- scan1coef(genoprobs = chrom.geno, pheno = expr[,expr.locale], 
+      #addcovar = covar, intcovar = int.covar)
+    #chrom.chow.coef <- scan1coef(genoprobs = chrom.geno, pheno = expr[,expr.locale], 
+      #addcovar = covar[chow.locale,])
+    #chrom.hf.coef <- scan1coef(genoprobs = chrom.geno, pheno = expr[,expr.locale], 
+      #addcovar = covar[hf.locale,])
+    #chrom.coef.list <- list(chrom.add.coef[,1:num.states], chrom.int.coef[,1:num.states], chrom.chow.coef[,1:8], chrom.hf.coef[,1:num.states])
+    #names(chrom.coef.list) <- model.names
+    chrom.coef.list <- list(chrom.add.coef[,1:num.states])
+    names(chrom.coef.list) <- "Additive"
 
     #calculate chromatin R2
     #adjust expression for covariates first, so we don't include 
@@ -223,21 +220,26 @@ scan_chrom_transcript <- function(gene.id, perm.order = NULL){
     chrom.models.add <- apply(chrom.geno[[1]], 3, function(x) lm(adj.expr~x))
     ch.add.r2 <- sapply(chrom.models.add, function(x) summary(x)$adj.r.squared)
     #plot(ch.add.r2, ylim = c(0, max(ch.add.r2)))
-    chrom.models.int <- apply(chrom.geno[[1]], 3, function(x) lm(adj.expr~x*int.covar))
-    ch.int.r2 <- sapply(chrom.models.int, function(x) summary(x)$adj.r.squared)
+    #chrom.models.int <- apply(chrom.geno[[1]], 3, function(x) lm(adj.expr~x*int.covar))
+    #ch.int.r2 <- sapply(chrom.models.int, function(x) summary(x)$adj.r.squared)
     #plot(ch.int.r2, ylim = c(0, max(ch.int.r2)))
-    chrom.chow.models <- apply(chrom.geno[[1]][chow.locale,,], 3, function(x) lm(adj.expr[chow.locale,]~x))
-    ch.chow.r2 <- sapply(chrom.chow.models, function(x) summary(x)$adj.r.squared)
+    #chrom.chow.models <- apply(chrom.geno[[1]][chow.locale,,], 3, function(x) lm(adj.expr[chow.locale,]~x))
+    #ch.chow.r2 <- sapply(chrom.chow.models, function(x) summary(x)$adj.r.squared)
     #plot(ch.chow.r2)
-    chrom.hf.models <- apply(chrom.geno[[1]][hf.locale,,], 3, function(x) lm(adj.expr[hf.locale,]~x))
-    ch.hf.r2 <- sapply(chrom.hf.models, function(x) summary(x)$adj.r.squared)
+    #chrom.hf.models <- apply(chrom.geno[[1]][hf.locale,,], 3, function(x) lm(adj.expr[hf.locale,]~x))
+    #ch.hf.r2 <- sapply(chrom.hf.models, function(x) summary(x)$adj.r.squared)
     #plot(ch.hf.r2)
-    chrom.r2.results <- cbind(ch.add.r2, ch.int.r2, ch.chow.r2, ch.hf.r2)
-    colnames(chrom.r2.results) <- model.names
-    #chrom.r2[[i]] <- chrom.r2.results
-  
-  results <- list("prop.effect" = prop.effect, "chrom.lod.table" = chrom.lod.table, 
+    #chrom.r2.results <- cbind(ch.add.r2, ch.int.r2, ch.chow.r2, ch.hf.r2)
+    #colnames(chrom.r2.results) <- model.names
+    chrom.r2.results <- matrix(ch.add.r2, ncol = 1)
+    colnames(chrom.r2.results) <- "Additive"
+
+  #results <- list("prop.effect" = prop.effect, "chrom.lod.table" = chrom.lod.table, 
+  #  "chrom.coef.list" = chrom.coef.list, "chrom.r2.results" = chrom.r2.results)
+
+  results <- list("chrom.lod.table" = chrom.lod.table, 
     "chrom.coef.list" = chrom.coef.list, "chrom.r2.results" = chrom.r2.results)
+
 
   return(results)
 }
@@ -310,10 +312,8 @@ scan_gene_transcript <- function(gene.id){
 if(start.at < length(common.transcripts)){ #if we haven't scanned all the transcripts yet
   sink(file.path(results.dir, "progress.txt"))
   #for each remaining transcript
-  #for(i in 201:300){
   for(i in start.at:length(common.transcripts)){
     print(i)
-    if(i == 11140){next()} #for debugging
 
     if(is.interactive){report.progress(i, length(common.transcripts))}
     
@@ -370,20 +370,15 @@ sink(NULL)
 ```
 
 
-```{r perm, warning = FALSE}
-
-#select a set of permutations for which none of the chromatin
-#states get assigned to their original haplotype.
-#these are called derrangements
-perm.mat <- derrangements(8)
-nperm = 100
-
+```{r perm_files}
 perm.lod.file <- file.path(results.dir, "Perm.LOD.RDS")
 perm.r2.file <- file.path(results.dir, "Perm.R2.RDS")
+perm.coef.file <- file.path(results.dir, "Perm.Coef.RDS")
 
 if(file.exists(perm.lod.file)){
   perm.lod <- readRDS(perm.lod.file)
   perm.r2 <- readRDS(perm.r2.file)
+  perm.coef <- readRDS(perm.coef.file)
 
   #figure out where we left off.
   not.na <- which(!is.na(perm.lod[,1]))  
@@ -395,43 +390,74 @@ if(file.exists(perm.lod.file)){
   #results. 
   perm.lod <- perm.r2 <- matrix(NA, nrow = length(common.transcripts), ncol = nperm)
   rownames(perm.lod) <- rownames(perm.r2) <- common.transcripts
-
+  perm.coef <- vector(mode = "list", length = length(common.transcripts))
+  names(perm.coef) <- common.transcripts
 }
+```
 
+
+```{r do_perm, warning = FALSE}
+#select a set of permutations for which none of the chromatin
+#states get assigned to their original haplotype.
+#these are called derrangements
+perm.mat <- derrangements(8)
+nperm = 100
+
+#sample a random set of derraangements to use
+#for all transcripts
+perm.rows <- sample(1:nrow(perm.mat), nperm)
+
+#create and register multiple cores for parallele permutations
+cl <- makeCluster(n.cores)
+registerDoParallel(cl)
+#export everything we need to the cluster
+#this takes time upfront, but the parallelization
+#saves a huge amount of time overall
+env.var <- c(ls(), "scan1", "scan1coef")
+clusterExport(cl, c(env.var)) 
 
 if(start.at < length(common.transcripts)){
   sink(file.path(results.dir, "progress.txt"))
   for(tr in start.at:length(common.transcripts)){
     print(tr)
-    #sample a random set of derraangements to use
-    perm.rows <- sample(1:nrow(perm.mat), nperm)
-    gene.id <- common.transcripts[tr]
 
-    perm.chrom.effect <- perm.chrom.lod <- perm.chrom.r2 <- vector(mode = "list", length = nperm)
+    #gene.name = "Pkd2"
+    #gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == gene.name)[1],"ensembl_gene_id"]
+    #tr = which(common.transcripts == gene.id)
+
+    gene.id <- common.transcripts[tr]
+    #gene.name <- transcript.info[which(transcript.info[,"ensembl_gene_id"] == gene.id)[1],"external_gene_name"]
+
     gene.idx <- which(rownames(geno.lod) == gene.id)
 
-    for(p in 1:nperm){
-      #report.progress(p, nperm)
-      perm.chrom.results <- scan_chrom_transcript(gene.id = gene.id, 
-        perm.order = perm.mat[perm.rows[p],])
-      if(length(perm.chrom.results) > 1){
-        perm.chrom.effect[[p]] <- perm.chrom.results$prop.effect
-        perm.chrom.lod[[p]] <- perm.chrom.results$chrom.lod.table
-        perm.chrom.r2[[p]] <- perm.chrom.results$chrom.r2.results
-      }
-    }
+    #do the permutations in parallel
+    perm.chrom.results <- parLapply(cl, 1:nperm, 
+        function(p) scan_chrom_transcript(gene.id = gene.id, 
+        perm.order = perm.mat[perm.rows[p],]))
+  
+    perm.chrom.coef <- lapply(perm.chrom.results, function(x) x$chrom.coef.list)
+    perm.chrom.lod <- lapply(perm.chrom.results, function(x) x$chrom.lod.table)
+    perm.chrom.r2 <- lapply(perm.chrom.results, function(x) x$chrom.r2.results)
 
-    #keep the maximum values from each permutation.
+    #keep the maximum r2 and LOD values from each permutation.
+    #also keep the permuted coefficients for each state
+    tr.perm.coef <- lapply(1:num.states, 
+      function(x) sapply(perm.chrom.coef, function(y) y$Additive[,x]))
+    names(tr.perm.coef) <- 1:num.states
+    perm.coef[[tr]] <- tr.perm.coef
     perm.lod[tr,] <- t(sapply(perm.chrom.lod, function(x) max(x[,"Additive"])))
     perm.r2[tr,] <- t(sapply(perm.chrom.r2, function(x) max(x[,"Additive"])))
 
     if(tr %% save.every == 0){
       saveRDS(perm.lod, perm.lod.file)
       saveRDS(perm.r2, perm.r2.file)
+      saveRDS(perm.coef, perm.coef.file)
     }
 
-  }
-  #also save at the end
+  } #end looping through transcripts
+
+  #close the clusters at the end and save the final objects
+  stopCluster(cl)
   saveRDS(perm.lod, perm.lod.file)
   saveRDS(perm.r2, perm.r2.file)
   sink()
@@ -439,6 +465,81 @@ if(start.at < length(common.transcripts)){
   #if we've done all the permutations, read in the files.
   perm.lod <- readRDS(perm.lod.file)
   perm.r2 <- readRDS(perm.r2.file)
+}
+```
+
+For reasons that are still not totally clear to me,
+permuting the chromatin-haplotype assignments does
+not really affect the LOD score. However, it does
+affect the state coefficients. So what I think we 
+want to do is to focus less on the variance explained
+by chromatin state, and focus more on the effect
+direction and position. This might actually help 
+us filter putative cis regulatory regions.
+
+For each transcript we go through the permuted
+state coefficients to see where the strength of
+the coefficient is significantly different from 
+the null distribution.
+
+```{r assess_perm, eval = FALSE}
+
+
+
+
+#library(pheatmap)
+obs.chrom.results <- scan_chrom_transcript(gene.id = gene.id, perm.order = NULL)
+
+obs.coef <- t(obs.chrom.results$chrom.coef.list[[1]])
+pheatmap(obs.coef, cluster_rows = FALSE, cluster_cols = FALSE)
+
+st.coef <- perm.coef[[tr]]
+
+pdf("~/Desktop/state.coef.pdf")
+state.coef.p <- matrix(NA, nrow = num.states, ncol = ncol(st.coef[[st]]))
+rownames(state.coef.p) <- 1:num.states
+x <- as.numeric(colnames(obs.coef))
+for(st in 1:num.states){
+  if(!all(is.na(st.coef[[st]]))){
+    boxplot(t(st.coef[[st]]), main = paste("State", st), at = x)
+    abline(h = 0)
+    points(x, obs.coef[st,], pch = "*", col = "red")
+
+    state.coef.p[st,] <- sapply(1:ncol(st.coef[[st]]), function(x) if(length(unique(st.coef[[st]][,x])) > 1){calc.emp.p(obs.coef[st,x], st.coef[[st]][,x])}else{NA})
+  }
+}
+dev.off()
+
+pheatmap(-log10(state.coef.p+1e-2), cluster_rows = FALSE, cluster_cols = FALSE)
+plot(x, -log10(state.coef.p[6,]+1e-2))
+
+
+
+add.lod <- sapply(chrom.lod, function(x) if(length(x) > 1){max(x[,"Additive"])}else{NA})
+add.r2 <- sapply(chrom.r2, function(x) if(length(x) > 1){max(x[,"Additive"])}else{NA})
+emp.p <- sapply(1:length(add.lod), 
+  function(x) if(!all(is.na(perm.lod[x,]))){calc.emp.p(add.lod[x], perm.lod[x,])}else{NA})
+hist(emp.p)
+qqunif.plot(emp.p)
+
+max.rnd <- sapply(1:nrow(perm.lod), function(x) if(!all(is.na(perm.lod[x,]))){max(perm.lod[x,])}else{NA})
+rnd.better <- apply(cbind(max.rnd, add.lod), 1, function(x) x[1] > x[2])
+
+for(i in 1:nrow(perm.lod)){
+  xmin <- min(c(perm.lod[i,], add.lod[i]), na.rm = TRUE)
+  xmax <- max(c(perm.lod[i,], add.lod[i]), na.rm = TRUE)
+  p = calc.emp.p(add.lod[i], perm.lod[i,])
+  hist(perm.lod[i,], xlim = c(xmin, xmax*1.1), breaks = 100)
+  abline(v = add.lod[i], col = "red")
+}
+
+
+for(i in 1:nrow(perm.lod)){
+  xmin <- min(c(perm.lod[i,], add.lod[i]), na.rm = TRUE)
+  xmax <- max(c(perm.lod[i,], add.lod[i]), na.rm = TRUE)
+  p = calc.emp.p(add.r2[i], perm.r2[i,])
+  hist(perm.r2[i,])
+  abline(v = add.r2[i], col = "red")
 }
 
 
