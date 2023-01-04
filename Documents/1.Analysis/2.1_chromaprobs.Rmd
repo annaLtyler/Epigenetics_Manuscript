@@ -366,9 +366,10 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
   saveRDS(geno.coef, geno.coef.file)
   saveRDS(geno.r2, geno.r2.file)
   saveRDS(chrom.effect, chrom.effect.file)
+  sink()
 }
 
-sink(NULL)
+
 ```
 
 ```{r select_nperm}
@@ -401,34 +402,39 @@ if(file.exists(perm.lod.file)){
 ```
 
 
-```{r set_cl, warning = FALSE}
-#set up the clusters
-
-to.export <- c("scan_chrom_transcript", "transcript.info", 
-  "transcript.haplotypes", "expr", "covar", "chrom.states", 
-  "chrom.mats", "common.transcripts", "scan1", "scan1coef",
-  "get_one_geno", "get_one_geno", "match.order", "strain.key", 
-  "perm.mat", "perm.rows", "num.states", "adjust")
-
-#create and register multiple cores for parallele permutations
-cl <- makeCluster(n.cores)
-registerDoParallel(cl)
-#export everything we need to the cluster
-#this takes time upfront, but the parallelization
-#saves a huge amount of time overall
-clusterExport(cl, to.export) 
-```
-
-
-```{r do_perm}
+```{r set_perm}
 #select a set of permutations for which none of the chromatin
 #states get assigned to their original haplotype.
 #these are called derrangements
 perm.mat <- derrangements(8)
-
 #sample a random set of derraangements to use
 #for all transcripts
 perm.rows <- sample(1:nrow(perm.mat), nperm)
+```
+
+
+```{r set_cl, warning = FALSE}
+if(start.at < length(common.transcripts)){
+  #set up the clusters if we need to run perutations
+
+  to.export <- c("scan_chrom_transcript", "transcript.info", 
+    "transcript.haplotypes", "expr", "covar", "chrom.states", 
+    "chrom.mats", "common.transcripts", "scan1", "scan1coef",
+    "get_one_geno", "get_one_geno", "match.order", "strain.key", 
+    "perm.mat", "perm.rows", "num.states", "adjust", "calc.chrom")
+
+  #create and register multiple cores for parallele permutations
+  cl <- makeCluster(n.cores)
+  registerDoParallel(cl)
+  #export everything we need to the cluster
+  #this takes time upfront, but the parallelization
+  #saves a huge amount of time overall
+  clusterExport(cl, to.export) 
+}
+```
+
+
+```{r do_perm}
 
 if(start.at < length(common.transcripts)){
   sink(file.path(results.dir, "progress.txt"))
