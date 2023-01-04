@@ -25,6 +25,7 @@ The basic pipeline for mapping chromatin to genotype is as follows:
 3. Calculate chromatin effects on transcript abundance using qtl2.
 
 ```{r source_code}
+library("here")
 all.code.dir <- list.files(here("Code"), full.names = TRUE)
 for(i in 1:length(all.code.dir)){
 	all.fun <- list.files(all.code.dir[i], full.names = TRUE)
@@ -40,7 +41,7 @@ delete.previous <- as.logical(args[2])
 
 if(is.na(num.states)){num.states = 14; delete.previous = FALSE}
 
-needed.packages <- c("here", "qtl2", "gtools", "parallel", "doParallel")
+needed.packages <- c("qtl2", "gtools", "parallel", "doParallel")
 load_libraries(needed.packages, personal.library = TRUE)
 
 results.dir <- here("Results", "ChromHMM", paste0(num.states, "_states_C"))
