@@ -2,7 +2,7 @@
 
 
 calc.chrom <- function(gene.name, transcript.info, transcript.haplotypes, 
-chrom.states, strain.key, perm.order = NULL){
+  chrom.states, strain.key, perm.order = NULL){
     
   gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == gene.name),"ensembl_gene_id"][1]
 

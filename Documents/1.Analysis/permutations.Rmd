@@ -1,0 +1,151 @@
+```{r permutations}
+get_data_for_perm <- function(gene.id){
+
+    gene.name <- transcript.info[which(transcript.info[,"ensembl_gene_id"] == gene.id),"external_gene_name"][1]
+    if(is.na(gene.name)){return(NA)}
+
+    expr.locale <- which(colnames(expr) == gene.id)
+    chrom.locale <- which(names(chrom.mats) == gene.id)
+
+    if(length(expr.locale) == 0 || length(chrom.locale) == 0){
+        return(NA)
+    }
+
+    one.chrom <- chrom.states[[chrom.locale]]
+    one.expr <- expr[,expr.locale,drop=FALSE]
+    gene.idx <- which(names(transcript.haplotypes) == gene.id)
+    haps <- transcript.haplotypes[[gene.idx]]
+    gene.chr <- transcript.info[info.locale,"chromosome_name"]
+
+    data.for.perm <- list("name" = gene.name, "chrom" = one.chrom, 
+        "expr" = one.expr, "haps" = haps, "chr" = gene.chr)
+    return(data.for.perm)
+}
+
+imp_chrom <- function(perm.data, perm.order){
+ 
+  chrom.order <- match.order(colnames(perm.data$haps),
+    rownames(perm.data$chrom), strain.key)
+
+    ref.chroms <- perm.data$chrom
+    if(!is.null(perm.order)){
+        ref.chroms <- ref.chroms[perm.order,,]
+        rownames(ref.chroms) <- rownames(perm.data$chrom[chrom.order,,])
+    }
+
+    haps <- perm.data$haps
+    chrom.array <- array(NA, dim = c(nrow(haps), ncol(ref.chroms), dim(ref.chroms)[3]))
+    rownames(chrom.array) <- rownames(haps)
+    colnames(chrom.array) <- paste0("State", colnames(ref.chroms))
+    dimnames(chrom.array)[[3]] <- dimnames(ref.chroms)[[3]]
+  
+    for(p in 1:dim(ref.chroms)[3]){ #for each position
+        chrom.mat <- ref.chroms[,,p]
+        chrom.array[,,p] <- haps[,,1] %*% chrom.mat
+        }
+
+    #add attributes
+    gene.chr <- perm.data$chr
+    one.geno <- list(chrom.array)
+    names(one.geno) <- gene.chr
+    if(gene.chr == "X"){
+      attr(one.geno, "is_x_chr") <- TRUE
+    }else{
+      attr(one.geno, "is_x_chr") <- FALSE
+    }
+    attr(one.geno, "crosstype") <- "do"
+    attr(one.geno, "alleles") <- LETTERS[1:8]
+    attr(one.geno, "alleleprobs") <- TRUE
+    attr(one.geno, "class") <- c("calc_genoprob", "list")
+ 
+    return(one.geno)
+}
+
+perm.data <- get_data_for_perm(gene.id)
+
+#This function and the perm data will be exported to the
+#clusters
+perm_one_transcript <- function(perm.data, perm.order, 
+    geno_type = c("chromatin", "genotype")){
+    
+    if(is.na(perm.data){return(NA)})
+    
+    imp.geno <- imp_chrom(perm.data, perm.order)
+
+
+
+    }
+    
+
+
+
+if(start.at < length(common.transcripts)){
+  sink(file.path(results.dir, "progress.txt"))
+
+  for(tr in start.at:length(common.transcripts)){
+  #for(tr in 1:10){
+    print(tr)
+
+    #gene.name = "Pkd2"
+    #gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == gene.name)[1],"ensembl_gene_id"]
+    #tr = which(common.transcripts == gene.id)
+
+    gene.id <- common.transcripts[tr]
+    gene.idx <- which(rownames(geno.lod) == gene.id)
+    gene.name <- transcript.info[which(transcript.info[,"ensembl_gene_id"] == gene.id),"external_gene_name"][1]
+
+    if(is.na(gene.name)){next()}
+
+    expr.locale <- which(colnames(expr) == gene.id)
+    chrom.locale <- which(names(chrom.mats) == gene.id)
+
+    if(length(expr.locale) == 0 || length(chrom.locale) == 0){
+    next()
+    }
+
+  #impute chromatin states for DO
+  #using local haplotypes
+  chrom.geno <- get_one_geno(gene.name, transcript.info, transcript.haplotypes, 
+      chrom.states, strain.key, geno_type = "chromatin", perm.order = perm.order)
+
+
+    #do the permutations in parallel
+    perm.chrom.results <- parLapply(cl, 1:nperm, 
+        function(p) scan_chrom_transcript(gene.id = gene.id, 
+        perm.order = perm.mat[perm.rows[p],]))
+  
+    perm.chrom.coef <- lapply(perm.chrom.results, function(x) x$chrom.coef.list)
+    perm.chrom.lod <- lapply(perm.chrom.results, function(x) x$chrom.lod.table)
+    perm.chrom.r2 <- lapply(perm.chrom.results, function(x) x$chrom.r2.results)
+
+    #keep the maximum r2 and LOD values from each permutation.
+    #also keep the permuted coefficients for each state
+    tr.perm.coef <- lapply(1:num.states, 
+      function(x) sapply(perm.chrom.coef, function(y) y$Additive[,x]))
+    names(tr.perm.coef) <- 1:num.states
+    perm.coef[[tr]] <- tr.perm.coef
+    perm.lod[tr,] <- t(sapply(perm.chrom.lod, function(x) max(x[,"Additive"])))
+    perm.r2[tr,] <- t(sapply(perm.chrom.r2, function(x) max(x[,"Additive"])))
+
+    if(tr %% save.every == 0){
+      saveRDS(perm.lod, perm.lod.file)
+      saveRDS(perm.r2, perm.r2.file)
+      saveRDS(perm.coef, perm.coef.file)
+    }
+
+  } #end looping through transcripts
+
+  #close the clusters at the end and save the final objects
+  stopCluster(cl)
+  saveRDS(perm.lod, perm.lod.file)
+  saveRDS(perm.r2, perm.r2.file)
+  saveRDS(perm.coef, perm.coef.file)
+  sink()
+}else{
+  #if we've done all the permutations, read in the files.
+  perm.lod <- readRDS(perm.lod.file)
+  perm.r2 <- readRDS(perm.r2.file)
+  perm.coef <- readRDS(perm.coef.file)
+}
+
+```
