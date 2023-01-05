@@ -510,6 +510,7 @@ if(file.exists(perm.lod.file)){
   perm.coef <- vector(mode = "list", length = length(common.transcripts))
   names(perm.coef) <- common.transcripts
 }
+
 ```
 
 
@@ -522,6 +523,7 @@ perm.mat <- derrangements(8)
 #for all transcripts
 perm.rows <- sample(1:nrow(perm.mat), nperm)
 order.mat <- perm.mat[perm.rows,]
+
 ```
 
 
@@ -561,30 +563,33 @@ if(start.at < length(common.transcripts)){
 
     perm.data <- get_data_for_perm(gene.id)
 
-    #send the new gene ID to the clusters
-    clusterExport(cl, "perm.data")
+    if(dim(perm.data$chrom)[[3]] < 1000){
 
-    #do the permutations in parallel
-    perm.chrom.results <- parLapply(cl, 1:nperm, 
-        function(p) perm_one_transcript(perm.data, 
-        p = p))
+      #send the new gene ID to the clusters
+      clusterExport(cl, "perm.data")
 
-    #check for NAs
-    if(all(sapply(perm.chrom.results, length) > 1)){
+      #do the permutations in parallel
+      perm.chrom.results <- parLapply(cl, 1:nperm, 
+          function(p) perm_one_transcript(perm.data, 
+          p = p))
 
-      perm.chrom.coef <- lapply(perm.chrom.results, function(x) x$chrom.coef.list)
-      perm.chrom.lod <- lapply(perm.chrom.results, function(x) x$chrom.lod.table)
-      perm.chrom.r2 <- lapply(perm.chrom.results, function(x) x$chrom.r2.results)
+      #check for NAs
+      if(all(sapply(perm.chrom.results, length) > 1)){
 
-      #keep the maximum r2 and LOD values from each permutation.
-      #also keep the permuted coefficients for each state
-      tr.perm.coef <- lapply(1:num.states, 
-        function(x) sapply(perm.chrom.coef, function(y) y$Additive[,x]))
-      names(tr.perm.coef) <- 1:num.states
-      perm.coef[[tr]] <- tr.perm.coef
-      perm.lod[tr,] <- t(sapply(perm.chrom.lod, function(x) max(x[,"Additive"])))
-      perm.r2[tr,] <- t(sapply(perm.chrom.r2, function(x) max(x[,"Additive"])))
-    }
+        perm.chrom.coef <- lapply(perm.chrom.results, function(x) x$chrom.coef.list)
+        perm.chrom.lod <- lapply(perm.chrom.results, function(x) x$chrom.lod.table)
+        perm.chrom.r2 <- lapply(perm.chrom.results, function(x) x$chrom.r2.results)
+
+        #keep the maximum r2 and LOD values from each permutation.
+        #also keep the permuted coefficients for each state
+        tr.perm.coef <- lapply(1:num.states, 
+          function(x) sapply(perm.chrom.coef, function(y) y$Additive[,x]))
+        names(tr.perm.coef) <- 1:num.states
+        perm.coef[[tr]] <- tr.perm.coef
+        perm.lod[tr,] <- t(sapply(perm.chrom.lod, function(x) max(x[,"Additive"])))
+        perm.r2[tr,] <- t(sapply(perm.chrom.r2, function(x) max(x[,"Additive"])))
+      }#end case for data actually returned from the scans
+    } #end case for when chromatin matrix is too big
 
     if(tr %% save.every == 0){
       saveRDS(perm.lod, perm.lod.file)
@@ -601,11 +606,6 @@ if(start.at < length(common.transcripts)){
   saveRDS(perm.r2, perm.r2.file)
   saveRDS(perm.coef, perm.coef.file)
   sink()
-}else{
-  #if we've done all the permutations, read in the files.
-  perm.lod <- readRDS(perm.lod.file)
-  perm.r2 <- readRDS(perm.r2.file)
-  perm.coef <- readRDS(perm.coef.file)
 }
 ```
 
@@ -623,22 +623,60 @@ state coefficients to see where the strength of
 the coefficient is significantly different from 
 the null distribution.
 
-```{r assess_perm, eval = FALSE}
+```{r emp_p}
+#our ecdf function seems to be underestinating p values
+#even if there are multiple values in the null that
+#are identical to the observed value, we still get a
+#p value of 0
+
+emp.p <- function(obs.val, null.dist){
+  if(is.na(obs.val)){return(NA)}
+  as.or.more.extreme <- which(abs(null.dist) >= abs(obs.val))
+  p <- length(as.or.more.extreme)/length(null.dist)
+  return(p)
+}
+
+```
+
+
+```{r assess_perm}
 
 #calculate p values for the coefficients of each state at each 
 #position in each transcript.
+plot.results = FALSE
 all.coef.p <- vector(mode = "list", length = length(common.transcripts))
 names(all.coef.p) <- common.transcripts
 for(tr in 1:length(chrom.coef)){
+  if(length(chrom.coef[[tr]]) <= 1){next()}
   tr.chrom.coef <- chrom.coef[[tr]]$Additive
   tr.perm.coef <- perm.coef[[tr]]
   if(is.null(tr.perm.coef)){next()}
+
+  coef.by.state <- lapply(1:num.states, function(x) tr.chrom.coef[,x])
+
+  if(plot.results){
+    pdf("~/Desktop/perm_comp.pdf", width = 10, height = 6)
+    boxplot(tr.chrom.coef, main = "overall state effects")
+    abline(h = 0)
+    x <- as.numeric(rownames(tr.chrom.coef))
+    for(st in 1:num.states){
+      has.vals <- as.logical(length(which(!is.na(tr.perm.coef[[st]]))))
+      if(has.vals){
+        boxplot(t(tr.perm.coef[[st]]), at = x, main = paste("State", st))
+        points(x, coef.by.state[[st]], col = "red", pch = "*") 
+      }
+    }
+    dev.off()
+  }
+
+
   tr.coef.p <- matrix(NA, nrow = nrow(tr.chrom.coef), ncol = ncol(tr.chrom.coef))
   dimnames(tr.coef.p) <- dimnames(tr.chrom.coef)
   for(st in 1:num.states){
-    has.coef <- which(apply(tr.perm.coef[[st]], 1, function(x) length(unique(x)) > 1))
+    has.coef <- intersect(which(!is.na(coef.by.state[[st]])), which(coef.by.state[[st]] != 0))
     if(length(has.coef) > 0){
-      tr.coef.p[has.coef,st] <- sapply(has.coef, function(x) calc.emp.p(tr.chrom.coef[x,st], tr.perm.coef[[st]][x,]))
+      tr.coef.p[has.coef,st] <- sapply(has.coef, 
+        function(x) emp.p(tr.chrom.coef[x,st], tr.perm.coef[[st]][x,]))
     }
   }
 
@@ -654,17 +692,58 @@ for(tr in 1:length(sig.coef)){
     non.sig.locale <- which(all.coef.p[[tr]] > 0)
     na.p <- which(is.na(all.coef.p[[tr]]))
     #pheatmap(t(-log10(all.coef.p[[tr]]+1e-2)), cluster_rows = FALSE, cluster_cols = FALSE)
-    sig.coef[[tr]][non.sig.locale] <- NA
-    sig.coef[[tr]][na.p] <- NA
+    temp.mat <- sig.coef[[tr]]
+    temp.mat[non.sig.locale] <- NA
+    temp.mat[na.p] <- NA
+    sig.coef[[tr]] <- temp.mat
     #pheatmap(t(sig.coef[[tr]]), cluster_rows = FALSE, cluster_cols = FALSE)
   }
 
 }
 
-sig.coef.by.state <- lapply(1:num.states, function(x) unlist(lapply(sig.coef, function(y) if(length(y) > 1){y[,x]}else{NA})))
+#look at the overall distribution of the significant
+#coefficients for each state
+sig.coef.by.state <- lapply(1:num.states, 
+  function(x) unlist(lapply(sig.coef, function(y) if(length(y) > 1){y[,x]}else{NA})))
 #pdf("~/Desktop/sig.coef.pdf")
 boxplot(sig.coef.by.state)
+#stripchart(sig.coef.by.state, vertical = TRUE, method = "jitter", col = "gray", pch = 16)
 abline(h = 0)
 #dev.off()
+```
+
+## Significant Coefficients by Position
+
+```{r coef_by_pos}
+#center the significant coefficients
+gene.names <- transcript.info[match(common.transcripts, transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
+centered.sig.coef <- lapply(1:length(common.transcripts), 
+  function(x) center.on.feature(gene.names[x], transcript.info, 
+  vals = as.numeric(rownames(sig.coef[[x]])), feature = "full"))
+centered.sig <- sig.coef
+for(tr in 1:length(centered.sig)){
+  if(length(centered.sig.coef[[tr]]) > 1){
+    rownames(centered.sig[[tr]]) <- names(centered.sig.coef[[tr]])
+  }else{
+    centered.sig[[tr]] <- NA
+  }
+}
+
+min.coord = -0.5; max.coord = 1.5
+for(st in 1:num.states){
+  cent.state <- lapply(centered.sig, function(x) if(length(x) > 1){x[,st]})
+  state.vals <- unlist(cent.state)
+  state.pos <- as.numeric(unlist(lapply(cent.state, names)))
+  not.na <- which(!is.na(state.vals))
+  plot(state.pos[not.na], state.vals[not.na], xlab = "Relative Position",
+    ylab = "Coefficient", main = paste("State", st), pch = 16, col = "darkgray")
+  abline(h = 0)
+  }
+
+min.coord = -0.5; max.coord = 1.5; nbins = 42
+bins <- segment.region(coord.min, coord.max, nbins, "ends")
+consec.bins <- consec.pairs(bins)
+
+
 
 ```
