@@ -47,8 +47,8 @@ results.dir <- here("Results", "ChromHMM", paste0(num.states, "_states_C"))
 #barplot(1:length(chrom.colors), col = chrom.colors)
 is.interactive = FALSE
 #is.interactive = TRUE
-#n.cores = detectCores() - 1
-n.cores = 19
+n.cores = detectCores() - 1
+#n.cores = 19
 
 data(CCcolors)
 chrom.colors <- colors.from.values(1:num.states, use.pheatmap.colors = TRUE)
@@ -380,7 +380,8 @@ nperm = 100
 ```{r perm_fun}
 get_data_for_perm <- function(gene.id){
 
-    gene.name <- transcript.info[which(transcript.info[,"ensembl_gene_id"] == gene.id),"external_gene_name"][1]
+    info.locale <- which(transcript.info[,"ensembl_gene_id"] == gene.id)[1]
+    gene.name <- transcript.info[info.locale,"external_gene_name"]
     if(is.na(gene.name)){return(NA)}
 
     expr.locale <- which(colnames(expr) == gene.id)
@@ -409,7 +410,7 @@ imp_chrom <- function(perm.data, perm.order){
     ref.chroms <- perm.data$chrom
     if(!is.null(perm.order)){
         ref.chroms <- ref.chroms[perm.order,,]
-        rownames(ref.chroms) <- rownames(perm.data$chrom[chrom.order,,])
+        rownames(ref.chroms) <- colnames(perm.data$haps)
     }
 
     haps <- perm.data$haps
@@ -529,7 +530,7 @@ if(start.at < length(common.transcripts)){
   #set up the clusters if we need to run perutations
 
   to.export <- c("scan1", "scan1coef", "covar", "perm_one_transcript",
-    "num.states", "adjust", "order.mat")
+    "num.states", "adjust", "order.mat", "imp_chrom", "match.order", "strain.key")
 
   #create and register multiple cores for parallele permutations
   cl <- makeCluster(n.cores)
