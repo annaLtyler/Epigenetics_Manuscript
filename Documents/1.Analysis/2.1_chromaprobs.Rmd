@@ -657,9 +657,9 @@ for(tr in 1:length(sig.coef)){
 }
 
 sig.coef.by.state <- lapply(1:num.states, function(x) unlist(lapply(sig.coef, function(y) if(length(y) > 1){y[,x]}else{NA})))
-pdf("~/Desktop/sig.coef.pdf")
+#pdf("~/Desktop/sig.coef.pdf")
 boxplot(sig.coef.by.state)
 abline(h = 0)
-dev.off()
+#dev.off()
 
 ```
