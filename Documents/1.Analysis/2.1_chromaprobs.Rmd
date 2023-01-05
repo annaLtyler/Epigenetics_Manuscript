@@ -569,18 +569,22 @@ if(start.at < length(common.transcripts)){
         function(p) perm_one_transcript(perm.data, 
         p = p))
 
-    perm.chrom.coef <- lapply(perm.chrom.results, function(x) x$chrom.coef.list)
-    perm.chrom.lod <- lapply(perm.chrom.results, function(x) x$chrom.lod.table)
-    perm.chrom.r2 <- lapply(perm.chrom.results, function(x) x$chrom.r2.results)
+    #check for NAs
+    if(all(sapply(perm.chrom.results, length) > 1)){
 
-    #keep the maximum r2 and LOD values from each permutation.
-    #also keep the permuted coefficients for each state
-    tr.perm.coef <- lapply(1:num.states, 
-      function(x) sapply(perm.chrom.coef, function(y) y$Additive[,x]))
-    names(tr.perm.coef) <- 1:num.states
-    perm.coef[[tr]] <- tr.perm.coef
-    perm.lod[tr,] <- t(sapply(perm.chrom.lod, function(x) max(x[,"Additive"])))
-    perm.r2[tr,] <- t(sapply(perm.chrom.r2, function(x) max(x[,"Additive"])))
+      perm.chrom.coef <- lapply(perm.chrom.results, function(x) x$chrom.coef.list)
+      perm.chrom.lod <- lapply(perm.chrom.results, function(x) x$chrom.lod.table)
+      perm.chrom.r2 <- lapply(perm.chrom.results, function(x) x$chrom.r2.results)
+
+      #keep the maximum r2 and LOD values from each permutation.
+      #also keep the permuted coefficients for each state
+      tr.perm.coef <- lapply(1:num.states, 
+        function(x) sapply(perm.chrom.coef, function(y) y$Additive[,x]))
+      names(tr.perm.coef) <- 1:num.states
+      perm.coef[[tr]] <- tr.perm.coef
+      perm.lod[tr,] <- t(sapply(perm.chrom.lod, function(x) max(x[,"Additive"])))
+      perm.r2[tr,] <- t(sapply(perm.chrom.r2, function(x) max(x[,"Additive"])))
+    }
 
     if(tr %% save.every == 0){
       saveRDS(perm.lod, perm.lod.file)
@@ -592,6 +596,7 @@ if(start.at < length(common.transcripts)){
 
   #close the clusters at the end and save the final objects
   stopCluster(cl)
+
   saveRDS(perm.lod, perm.lod.file)
   saveRDS(perm.r2, perm.r2.file)
   saveRDS(perm.coef, perm.coef.file)
