@@ -563,6 +563,8 @@ if(start.at < length(common.transcripts)){
 
     perm.data <- get_data_for_perm(gene.id)
 
+    if(is.na(perm.data)){next()}
+
     if(dim(perm.data$chrom)[[3]] < 1000){
 
       #send the new gene ID to the clusters
@@ -655,7 +657,7 @@ for(tr in 1:length(chrom.coef)){
   coef.by.state <- lapply(1:num.states, function(x) tr.chrom.coef[,x])
 
   if(plot.results){
-    pdf("~/Desktop/perm_comp.pdf", width = 10, height = 6)
+    #pdf("~/Desktop/perm_comp.pdf", width = 10, height = 6)
     boxplot(tr.chrom.coef, main = "overall state effects")
     abline(h = 0)
     x <- as.numeric(rownames(tr.chrom.coef))
@@ -666,7 +668,7 @@ for(tr in 1:length(chrom.coef)){
         points(x, coef.by.state[[st]], col = "red", pch = "*") 
       }
     }
-    dev.off()
+    #dev.off()
   }
 
 
@@ -714,6 +716,24 @@ abline(h = 0)
 
 ## Significant Coefficients by Position
 
+```{r bin_coef}
+bin_coef <- function(xvals, yvals, xmin, xmax, nbins){
+  bins <- segment.region(coord.min, coord.max, nbins, "ends")
+  consec.bins <- consec.pairs(bins)
+  binned.vals <- vector(mode = "list", length = nrow(consec.bins)+1)
+  for(i in 1:nrow(consec.bins)){
+    above.min <- which(xvals >= consec.bins[i,1])
+    below.max <- which(xvals < consec.bins[i,2])
+    bin.idx <- intersect(above.min, below.max)
+    binned.vals[[i]] <- yvals[bin.idx]
+  }
+  bin.idx <- which(xvals > consec.bins[i,2])
+  binned.vals[[(i+1)]] <- yvals[bin.idx]
+  return(binned.vals)
+}
+
+```
+
 ```{r coef_by_pos}
 #center the significant coefficients
 gene.names <- transcript.info[match(common.transcripts, transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
@@ -729,7 +749,9 @@ for(tr in 1:length(centered.sig)){
   }
 }
 
-min.coord = -0.5; max.coord = 1.5
+#pdf("~/Desktop/state.effects.pdf")
+min.coord = -0.5; max.coord = 1.5; nbins = 42
+bins <- segment.region(coord.min, coord.max, nbins, "ends")
 for(st in 1:num.states){
   cent.state <- lapply(centered.sig, function(x) if(length(x) > 1){x[,st]})
   state.vals <- unlist(cent.state)
@@ -738,11 +760,14 @@ for(st in 1:num.states){
   plot(state.pos[not.na], state.vals[not.na], xlab = "Relative Position",
     ylab = "Coefficient", main = paste("State", st), pch = 16, col = "darkgray")
   abline(h = 0)
-  }
+  abline(v = c(0,1))
 
-min.coord = -0.5; max.coord = 1.5; nbins = 42
-bins <- segment.region(coord.min, coord.max, nbins, "ends")
-consec.bins <- consec.pairs(bins)
+  binned.coef <- bin_coef(state.pos, state.vals, min.coord, max.coord, nbins)
+  boxplot(binned.coef, main = paste("State", st), names = round(bins, 2))
+  abline(v = match(c(0,1), round(bins, 1)), col = "blue", lwd = 3)
+  abline(h = 0)
+}
+#dev.off()
 
 
 
