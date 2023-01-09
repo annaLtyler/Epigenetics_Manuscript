@@ -547,12 +547,19 @@ if(start.at < length(common.transcripts)){
 
 ```{r do_perm}
 
-if(start.at < length(common.transcripts)){
+lod.thresh = 6
+to.perm <- which(geno.lod[,"Additive"] > lod.thresh)
+do.perm <- rep(FALSE, length(common.transcripts))
+do.perm[to.perm] <- TRUE
+
+if(start.at < max(to.perm)){
   sink(file.path(results.dir, "progress.txt"))
 
   for(tr in start.at:length(common.transcripts)){
   #for(tr in 1:10){
     print(tr)
+
+    if(!do.perm[tr]){next}
 
     #gene.name = "Pkd2"
     #gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == gene.name)[1],"ensembl_gene_id"]
