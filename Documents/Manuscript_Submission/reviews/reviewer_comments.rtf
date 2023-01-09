@@ -4,7 +4,7 @@
 }
 {\*\expandedcolortbl;;\cssrgb\c77647\c0\c11765;\cssrgb\c1680\c19835\c100000;\cssrgb\c50196\c50196\c50196;
 }
-\margl1440\margr1440\vieww20620\viewh12480\viewkind1
+\margl1440\margr1440\vieww20920\viewh12780\viewkind1
 \deftab720
 \pard\pardeftab720\partightenfactor0
 
@@ -32,7 +32,11 @@ We have added a section to the introduction describing work linking genetic vara
 \
 \
 \pard\pardeftab720\partightenfactor0
-\cf3 This point is well taken. We cannot verify the accuracy of the imputation, and cannot directly test the effect of chromatin state variation on gene expression with these data. Any feature imputed using haplotype will be positively correlated with gene expression because haplotype is positively correlated with gene expression. We have improved our discussion on these points in the paper. \
+\cf3 This point is well taken. We cannot verify the accuracy of the imputation, and cannot directly test the effect of chromatin state variation on gene expression with these data. Any feature imputed using haplotype will be positively correlated with gene expression because haplotype is positively correlated with gene expression. \
+\
+We have added a permutation test to this part of the analysis. We permuted the labels on the chromatin state vectors in the founder population and recalculated the LOD scores, R2, and state coefficients. We performed 1000 permutations on each transcript with a local eQTL LOD score > 6. The permutations preseved all correlations between chromatin states and their positions, and all correlations between expression and covariates. Only the haplotype each chromatin state was assigned to was shuffled. These permutations showed that chromatin state explained more variance in gene expression in the DO mice than would be expected if we assigned chromatin states to haplotypes at random.  \
+\
+We have improved our discussion on these points in the paper. \
 \
 We have also \
 \

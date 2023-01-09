@@ -29,7 +29,7 @@ for(i in 1:length(all.code.dir)){
 
 
 ```{r load_other_lib}
-needed.packages <- c("qtl2", "abind", "pheatmap")
+needed.packages <- c("qtl2", "abind", "pheatmap", "parallel", "doParallel")
 load_libraries(needed.packages)
 ```
 
@@ -70,22 +70,29 @@ get_nearest_marker <- function(chr, start.pos){
     return(marker.geno)
 }
 
-rrbs_geno <- function(gene.rrbs.array, haplotype.matrix, gene.chr){
+rrbs_geno <- function(gene.rrbs.array, haplotype.matrix, gene.chr, perm.order = NULL){
     if(length(gene.rrbs.array) == 1){return(NA)}
     if(length(haplotype.matrix) <= 1){return(NA)}
     #filter out NAs
     has.all <- which(apply(gene.rrbs.array, 2, function(x) all(!is.na(x))))
     if(length(has.all) <= 1){return(NA)}
-    #quartz();plot.methyl.mat(gene.rrbs.array[,has.all])
-    #quartz();boxplot(gene.rrbs.array[,has.all])
-    #quartz();pheatmap(cor(gene.rrbs.array[,has.all]), cluster_rows = FALSE, cluster_cols = FALSE)
+    #plot.methyl.mat(gene.rrbs.array[,has.all])
+    #boxplot(gene.rrbs.array[,has.all])
+    #pheatmap(cor(gene.rrbs.array[,has.all]), cluster_rows = FALSE, cluster_cols = FALSE)
 
-    #bin the methylation into 0 and 100
+    #bin the methylation into 0, 50, and 100
     #this prevents transferring haplotypes directly
-    #to directly onto very small variations in methylation
+    #onto very small variations in methylation
     binned.rrbs <- t(apply(gene.rrbs.array[,has.all,drop=FALSE], 1, function(x) bin.vector(x, c(0, 50, 100))))
-
-    all.rrbs <- haplotype.matrix %*% binned.rrbs
+        
+    #do the imputation, with a shuffled haplotype order if requested
+    if(is.null(perm.order)){
+      all.rrbs <- haplotype.matrix %*% binned.rrbs
+    }else{
+      perm.rrbs <- binned.rrbs[perm.order,]
+      rownames(perm.rrbs) <- rownames(binned.rrbs)
+      all.rrbs <- haplotype.matrix %*% perm.rrbs
+    }
     #pheatmap(all.rrbs, cluster_cols = FALSE)
     #boxplot(all.rrbs) 
     #pheatmap(haplotype.matrix)
@@ -98,7 +105,6 @@ rrbs_geno <- function(gene.rrbs.array, haplotype.matrix, gene.chr){
     #pheatmap(hap.cor, cluster_rows = FALSE, cluster_cols = FALSE)
     #which(hap.cor[1,] == 1)
     #gene.rrbs.array[,"67245515"]
-    
     
     all.rrbs.mat <- abind(all.rrbs, round(100-all.rrbs), along = 3)
     dimnames(all.rrbs.mat)[[3]] <- c("A", "B")
@@ -172,8 +178,9 @@ if(!file.exists(rrbs.lod.file)){
           if(!is.na(transcript.chr) && transcript.chr != "X" && transcript.chr != "MT"){
               rrbs.mat <- methyl.mats[[methyl.mat.locale]][strain.order,,drop=FALSE]
               hap.mat <- gene.marker[[i]]
-              rrbs.array <- rrbs_geno(gene.rrbs.array = rrbs.mat, haplotype.matrix = hap.mat, 
-              gene.chr = ordered.transcript.info[i,"chromosome_name"])
+              rrbs.array <- rrbs_geno(gene.rrbs.array = rrbs.mat, 
+                haplotype.matrix = hap.mat, 
+                gene.chr = ordered.transcript.info[i,"chromosome_name"])
               if(!is.na(rrbs.array)){
                 gene.expr <- expr[,which(colnames(expr) == methyl.id[i]),drop=FALSE]
                 if(length(gene.expr) > 0){
@@ -190,5 +197,175 @@ if(!file.exists(rrbs.lod.file)){
     }
     saveRDS(all.rrbs.lod, rrbs.lod.file)
     saveRDS(all.rrbs.r2, rrbs.r2.file)
+}else{
+  all.rrbs.lod <- readRDS(rrbs.lod.file)
 }
+```
+
+
+## Permute RRBS LOD and R2
+
+We need to do permutations on these as we did for chromatin state.
+We permute the haplotype that is assigned to each DNA methylation
+vector.
+
+```{r perm_fun}
+#This function and the perm data will be exported to the
+#clusters
+scan_one_rrbs <- function(perm.data, p){
+    
+  perm.order <- order.mat[p,]
+
+  imp.geno <- rrbs_geno(gene.rrbs.array = perm.data$rrbs.mat, 
+            haplotype.matrix = perm.data$hap.mat, 
+            gene.chr = perm.data$chr, perm.order)
+          
+  if(is.na(imp.geno)){return(NA)}
+
+  one.lod <- scan1(imp.geno, perm.data$gene.expr)
+  #quartz();plot(as.numeric(rownames(all.rrbs.lod[[i]])), all.rrbs.lod[[i]][,1], type  = "h",xlab = "Genomic Position", ylab = "DNA Methylation LOD score")
+  regression.models <- apply(imp.geno[[1]][common.genoprob.locale,1,], 2, 
+      function(x) if(var(x) > 0){lm(perm.data$gene.expr[common.expr.locale,]~x)}else{NA})
+  one.rrbs.r2 <- sapply(regression.models, function(x) if(length(x) > 1){summary(x)$adj.r.squared}else{NA})
+
+  results <- list("one.lod" = one.lod, 
+    "one.r2" = one.rrbs.r2)
+
+  return(results)
+}
+```
+
+```{r select_nperm}
+nperm = 1000
+```
+
+
+```{r set_perm}
+#select a set of permutations for which none of 
+#the haplotypes remain in their original position.
+#these are called derrangements
+perm.mat <- derrangements(8)
+#sample a random set of derraangements to use
+#for all transcripts
+perm.rows <- sample(1:nrow(perm.mat), nperm)
+order.mat <- perm.mat[perm.rows,]
+```
+
+
+
+```{r perm_files}
+perm.lod.rrbs.file <- here("Results", "RRBS", "Perm.RRBS.LOD.RDS")
+perm.r2.rrbs.file <- here("Results", "RRBS", "Perm.RRBS.R2.RDS")
+
+if(file.exists(perm.lod.rrbs.file)){
+  perm.rrbs.lod <- readRDS(perm.lod.rrbs.file)
+  perm.rrbs.r2 <- readRDS(perm.r2.rrbs.file)
+
+  #figure out where we left off.
+  not.na <- which(!is.na(perm.rrbs.lod[,1]))  
+  left.off <- max(not.na)
+  start.at <- left.off + 1
+}else{
+  start.at <- 1
+  #if we are at the beginning, intialize all the objects for holding
+  #results. 
+  perm.rrbs.lod <- perm.rrbs.r2 <- matrix(NA, nrow = length(methyl.id), ncol = nperm)
+  rownames(perm.rrbs.lod) <- rownames(perm.rrbs.r2) <- methyl.id
+}
+```
+
+
+```{r set_cl, warning = FALSE}
+save.every = 100
+
+if(start.at < length(methyl.id)){
+  #set up the clusters if we need to run perutations
+  n.cores <- detectCores() - 1
+  to.export <- c("scan1", "scan1coef", "scan_one_rrbs", "rrbs_geno", 
+    "order.mat", "bin.vector", "abind", "common.genoprob.locale", 
+    "common.expr.locale")
+
+  #create and register multiple cores for parallele permutations
+  cl <- makeCluster(n.cores)
+  registerDoParallel(cl)
+  #export everything we need to the cluster
+  #this takes time upfront, but the parallelization
+  #saves a huge amount of time overall
+  clusterExport(cl, to.export) 
+}
+```
+
+
+```{r perm_rrbs}
+if(start.at < length(methyl.id)){
+  sink(here("Results", "RRBS", "progress.txt"))
+  for(tr in start.at:length(perm.rrbs.lod)){
+      print(tr)
+      methyl.mat.locale <- which(names(methyl.mats) == ordered.transcript.info[tr,"external_gene_name"])
+      if(length(methyl.mats[[methyl.mat.locale]]) > 1 && nrow(methyl.mats[[methyl.mat.locale]]) <= 5000){
+        transcript.chr <- ordered.transcript.info[i,"chromosome_name"]
+        if(!is.na(transcript.chr) && transcript.chr != "X" && transcript.chr != "MT"){
+            rrbs.mat <- methyl.mats[[methyl.mat.locale]][strain.order,,drop=FALSE]
+            hap.mat <- gene.marker[[tr]]
+            rrbs.array <- rrbs_geno(gene.rrbs.array = rrbs.mat, 
+              haplotype.matrix = hap.mat, 
+              gene.chr = ordered.transcript.info[i,"chromosome_name"])
+            
+            if(!is.na(rrbs.array)){
+              gene.expr <- expr[,which(colnames(expr) == methyl.id[tr]),drop=FALSE]
+              if(length(gene.expr) > 0){
+                adj.expr <- adjust(gene.expr, covar)
+
+                perm.data <- list("gene.expr" = gene.expr, 
+                  "rrbs.mat" = rrbs.mat, "hap.mat" = hap.mat,
+                  "chr" = ordered.transcript.info[tr,"chromosome_name"])
+
+                  #send the new gene ID to the clusters
+                  clusterExport(cl, "perm.data")
+
+                  #do the permutations in parallel
+                  perm.rrbs.results <- parLapply(cl, 1:nperm, 
+                      function(p) scan_one_rrbs(perm.data, 
+                      p = p))
+
+                  #check for NAs
+                  if(all(sapply(perm.rrbs.results, length) > 1)){
+                    perm.tr.lod <- lapply(perm.rrbs.results, function(x) x$one.lod)
+                    perm.tr.r2 <- lapply(perm.rrbs.results, function(x) x$one.r2)
+
+                    #keep the maximum r2 and LOD values from each permutation.
+                    perm.rrbs.lod[tr,] <- t(sapply(perm.tr.lod, function(x) max(x[,1])))
+                    perm.rrbs.r2[tr,] <- t(sapply(perm.tr.r2, function(x) max(x, na.rm = TRUE)))
+                  }#end case for data actually returned from the scans
+              } #end case for existence of gene expression data
+            } #end case for existence of RRBS data
+        } #end case for chromosome check
+      } #end check for size of methylation matrix
+
+      if(tr %% save.every == 0){
+          saveRDS(perm.rrbs.lod, perm.rrbs.lod.file)
+          saveRDS(perm.rrbs.r2, perm.rrbs.r2.file)
+      }
+  } #end looping over transcripts
+  #save again at the very end
+  saveRDS(perm.rrbs.lod, perm.rrbs.lod.file)
+  saveRDS(perm.rrbs.r2, perm.rrbs.r2.file)
+
+  sink()
+
+  #close the clusters at the end and save the final objects
+  stopCluster(cl)
+
+} #end case for needing to do more permutations.
+```
+
+
+
+```{r assess_perm}
+max.obs.lod <- sapply(all.rrbs.lod, function(x) if(length(x) > 1){max(x, na.rm = TRUE)}else{NA})
+max.null.lod <- apply(perm.rrbs.lod, 1, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
+
+plot(max.null.lod, max.obs.lod, xlab = "Effect of Haplotype Alone",
+  ylab = "Observed LOD")
+abline(0,1)
 ```

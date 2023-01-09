@@ -510,6 +510,29 @@ if(file.exists(perm.lod.file)){
   perm.coef <- vector(mode = "list", length = length(common.transcripts))
   names(perm.coef) <- common.transcripts
 }
+```
+
+```{r perm_test, eval = FALSE}
+max.perm <- apply(perm.lod, 1, max)
+plot(geno.lod[,"Additive"], max.perm)
+abline(0,1)
+
+lod.dist <- sapply(1:nrow(perm.lod), function(x) if(!all(is.na(perm.lod[x,]))){geno.lod[x,"Additive"]/max(perm.lod[x,])}else{NA})
+plot(lod.dist, geno.lod[,"Additive"])
+abline(v = 1)
+
+big.dist <- intersect(which(geno.lod[,"Additive"] > 6), which(lod.dist > 1.05))
+i <- 1
+i = i + 1
+xlim <- c(min(c(perm.lod[big.dist[i],], geno.lod[big.dist[i],"Additive"])), max(c(perm.lod[big.dist[i],], geno.lod[big.dist[i],"Additive"])))
+hist(perm.lod[big.dist[i],], xlim = xlim, breaks = 50)
+abline(v = geno.lod[big.dist[i],"Additive"], col = "red")
+
+lod.p <- sapply(1:nrow(perm.lod), function(x) if(!all(is.na(perm.lod[x,]))){calc.emp.p(geno.lod[x,"Additive"], perm.lod[x,])}else{NA})
+dim(perm.lod)
+dim(geno.lod)
+
+outside.null <- sapply(1:nrow(perm.lod), function(x) if(!all(is.na(perm.lod[x,]))){geno.lod[x,"Additive"] > max(perm.lod[x,], na.rm = TRUE)}else{NA})
 
 ```
 
@@ -813,15 +836,17 @@ for(st in 1:num.states){
   state.vals <- unlist(cent.state)
   state.pos <- as.numeric(unlist(lapply(cent.state, names)))
   not.na <- which(!is.na(state.vals))
-  plot(state.pos[not.na], state.vals[not.na], xlab = "Relative Position",
-    ylab = "Coefficient", main = paste("State", st), pch = 16, col = "darkgray")
-  abline(h = 0)
-  abline(v = c(0,1))
+  if(length(not.na) > 0){
+    plot(state.pos[not.na], state.vals[not.na], xlab = "Relative Position",
+      ylab = "Coefficient", main = paste("State", st), pch = 16, col = "darkgray")
+    abline(h = 0)
+    abline(v = c(0,1))
 
-  binned.coef <- bin_coef(state.pos, state.vals, min.coord, max.coord, nbins)
-  boxplot(binned.coef, main = paste("State", st), names = round(bins, 2))
-  abline(v = match(c(0,1), round(bins, 1)), col = "slateblue", lwd = 3)
-  abline(h = 0)
+    binned.coef <- bin_coef(state.pos, state.vals, min.coord, max.coord, nbins)
+    boxplot(binned.coef, main = paste("State", st), names = round(bins, 2))
+    abline(v = match(c(0,1), round(bins, 1)), col = "slateblue", lwd = 3)
+    abline(h = 0)
+  }
 }
 #dev.off()
 
