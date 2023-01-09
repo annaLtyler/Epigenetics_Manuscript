@@ -374,7 +374,7 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
 ```
 
 ```{r select_nperm}
-nperm = 100
+nperm = 1000
 ```
 
 ```{r perm_fun}
@@ -641,7 +641,56 @@ emp.p <- function(obs.val, null.dist){
 ```
 
 
-```{r assess_perm}
+```{r perm_comp}
+get_pos_coef <- function(tr, st, perm = FALSE){
+  if(!perm){
+    if(length(centered.pos[[tr]]) > 1 && length(chrom.coef[[tr]]) > 1){
+      tr.pos <- as.numeric(names(centered.pos[[tr]]))
+      tr.coef <- chrom.coef[[tr]]$Additive[,st]
+      result <- cbind(tr.pos, tr.coef)
+    }else{
+      return(matrix(c(NA, NA), ncol = 2))
+    }
+  }else{
+      if(length(centered.pos[[tr]]) > 1 && length(perm.coef[[tr]]) > 1){
+        tr.pos <- as.numeric(names(centered.pos[[tr]]))
+        perm.tr.coef <- perm.coef[[tr]][[st]]
+        max.perm <- apply(perm.tr.coef, 1, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
+        min.perm <- apply(perm.tr.coef, 1, function(x) if(!all(is.na(x))){min(x, na.rm = TRUE)}else{NA})
+        result <- cbind(tr.pos, max.perm, min.perm)
+      }else{
+        result <- matrix(c(NA, NA, NA), ncol = 3)
+      }
+    }
+    return(result)
+}
+
+
+centered.pos <- lapply(1:length(common.transcripts), 
+  function(x) if(length(chrom.coef[[x]]) > 1){center.on.feature(gene.names[x], transcript.info, 
+  vals = as.numeric(rownames(chrom.coef[[x]]$Additive)), feature = "full")}else{NA})
+
+for(st in 1:num.states){
+  state.coef <- lapply(1:length(common.transcripts), 
+    function(x) get_pos_coef(x, st))
+  state.pos <- unlist(lapply(state.coef, function(x) if(length(x) > 1){x[,1]}else{NA}))
+  pos.coef <- unlist(lapply(state.coef, function(x) if(length(x) > 1){x[,2]}else{NA}))
+  not.na <- intersect(which(!is.na(state.pos)), which(!is.na(pos.coef)))
+  plot(state.pos[not.na], pos.coef[not.na], xlim = c(-0.5, 1.5))
+
+  perm.state.coef <- lapply(1:length(common.transcripts), 
+    function(x) get_pos_coef(x, st, perm = TRUE))  
+  state.pos <- unlist(lapply(perm.state.coef, function(x) if(length(x) > 1){x[,1]}else{NA}))
+  max.coef <- unlist(lapply(perm.state.coef, function(x) if(length(x) > 1){x[,2]}else{NA}))
+  min.coef <- unlist(lapply(perm.state.coef, function(x) if(length(x) > 1){x[,3]}else{NA}))
+  points(state.pos, max.coef, xlim = c(-0.5, 1.5), col = "red", pch = 16, cex = 0.5)
+  points(state.pos, min.coef, xlim = c(-0.5, 1.5), col = "red", pch = 16, cex = 0.5)
+
+}
+
+```
+
+```{r sig_coef}
 
 #calculate p values for the coefficients of each state at each 
 #position in each transcript.
@@ -718,7 +767,7 @@ abline(h = 0)
 
 ```{r bin_coef}
 bin_coef <- function(xvals, yvals, xmin, xmax, nbins){
-  bins <- segment.region(coord.min, coord.max, nbins, "ends")
+  bins <- segment.region(xmin, xmax, nbins, "ends")
   consec.bins <- consec.pairs(bins)
   binned.vals <- vector(mode = "list", length = nrow(consec.bins)+1)
   for(i in 1:nrow(consec.bins)){
@@ -751,7 +800,7 @@ for(tr in 1:length(centered.sig)){
 
 #pdf("~/Desktop/state.effects.pdf")
 min.coord = -0.5; max.coord = 1.5; nbins = 42
-bins <- segment.region(coord.min, coord.max, nbins, "ends")
+bins <- segment.region(min.coord, max.coord, nbins, "ends")
 for(st in 1:num.states){
   cent.state <- lapply(centered.sig, function(x) if(length(x) > 1){x[,st]})
   state.vals <- unlist(cent.state)
@@ -764,7 +813,7 @@ for(st in 1:num.states){
 
   binned.coef <- bin_coef(state.pos, state.vals, min.coord, max.coord, nbins)
   boxplot(binned.coef, main = paste("State", st), names = round(bins, 2))
-  abline(v = match(c(0,1), round(bins, 1)), col = "blue", lwd = 3)
+  abline(v = match(c(0,1), round(bins, 1)), col = "slateblue", lwd = 3)
   abline(h = 0)
 }
 #dev.off()
