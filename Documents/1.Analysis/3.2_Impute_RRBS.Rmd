@@ -343,13 +343,13 @@ if(start.at < length(methyl.id)){
       } #end check for size of methylation matrix
 
       if(tr %% save.every == 0){
-          saveRDS(perm.rrbs.lod, perm.rrbs.lod.file)
-          saveRDS(perm.rrbs.r2, perm.rrbs.r2.file)
+          saveRDS(perm.rrbs.lod, perm.lod.rrbs.file)
+          saveRDS(perm.rrbs.r2, perm.r2.rrbs.file)
       }
   } #end looping over transcripts
   #save again at the very end
-  saveRDS(perm.rrbs.lod, perm.rrbs.lod.file)
-  saveRDS(perm.rrbs.r2, perm.rrbs.r2.file)
+  saveRDS(perm.rrbs.lod, perm.lod.rrbs.file)
+  saveRDS(perm.rrbs.r2, perm.r2.rrbs.file)
 
   sink()
 

@@ -512,31 +512,6 @@ if(file.exists(perm.lod.file)){
 }
 ```
 
-```{r perm_test, eval = FALSE}
-max.perm <- apply(perm.lod, 1, max)
-plot(geno.lod[,"Additive"], max.perm)
-abline(0,1)
-
-lod.dist <- sapply(1:nrow(perm.lod), function(x) if(!all(is.na(perm.lod[x,]))){geno.lod[x,"Additive"]/max(perm.lod[x,])}else{NA})
-plot(lod.dist, geno.lod[,"Additive"])
-abline(v = 1)
-
-big.dist <- intersect(which(geno.lod[,"Additive"] > 6), which(lod.dist > 1.05))
-i <- 1
-i = i + 1
-xlim <- c(min(c(perm.lod[big.dist[i],], geno.lod[big.dist[i],"Additive"])), max(c(perm.lod[big.dist[i],], geno.lod[big.dist[i],"Additive"])))
-hist(perm.lod[big.dist[i],], xlim = xlim, breaks = 50)
-abline(v = geno.lod[big.dist[i],"Additive"], col = "red")
-
-lod.p <- sapply(1:nrow(perm.lod), function(x) if(!all(is.na(perm.lod[x,]))){calc.emp.p(geno.lod[x,"Additive"], perm.lod[x,])}else{NA})
-dim(perm.lod)
-dim(geno.lod)
-
-outside.null <- sapply(1:nrow(perm.lod), function(x) if(!all(is.na(perm.lod[x,]))){geno.lod[x,"Additive"] > max(perm.lod[x,], na.rm = TRUE)}else{NA})
-
-```
-
-
 ```{r set_perm}
 #select a set of permutations for which none of the chromatin
 #states get assigned to their original haplotype.
@@ -548,7 +523,6 @@ perm.rows <- sample(1:nrow(perm.mat), nperm)
 order.mat <- perm.mat[perm.rows,]
 
 ```
-
 
 ```{r set_cl, warning = FALSE}
 if(start.at < length(common.transcripts)){
@@ -641,19 +615,88 @@ if(start.at < max(to.perm)){
 }
 ```
 
-For reasons that are still not totally clear to me,
-permuting the chromatin-haplotype assignments does
-not really affect the LOD score. However, it does
-affect the state coefficients. So what I think we 
-want to do is to focus less on the variance explained
-by chromatin state, and focus more on the effect
-direction and position. This might actually help 
-us filter putative cis regulatory regions.
+We do see a large null effect simply from the 
+imputation. Shuffling the inbred strain assignents
+for the chromatin state vectors does not reduce
+the LOD scores to near 0. It only seems to reduce
+the LOD scores a little.
 
-For each transcript we go through the permuted
-state coefficients to see where the strength of
-the coefficient is significantly different from 
-the null distribution.
+For example, below we show the null distribution
+of LOD scores for a single gene. The observed LOD 
+score (red line) is at the high end of the null 
+distribution for this gene. It is almost as high
+as the haplotype LOD score (blue line).
+
+
+```{r example_perm}
+example.gene <- which(geno.lod[,"Additive"] > 80)[5]
+gene.name <- transcript.info[which(transcript.info[,"ensembl_gene_id"] == rownames(geno.lod)[example.gene])[1], "external_gene_name"]
+hap.lod <- geno.lod[example.gene,"Additive"]
+obs.lod <- max(chrom.lod[[example.gene]][,"Additive"])
+null.lod <- perm.lod[example.gene,]
+xmin <- min(c(null.lod, obs.lod, hap.lod))
+xmax <- max(c(null.lod, obs.lod, hap.lod))
+hist(perm.lod[example.gene,], breaks = 50, xlim = c(xmin, xmax), main = gene.name,
+  xlab = "LOD")
+abline(v = c(obs.lod, hap.lod), col = c("red", "blue"))
+```
+
+Are there any observed chromatin state LOD scores that 
+are outside of the permuted distribution?
+
+```{r outside_null}
+max.chrom.lod <- sapply(chrom.lod, function(x) if(length(x) > 1){max(x[,"Additive"], na.rm = TRUE)}else{NA})
+max.perm.lod <- apply(perm.lod, 1, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
+outside.null <- apply(cbind(max.chrom.lod, max.perm.lod), 1, function(x) x[1] > x[2])
+
+plot(max.perm.lod, max.chrom.lod)
+abline(0,1)
+
+test <- sapply(1:length(chrom.lod), 
+  function(x) if(!all(is.na(perm.lod[[x]]))){calc.emp.p(max.chrom.lod[x], perm.lod[x,])}else{NA})
+
+```
+
+
+I am interpreting this to mean that for any randomly
+imputed feature we can get a large LOD score for the 
+transcript eQTL simply because it's expression is 
+related to haplotype, and we are using haplotype to 
+perform the imputation. 
+
+It is interesting that the null distribution is trimodal.
+That is probably related to the structure of allele effects.
+This gene does have a high group, a middle group, and a 
+low group of effects.
+
+Because our observed effect is larger than any of our 
+null effects, we will say that there is a significant 
+effect of chromatin state on gene expression for this
+transcript. The size of that 
+
+```{r perm_test, eval = FALSE}
+max.perm <- apply(perm.lod, 1, max)
+plot(geno.lod[,"Additive"], max.perm)
+abline(0,1)
+
+lod.dist <- sapply(1:nrow(perm.lod), function(x) if(!all(is.na(perm.lod[x,]))){geno.lod[x,"Additive"]/max(perm.lod[x,])}else{NA})
+plot(lod.dist, geno.lod[,"Additive"])
+abline(v = 1)
+
+big.dist <- intersect(which(geno.lod[,"Additive"] > 6), which(lod.dist > 1.05))
+i <- 1
+i = i + 1
+xlim <- c(min(c(perm.lod[big.dist[i],], geno.lod[big.dist[i],"Additive"])), max(c(perm.lod[big.dist[i],], geno.lod[big.dist[i],"Additive"])))
+hist(perm.lod[big.dist[i],], xlim = xlim, breaks = 50)
+abline(v = geno.lod[big.dist[i],"Additive"], col = "red")
+
+lod.p <- sapply(1:nrow(perm.lod), function(x) if(!all(is.na(perm.lod[x,]))){calc.emp.p(geno.lod[x,"Additive"], perm.lod[x,])}else{NA})
+dim(perm.lod)
+dim(geno.lod)
+
+outside.null <- sapply(1:nrow(perm.lod), function(x) if(!all(is.na(perm.lod[x,]))){geno.lod[x,"Additive"] > max(perm.lod[x,], na.rm = TRUE)}else{NA})
+
+```
 
 ```{r emp_p}
 #our ecdf function seems to be underestinating p values
