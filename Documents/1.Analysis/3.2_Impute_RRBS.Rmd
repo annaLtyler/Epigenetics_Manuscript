@@ -199,6 +199,7 @@ if(!file.exists(rrbs.lod.file)){
     saveRDS(all.rrbs.r2, rrbs.r2.file)
 }else{
   all.rrbs.lod <- readRDS(rrbs.lod.file)
+  all.rrbs.r2 <- readRDS(rrbs.r2.file)
 }
 ```
 
@@ -254,6 +255,7 @@ order.mat <- perm.mat[perm.rows,]
 
 
 ```{r perm_files}
+
 perm.lod.rrbs.file <- here("Results", "RRBS", "Perm.RRBS.LOD.RDS")
 perm.r2.rrbs.file <- here("Results", "RRBS", "Perm.RRBS.R2.RDS")
 
@@ -359,13 +361,59 @@ if(start.at < length(methyl.id)){
 } #end case for needing to do more permutations.
 ```
 
+We look at the distribution of p values across all transcripts.
+If it is skewed toward 0, there is a signal here. 
+If it is totally uniform, the 
+
+```{r emp_p}
+#our ecdf function seems to be underestinating p values
+#even if there are multiple values in the null that
+#are identical to the observed value, we still get a
+#p value of 0
+
+emp.p <- function(obs.val, null.dist){
+  if(is.na(obs.val)){return(NA)}
+  as.or.more.extreme <- which(abs(null.dist) >= abs(obs.val))
+  p <- length(as.or.more.extreme)/length(null.dist)
+  return(p)
+}
+
+```
+
+```{r assess_perm}
+geno.lod <- readRDS(here("Results", "ChromHMM", "14_states_C", "eQTL.lod.RDS"))
+low.lod <- which(geno.lod[,"Additive"] <= 6)
+low.lod.idx <- match(rownames(geno.lod)[low.lod], names(all.rrbs.lod))
+
+max.rrbs.lod <- sapply(all.rrbs.lod, function(x) if(length(x) > 1){max(x[,1])}else{NA})
+rrbs.p <- sapply(1:length(all.rrbs.lod), 
+  function(x) if(!all(is.na(perm.rrbs.lod[x,]))){emp.p(max.rrbs.lod[x], perm.rrbs.lod[x,])}else{NA})
+names(rrbs.p) <- names(all.rrbs.lod)
+
+rrbs.p[low.lod.idx] <- NA
+hist(rrbs.p, breaks = 100)
+
+examples <- which(rrbs.p == 0)
+i <- examples[4]
+gene.name = gene.info[which(gene.info[,"ensembl_gene_id"] == names(rrbs.p)[i]),"external_gene_name"][1]
+xlim <- c(min(c(perm.rrbs.lod[i,], max.rrbs.lod[i])), max(c(perm.rrbs.lod[i,], max.rrbs.lod[i])))
+hist_with_points(c(perm.rrbs.lod[i,], max.rrbs.lod[i]), 
+  col = c(rep("gray", ncol(perm.rrbs.lod)), "red"), xlab = "LOD", main = gene.name)
+abline(v = max.rrbs.lod[i], col = "red")
+```
 
 
 ```{r assess_perm}
-max.obs.lod <- sapply(all.rrbs.lod, function(x) if(length(x) > 1){max(x, na.rm = TRUE)}else{NA})
-max.null.lod <- apply(perm.rrbs.lod, 1, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
+geno.r2 <- readRDS(here("Results", "ChromHMM", "14_states_C", "eQTL.r2.RDS"))
 
-plot(max.null.lod, max.obs.lod, xlab = "Effect of Haplotype Alone",
-  ylab = "Observed LOD")
-abline(0,1)
+max.rrbs.r2 <- sapply(all.rrbs.r2, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
+r2.p <- sapply(1:length(all.rrbs.r2), 
+  function(x) if(!all(is.na(perm.rrbs.r2[x,]))){emp.p(max.rrbs.r2[x], perm.rrbs.r2[x,])}else{NA})
+names(r2.p) <- names(all.rrbs.lod)
+
+
+hist(r2.p, breaks = 100)
+
+plot(-log10(r2.p+1e-2), max.rrbs.r2)
+
 ```

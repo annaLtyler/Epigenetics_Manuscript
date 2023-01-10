@@ -155,6 +155,8 @@ if(file.exists(chrom.coef.file)){
   rownames(geno.lod) <- rownames(geno.r2) <- common.transcripts 
   colnames(geno.lod) <- colnames(geno.r2) <- model.names
 }
+
+
 ```
 
 
