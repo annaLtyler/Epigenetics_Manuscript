@@ -344,11 +344,21 @@ if(start.at < length(all.snp.lod)){
 ```
 
 
-```{r perm_rrbs}
+```{r perm_snps}
+geno.lod.file <- here("Results", "ChromHMM", "14_states_C", "eQTL.lod.RDS")
+geno.lod <- readRDS(geno.lod.file)
+
+lod.thresh = 6
+to.perm <- which(geno.lod[,"Additive"] > lod.thresh)
+do.perm <- rep(FALSE, length(common.transcripts))
+do.perm[to.perm] <- TRUE
+
 if(start.at < length(all.snp.lod)){
   sink(here("Results", "SNPs", "progress.txt"))
   for(tr in start.at:length(perm.snp.lod)){
     print(tr)
+
+    if(!do.perm[tr]){next}
 
     if(nrow(snp.mats[[tr]]) > 2000){next()}
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J scan_chromaprobs
+#SBATCH -J snp_imputation
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 20 # number of cores
 #SBATCH --mem=32G # memory pool for all cores
