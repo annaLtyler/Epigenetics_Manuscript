@@ -156,7 +156,6 @@ if(file.exists(chrom.coef.file)){
   colnames(geno.lod) <- colnames(geno.r2) <- model.names
 }
 
-
 ```
 
 
@@ -523,6 +522,7 @@ order.mat <- perm.mat[perm.rows,]
 ```
 
 ```{r set_cl, warning = FALSE}
+
 if(start.at < length(common.transcripts)){
   #set up the clusters if we need to run perutations
 
@@ -607,67 +607,19 @@ if(start.at < max(to.perm)){
 }
 ```
 
-We do see a large null effect simply from the 
-imputation. Shuffling the inbred strain assignents
-for the chromatin state vectors does not reduce
-the LOD scores to near 0. It only seems to reduce
-the LOD scores a little.
+## Assess permutations
 
-For example, below we show the null distribution
-of LOD scores for a single gene. The observed LOD 
-score (red line) is at the high end of the null 
-distribution for this gene. It is almost as high
-as the haplotype LOD score (blue line).
+To assess the permutations, we look at the distribution
+of empirical p values. If this distribution is uniform,
+then it is the imputation itself that is explaining the
+LOD scores we see. If the distribution is skewed toward
+0, then the chromatin states are adding something beyond
+the imputation itself.
 
-
-```{r example_perm}
-example.gene <- which(geno.lod[,"Additive"] > 80)[5]
-gene.name <- transcript.info[which(transcript.info[,"ensembl_gene_id"] == rownames(geno.lod)[example.gene])[1], "external_gene_name"]
-hap.lod <- geno.lod[example.gene,"Additive"]
-obs.lod <- max(chrom.lod[[example.gene]][,"Additive"])
-null.lod <- perm.lod[example.gene,]
-xmin <- min(c(null.lod, obs.lod, hap.lod))
-xmax <- max(c(null.lod, obs.lod, hap.lod))
-hist(perm.lod[example.gene,], breaks = 50, xlim = c(xmin, xmax), main = gene.name,
-  xlab = "LOD")
-abline(v = c(obs.lod, hap.lod), col = c("red", "blue"))
-```
-
-The following plot shows the observed LOD score for 
-each transcript plotted against the maximum LOD score
-for the null distribution.
-
-```{r outside_null}
-max.chrom.lod <- sapply(chrom.lod, function(x) if(length(x) > 1){max(x[,"Additive"], na.rm = TRUE)}else{NA})
-max.perm.lod <- apply(perm.lod, 1, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
-mean.perm.lod <- apply(perm.lod, 1, function(x) if(!all(is.na(x))){mean(x, na.rm = TRUE)}else{NA})
-outside.null <- apply(cbind(max.chrom.lod, max.perm.lod), 1, function(x) x[1] > x[2])
-num.outside <- length(which(outside.null))
-
-plot(max.perm.lod, max.chrom.lod, ylab = "Observed LOD", xlab = "Maximum Null LOD",
-  pch = 16)
-abline(0,1)
-```
-
-There were `r num.outside` values that fell outside
-the null distribution (above the line y = x).
-Many observed LOD scores are quite a bit lower 
-than the maximum of the null.
-
-However, there are quite a few points near
-the line y=x. These values are less likely 
-to be observed at random (although, still
-pretty likely.)
 
 ```{r alpha}
 alpha = 0.01
 ```
-
-The following plot shows the observed LOD score
-plotted against the mean of each null distribution.
-Points with an empirical p value less than `r alpha`
-are shown in red.
-
 
 
 ```{r emp_p}
@@ -684,27 +636,56 @@ emp.p <- function(obs.val, null.dist){
 }
 
 ```
-```{r mean_null}
+
+The plots below show the distributions of p values for both 
+the R2 statistic and the LOD score statistic. Both are
+skewed toward 0. The dot plot shows that the p values for 
+these two statistics are highly correlated, but not identical.
+
+```{r perm_plots, fig.width = 8, fig.height = 8}
+max.chrom.r2 <- sapply(chrom.r2, function(x) if(length(x) > 1){max(x[,"Additive"], na.rm = TRUE)}else{NA})
+max.chrom.lod <- sapply(chrom.lod, function(x) if(length(x) > 1){max(x[,"Additive"], na.rm = TRUE)}else{NA})
 lod.p <- sapply(1:length(chrom.lod), 
   function(x) if(!all(is.na(perm.lod[[x]]))){emp.p(max.chrom.lod[x], perm.lod[x,])}else{NA})
+r2.p <- sapply(1:length(chrom.lod), 
+  function(x) if(!all(is.na(perm.r2[[x]]))){emp.p(max.chrom.r2[x], perm.r2[x,])}else{NA})
 
-hist(lod.p, breaks = 50)
-
-sig.chrom <- which(lod.p <= alpha)
-
-sig.col <- rep("black", length(lod.p))
-sig.col[sig.chrom] <- "red"
-plot.order <- order(sig.col)
-plot(mean.perm.lod[plot.order], max.chrom.lod[plot.order], 
-  ylab = "Observed LOD", xlab = "Mean Null LOD",
-  col = sig.col[plot.order], pch = 16)
-abline(0,1)
+par(mfrow = c(2,2))
+hist(lod.p, breaks = 100, main = "LOD score p values",
+  xlab = "p value")
+hist(r2.p, breaks = 100, main = "R2 p values",
+  xlab = "p value")
+plot(-log10(lod.p+1e-3), -log10(r2.p+1e-3), main = "LOD vs. R2",
+  xlab = "-log10(LOD p values)", ylab = "-log10(R2 p values")
 ```
 
 
-```{r outside_example, eval = FALSE}
-#example.gene <- sig.chrom[3]
-example.gene <- which(outside.null)
+The following plots show each test statistic vs. its
+p values. In general higher test statistics have lower
+p values, but this is not strictly true. 
+
+
+```{r, fig.width = 8, fig.height = 4}
+par(mfrow = c(1,2))
+plot(max.chrom.lod, -log10(lod.p+1e-3), xlab = "LOD", ylab = "-log10(p)", 
+  main = "LOD vs. LOD -log10(p)")
+
+plot(max.chrom.r2, -log10(r2.p+1e-3), xlab = "Variance Explained", 
+  ylab = "-log10(p)", main = "R2 vs. R2-log10(p)")
+
+#sig.col <- colors.from.values(-log10(lod.p+1e-3), grad.dir = "high",
+#  col.scale = "blue", light.dark = "f")
+#plot.order <- rev(order(sig.col))
+#plot(max.chrom.lod[plot.order], max.chrom.r2[plot.order], 
+#  ylab = "Variance Explained", xlab = "LOD",
+#  col = sig.col[plot.order], pch = 16, 
+#  main = "LOD vs. R2\nDarker ",
+# )
+```
+
+
+```{r example, eval = FALSE}
+example.gene <- sig.chrom[3]
 gene.name <- transcript.info[which(transcript.info[,"ensembl_gene_id"] == rownames(geno.lod)[example.gene])[1], "external_gene_name"]
 hap.lod <- geno.lod[example.gene,"Additive"]
 obs.lod <- max(chrom.lod[[example.gene]][,"Additive"])

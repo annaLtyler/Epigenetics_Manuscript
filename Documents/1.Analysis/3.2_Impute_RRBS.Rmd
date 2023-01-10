@@ -204,11 +204,13 @@ if(!file.exists(rrbs.lod.file)){
 ```
 
 
-## Permute RRBS LOD and R2
+## Permute RRBS
 
-We need to do permutations on these as we did for chromatin state.
-We permute the haplotype that is assigned to each DNA methylation
-vector.
+We permuted the DNA methylation as we did for chromatin 
+states. We permute the haplotype that is assigned to 
+each DNA methylation vector, re-do the imputation, 
+and recalculate the LOD scores and R2 values.
+
 
 ```{r perm_fun}
 #This function and the perm data will be exported to the
@@ -279,7 +281,6 @@ if(file.exists(perm.lod.rrbs.file)){
 
 ```{r set_cl, warning = FALSE}
 save.every = 100
-
 if(start.at < length(methyl.id)){
   #set up the clusters if we need to run perutations
   n.cores <- detectCores() - 1
@@ -361,9 +362,15 @@ if(start.at < length(methyl.id)){
 } #end case for needing to do more permutations.
 ```
 
-We look at the distribution of p values across all transcripts.
-If it is skewed toward 0, there is a signal here. 
-If it is totally uniform, the 
+## Assess permutations
+
+To assess the permutations, we look at the distribution
+of empirical p values. If this distribution is uniform,
+then it is the imputation itself that is explaining the
+LOD scores we see. If the distribution is skewed toward
+0, then the DNA methylation is adding something beyond
+the imputation itself.
+
 
 ```{r emp_p}
 #our ecdf function seems to be underestinating p values
@@ -380,40 +387,59 @@ emp.p <- function(obs.val, null.dist){
 
 ```
 
-```{r assess_perm}
+The plots below show the distributions of p values for both 
+the R2 statistic and the LOD score statistic. Both are
+skewed toward 0. The dot plot shows that the p values for 
+these two statistics are highly correlated, but not identical.
+
+```{r assess_lod_perm, fig.width = 8, fig.height = 8}
 geno.lod <- readRDS(here("Results", "ChromHMM", "14_states_C", "eQTL.lod.RDS"))
 low.lod <- which(geno.lod[,"Additive"] <= 6)
 low.lod.idx <- match(rownames(geno.lod)[low.lod], names(all.rrbs.lod))
 
-max.rrbs.lod <- sapply(all.rrbs.lod, function(x) if(length(x) > 1){max(x[,1])}else{NA})
-rrbs.p <- sapply(1:length(all.rrbs.lod), 
+max.rrbs.lod <- sapply(all.rrbs.lod, function(x) if(length(x) > 1){max(x[,1], na.rm = TRUE)}else{NA})
+lod.p <- sapply(1:length(all.rrbs.lod), 
   function(x) if(!all(is.na(perm.rrbs.lod[x,]))){emp.p(max.rrbs.lod[x], perm.rrbs.lod[x,])}else{NA})
-names(rrbs.p) <- names(all.rrbs.lod)
-
-rrbs.p[low.lod.idx] <- NA
-hist(rrbs.p, breaks = 100)
-
-examples <- which(rrbs.p == 0)
-i <- examples[4]
-gene.name = gene.info[which(gene.info[,"ensembl_gene_id"] == names(rrbs.p)[i]),"external_gene_name"][1]
-xlim <- c(min(c(perm.rrbs.lod[i,], max.rrbs.lod[i])), max(c(perm.rrbs.lod[i,], max.rrbs.lod[i])))
-hist_with_points(c(perm.rrbs.lod[i,], max.rrbs.lod[i]), 
-  col = c(rep("gray", ncol(perm.rrbs.lod)), "red"), xlab = "LOD", main = gene.name)
-abline(v = max.rrbs.lod[i], col = "red")
-```
-
-
-```{r assess_perm}
-geno.r2 <- readRDS(here("Results", "ChromHMM", "14_states_C", "eQTL.r2.RDS"))
+names(lod.p) <- names(all.rrbs.lod)
 
 max.rrbs.r2 <- sapply(all.rrbs.r2, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
 r2.p <- sapply(1:length(all.rrbs.r2), 
   function(x) if(!all(is.na(perm.rrbs.r2[x,]))){emp.p(max.rrbs.r2[x], perm.rrbs.r2[x,])}else{NA})
-names(r2.p) <- names(all.rrbs.lod)
+names(r2.p) <- names(all.rrbs.r2)
+
+par(mfrow = c(2,2))
+lod.p[low.lod.idx] <- NA
+hist(lod.p, breaks = 100, main = "LOD score p",
+  xlab = "p value")
+
+r2.p[low.lod.idx] <- NA
+hist(r2.p, breaks = 100, main = "R2 p",
+  xlab = "p value")
+
+plot(-log10(lod.p+1e-3), -log10(r2.p+1e-3), xlab = "-log10(LOD p)",
+  ylab = "-log10(R2 p)", main = "LOD p vs. R2 p")
+```
+
+The following plots show each test statistic vs. its
+p values. In general higher test statistics have lower
+p values, but this is not strictly true. 
 
 
-hist(r2.p, breaks = 100)
+```{r stat_v_p, fig.width = 8, fig.height = 4}
+par(mfrow = c(1,2))
+plot(max.rrbs.lod, -log10(lod.p+1e-3), xlab = "LOD", ylab = "-log10(p)", 
+  main = "LOD vs. LOD -log10(p)")
 
-plot(-log10(r2.p+1e-2), max.rrbs.r2)
+plot(max.rrbs.r2, -log10(r2.p+1e-3), xlab = "Variance Explained", 
+  ylab = "-log10(p)", main = "R2 vs. R2-log10(p)")
+```
 
+```{r example, eval = FALSE}
+examples <- which(lod.p == 0)
+i <- examples[4]
+gene.name = gene.info[which(gene.info[,"ensembl_gene_id"] == names(lod.p)[i]),"external_gene_name"][1]
+xlim <- c(min(c(perm.rrbs.lod[i,], max.rrbs.lod[i])), max(c(perm.rrbs.lod[i,], max.rrbs.lod[i])))
+hist_with_points(c(perm.rrbs.lod[i,], max.rrbs.lod[i]), 
+  col = c(rep("gray", ncol(perm.rrbs.lod)), "red"), xlab = "LOD", main = gene.name)
+abline(v = max.rrbs.lod[i], col = "red")
 ```
