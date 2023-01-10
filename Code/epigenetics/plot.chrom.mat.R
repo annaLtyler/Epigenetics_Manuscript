@@ -14,7 +14,7 @@ line.color = "gray", state.cols = NULL, empty.cell.color = "lightgray"){
     }
 
     methyl.pos <- as.numeric(colnames(state.mat))
-    if(is.null(xlim)){xlim <- c(min(methyl.pos), max(methyl.pos))}
+    if(is.null(xlim)){xlim <- c(min(methyl.pos, na.rm = TRUE), max(methyl.pos, na.rm = TRUE))}
   
     #quartz()
     plot.new()

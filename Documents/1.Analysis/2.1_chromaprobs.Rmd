@@ -490,12 +490,10 @@ perm_one_transcript <- function(perm.data, p,
 ```{r perm_files}
 perm.lod.file <- file.path(results.dir, "Perm.LOD.RDS")
 perm.r2.file <- file.path(results.dir, "Perm.R2.RDS")
-perm.coef.file <- file.path(results.dir, "Perm.Coef.RDS")
 
 if(file.exists(perm.lod.file)){
   perm.lod <- readRDS(perm.lod.file)
   perm.r2 <- readRDS(perm.r2.file)
-  perm.coef <- readRDS(perm.coef.file)
 
   #figure out where we left off.
   not.na <- which(!is.na(perm.lod[,1]))  
@@ -507,8 +505,6 @@ if(file.exists(perm.lod.file)){
   #results. 
   perm.lod <- perm.r2 <- matrix(NA, nrow = length(common.transcripts), ncol = nperm)
   rownames(perm.lod) <- rownames(perm.r2) <- common.transcripts
-  perm.coef <- vector(mode = "list", length = length(common.transcripts))
-  names(perm.coef) <- common.transcripts
 }
 ```
 
@@ -588,10 +584,6 @@ if(start.at < max(to.perm)){
 
         #keep the maximum r2 and LOD values from each permutation.
         #also keep the permuted coefficients for each state
-        tr.perm.coef <- lapply(1:num.states, 
-          function(x) sapply(perm.chrom.coef, function(y) y$Additive[,x]))
-        names(tr.perm.coef) <- 1:num.states
-        perm.coef[[tr]] <- tr.perm.coef
         perm.lod[tr,] <- t(sapply(perm.chrom.lod, function(x) max(x[,"Additive"])))
         perm.r2[tr,] <- t(sapply(perm.chrom.r2, function(x) max(x[,"Additive"])))
       }#end case for data actually returned from the scans
@@ -600,7 +592,6 @@ if(start.at < max(to.perm)){
     if(tr %% save.every == 0){
       saveRDS(perm.lod, perm.lod.file)
       saveRDS(perm.r2, perm.r2.file)
-      saveRDS(perm.coef, perm.coef.file)
     }
 
   } #end looping through transcripts
@@ -610,7 +601,6 @@ if(start.at < max(to.perm)){
 
   saveRDS(perm.lod, perm.lod.file)
   saveRDS(perm.r2, perm.r2.file)
-  saveRDS(perm.coef, perm.coef.file)
   sink()
 }
 ```
@@ -641,62 +631,42 @@ hist(perm.lod[example.gene,], breaks = 50, xlim = c(xmin, xmax), main = gene.nam
 abline(v = c(obs.lod, hap.lod), col = c("red", "blue"))
 ```
 
-Are there any observed chromatin state LOD scores that 
-are outside of the permuted distribution?
+The following plot shows the observed LOD score for 
+each transcript plotted against the maximum LOD score
+for the null distribution.
 
 ```{r outside_null}
 max.chrom.lod <- sapply(chrom.lod, function(x) if(length(x) > 1){max(x[,"Additive"], na.rm = TRUE)}else{NA})
 max.perm.lod <- apply(perm.lod, 1, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
+mean.perm.lod <- apply(perm.lod, 1, function(x) if(!all(is.na(x))){mean(x, na.rm = TRUE)}else{NA})
 outside.null <- apply(cbind(max.chrom.lod, max.perm.lod), 1, function(x) x[1] > x[2])
+num.outside <- length(which(outside.null))
 
-plot(max.perm.lod, max.chrom.lod)
+plot(max.perm.lod, max.chrom.lod, ylab = "Observed LOD", xlab = "Maximum Null LOD",
+  pch = 16)
 abline(0,1)
-
-test <- sapply(1:length(chrom.lod), 
-  function(x) if(!all(is.na(perm.lod[[x]]))){calc.emp.p(max.chrom.lod[x], perm.lod[x,])}else{NA})
-
 ```
 
+There were `r num.outside` values that fell outside
+the null distribution (above the line y = x).
+Many observed LOD scores are quite a bit lower 
+than the maximum of the null.
 
-I am interpreting this to mean that for any randomly
-imputed feature we can get a large LOD score for the 
-transcript eQTL simply because it's expression is 
-related to haplotype, and we are using haplotype to 
-perform the imputation. 
+However, there are quite a few points near
+the line y=x. These values are less likely 
+to be observed at random (although, still
+pretty likely.)
 
-It is interesting that the null distribution is trimodal.
-That is probably related to the structure of allele effects.
-This gene does have a high group, a middle group, and a 
-low group of effects.
-
-Because our observed effect is larger than any of our 
-null effects, we will say that there is a significant 
-effect of chromatin state on gene expression for this
-transcript. The size of that 
-
-```{r perm_test, eval = FALSE}
-max.perm <- apply(perm.lod, 1, max)
-plot(geno.lod[,"Additive"], max.perm)
-abline(0,1)
-
-lod.dist <- sapply(1:nrow(perm.lod), function(x) if(!all(is.na(perm.lod[x,]))){geno.lod[x,"Additive"]/max(perm.lod[x,])}else{NA})
-plot(lod.dist, geno.lod[,"Additive"])
-abline(v = 1)
-
-big.dist <- intersect(which(geno.lod[,"Additive"] > 6), which(lod.dist > 1.05))
-i <- 1
-i = i + 1
-xlim <- c(min(c(perm.lod[big.dist[i],], geno.lod[big.dist[i],"Additive"])), max(c(perm.lod[big.dist[i],], geno.lod[big.dist[i],"Additive"])))
-hist(perm.lod[big.dist[i],], xlim = xlim, breaks = 50)
-abline(v = geno.lod[big.dist[i],"Additive"], col = "red")
-
-lod.p <- sapply(1:nrow(perm.lod), function(x) if(!all(is.na(perm.lod[x,]))){calc.emp.p(geno.lod[x,"Additive"], perm.lod[x,])}else{NA})
-dim(perm.lod)
-dim(geno.lod)
-
-outside.null <- sapply(1:nrow(perm.lod), function(x) if(!all(is.na(perm.lod[x,]))){geno.lod[x,"Additive"] > max(perm.lod[x,], na.rm = TRUE)}else{NA})
-
+```{r alpha}
+alpha = 0.01
 ```
+
+The following plot shows the observed LOD score
+plotted against the mean of each null distribution.
+Points with an empirical p value less than `r alpha`
+are shown in red.
+
+
 
 ```{r emp_p}
 #our ecdf function seems to be underestinating p values
@@ -712,187 +682,35 @@ emp.p <- function(obs.val, null.dist){
 }
 
 ```
+```{r mean_null}
+lod.p <- sapply(1:length(chrom.lod), 
+  function(x) if(!all(is.na(perm.lod[[x]]))){emp.p(max.chrom.lod[x], perm.lod[x,])}else{NA})
 
+hist(lod.p, breaks = 50)
 
-```{r perm_comp}
-get_pos_coef <- function(tr, st, perm = FALSE){
-  if(!perm){
-    if(length(centered.pos[[tr]]) > 1 && length(chrom.coef[[tr]]) > 1){
-      tr.pos <- as.numeric(names(centered.pos[[tr]]))
-      tr.coef <- chrom.coef[[tr]]$Additive[,st]
-      result <- cbind(tr.pos, tr.coef)
-    }else{
-      return(matrix(c(NA, NA), ncol = 2))
-    }
-  }else{
-      if(length(centered.pos[[tr]]) > 1 && length(perm.coef[[tr]]) > 1){
-        tr.pos <- as.numeric(names(centered.pos[[tr]]))
-        perm.tr.coef <- perm.coef[[tr]][[st]]
-        max.perm <- apply(perm.tr.coef, 1, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
-        min.perm <- apply(perm.tr.coef, 1, function(x) if(!all(is.na(x))){min(x, na.rm = TRUE)}else{NA})
-        result <- cbind(tr.pos, max.perm, min.perm)
-      }else{
-        result <- matrix(c(NA, NA, NA), ncol = 3)
-      }
-    }
-    return(result)
-}
+sig.chrom <- which(lod.p <= alpha)
 
-
-centered.pos <- lapply(1:length(common.transcripts), 
-  function(x) if(length(chrom.coef[[x]]) > 1){center.on.feature(gene.names[x], transcript.info, 
-  vals = as.numeric(rownames(chrom.coef[[x]]$Additive)), feature = "full")}else{NA})
-
-for(st in 1:num.states){
-  state.coef <- lapply(1:length(common.transcripts), 
-    function(x) get_pos_coef(x, st))
-  state.pos <- unlist(lapply(state.coef, function(x) if(length(x) > 1){x[,1]}else{NA}))
-  pos.coef <- unlist(lapply(state.coef, function(x) if(length(x) > 1){x[,2]}else{NA}))
-  not.na <- intersect(which(!is.na(state.pos)), which(!is.na(pos.coef)))
-  plot(state.pos[not.na], pos.coef[not.na], xlim = c(-0.5, 1.5))
-
-  perm.state.coef <- lapply(1:length(common.transcripts), 
-    function(x) get_pos_coef(x, st, perm = TRUE))  
-  state.pos <- unlist(lapply(perm.state.coef, function(x) if(length(x) > 1){x[,1]}else{NA}))
-  max.coef <- unlist(lapply(perm.state.coef, function(x) if(length(x) > 1){x[,2]}else{NA}))
-  min.coef <- unlist(lapply(perm.state.coef, function(x) if(length(x) > 1){x[,3]}else{NA}))
-  points(state.pos, max.coef, xlim = c(-0.5, 1.5), col = "red", pch = 16, cex = 0.5)
-  points(state.pos, min.coef, xlim = c(-0.5, 1.5), col = "red", pch = 16, cex = 0.5)
-
-}
-
+sig.col <- rep("black", length(lod.p))
+sig.col[sig.chrom] <- "red"
+plot.order <- order(sig.col)
+plot(mean.perm.lod[plot.order], max.chrom.lod[plot.order], 
+  ylab = "Observed LOD", xlab = "Mean Null LOD",
+  col = sig.col[plot.order], pch = 16)
+abline(0,1)
 ```
 
-```{r sig_coef}
 
-#calculate p values for the coefficients of each state at each 
-#position in each transcript.
-plot.results = FALSE
-all.coef.p <- vector(mode = "list", length = length(common.transcripts))
-names(all.coef.p) <- common.transcripts
-for(tr in 1:length(chrom.coef)){
-  if(length(chrom.coef[[tr]]) <= 1){next()}
-  tr.chrom.coef <- chrom.coef[[tr]]$Additive
-  tr.perm.coef <- perm.coef[[tr]]
-  if(is.null(tr.perm.coef)){next()}
-
-  coef.by.state <- lapply(1:num.states, function(x) tr.chrom.coef[,x])
-
-  if(plot.results){
-    #pdf("~/Desktop/perm_comp.pdf", width = 10, height = 6)
-    boxplot(tr.chrom.coef, main = "overall state effects")
-    abline(h = 0)
-    x <- as.numeric(rownames(tr.chrom.coef))
-    for(st in 1:num.states){
-      has.vals <- as.logical(length(which(!is.na(tr.perm.coef[[st]]))))
-      if(has.vals){
-        boxplot(t(tr.perm.coef[[st]]), at = x, main = paste("State", st))
-        points(x, coef.by.state[[st]], col = "red", pch = "*") 
-      }
-    }
-    #dev.off()
-  }
-
-
-  tr.coef.p <- matrix(NA, nrow = nrow(tr.chrom.coef), ncol = ncol(tr.chrom.coef))
-  dimnames(tr.coef.p) <- dimnames(tr.chrom.coef)
-  for(st in 1:num.states){
-    has.coef <- intersect(which(!is.na(coef.by.state[[st]])), which(coef.by.state[[st]] != 0))
-    if(length(has.coef) > 0){
-      tr.coef.p[has.coef,st] <- sapply(has.coef, 
-        function(x) emp.p(tr.chrom.coef[x,st], tr.perm.coef[[st]][x,]))
-    }
-  }
-
-  all.coef.p[[tr]] <- tr.coef.p
-}
-
-sig.coef <- lapply(chrom.coef, function(x) if(length(x) > 1){x$Additive}else{NA})
-for(tr in 1:length(sig.coef)){
-  if(length(all.coef.p[[tr]]) == 0){
-    sig.coef[[tr]] <- NA
-  }
-  if(length(chrom.coef[[tr]]) > 1){
-    non.sig.locale <- which(all.coef.p[[tr]] > 0)
-    na.p <- which(is.na(all.coef.p[[tr]]))
-    #pheatmap(t(-log10(all.coef.p[[tr]]+1e-2)), cluster_rows = FALSE, cluster_cols = FALSE)
-    temp.mat <- sig.coef[[tr]]
-    temp.mat[non.sig.locale] <- NA
-    temp.mat[na.p] <- NA
-    sig.coef[[tr]] <- temp.mat
-    #pheatmap(t(sig.coef[[tr]]), cluster_rows = FALSE, cluster_cols = FALSE)
-  }
-
-}
-
-#look at the overall distribution of the significant
-#coefficients for each state
-sig.coef.by.state <- lapply(1:num.states, 
-  function(x) unlist(lapply(sig.coef, function(y) if(length(y) > 1){y[,x]}else{NA})))
-#pdf("~/Desktop/sig.coef.pdf")
-boxplot(sig.coef.by.state)
-#stripchart(sig.coef.by.state, vertical = TRUE, method = "jitter", col = "gray", pch = 16)
-abline(h = 0)
-#dev.off()
+```{r outside_example, eval = FALSE}
+#example.gene <- sig.chrom[3]
+example.gene <- which(outside.null)
+gene.name <- transcript.info[which(transcript.info[,"ensembl_gene_id"] == rownames(geno.lod)[example.gene])[1], "external_gene_name"]
+hap.lod <- geno.lod[example.gene,"Additive"]
+obs.lod <- max(chrom.lod[[example.gene]][,"Additive"])
+null.lod <- perm.lod[example.gene,]
+xmin <- min(c(null.lod, obs.lod, hap.lod))
+xmax <- max(c(null.lod, obs.lod, hap.lod))
+hist(perm.lod[example.gene,], breaks = 50, xlim = c(xmin, xmax), main = gene.name,
+  xlab = "LOD")
+abline(v = c(obs.lod, hap.lod), col = c("red", "blue"))
 ```
 
-## Significant Coefficients by Position
-
-```{r bin_coef}
-bin_coef <- function(xvals, yvals, xmin, xmax, nbins){
-  bins <- segment.region(xmin, xmax, nbins, "ends")
-  consec.bins <- consec.pairs(bins)
-  binned.vals <- vector(mode = "list", length = nrow(consec.bins)+1)
-  for(i in 1:nrow(consec.bins)){
-    above.min <- which(xvals >= consec.bins[i,1])
-    below.max <- which(xvals < consec.bins[i,2])
-    bin.idx <- intersect(above.min, below.max)
-    binned.vals[[i]] <- yvals[bin.idx]
-  }
-  bin.idx <- which(xvals > consec.bins[i,2])
-  binned.vals[[(i+1)]] <- yvals[bin.idx]
-  return(binned.vals)
-}
-
-```
-
-```{r coef_by_pos}
-#center the significant coefficients
-gene.names <- transcript.info[match(common.transcripts, transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
-centered.sig.coef <- lapply(1:length(common.transcripts), 
-  function(x) center.on.feature(gene.names[x], transcript.info, 
-  vals = as.numeric(rownames(sig.coef[[x]])), feature = "full"))
-centered.sig <- sig.coef
-for(tr in 1:length(centered.sig)){
-  if(length(centered.sig.coef[[tr]]) > 1){
-    rownames(centered.sig[[tr]]) <- names(centered.sig.coef[[tr]])
-  }else{
-    centered.sig[[tr]] <- NA
-  }
-}
-
-#pdf("~/Desktop/state.effects.pdf")
-min.coord = -0.5; max.coord = 1.5; nbins = 42
-bins <- segment.region(min.coord, max.coord, nbins, "ends")
-for(st in 1:num.states){
-  cent.state <- lapply(centered.sig, function(x) if(length(x) > 1){x[,st]})
-  state.vals <- unlist(cent.state)
-  state.pos <- as.numeric(unlist(lapply(cent.state, names)))
-  not.na <- which(!is.na(state.vals))
-  if(length(not.na) > 0){
-    plot(state.pos[not.na], state.vals[not.na], xlab = "Relative Position",
-      ylab = "Coefficient", main = paste("State", st), pch = 16, col = "darkgray")
-    abline(h = 0)
-    abline(v = c(0,1))
-
-    binned.coef <- bin_coef(state.pos, state.vals, min.coord, max.coord, nbins)
-    boxplot(binned.coef, main = paste("State", st), names = round(bins, 2))
-    abline(v = match(c(0,1), round(bins, 1)), col = "slateblue", lwd = 3)
-    abline(h = 0)
-  }
-}
-#dev.off()
-
-
-
-```
