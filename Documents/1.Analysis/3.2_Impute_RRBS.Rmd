@@ -312,11 +312,7 @@ if(start.at < length(methyl.id)){
       if(length(methyl.mats[[methyl.mat.locale]]) <= 1){next()} #it exists
       if(ncol(methyl.mats[[methyl.mat.locale]]) > 2000){next()} #is is of a reasonable size
 
-      transcript.chr <- ordered.transcript.info[i,"chromosome_name"]
-
-      print(paste("transcript chr:", transcript.chr))
-      chr.choice <- transcript.chr != "X"
-      print(paste("Chr choice:", chr.choice))
+      transcript.chr <- ordered.transcript.info[tr,"chromosome_name"]
 
       #checks for chromosome
       if(is.na(transcript.chr) || transcript.chr == "X" || transcript.chr == "MT"){next()}
@@ -443,7 +439,7 @@ plot(max.rrbs.r2, -log10(r2.p+1e-3), xlab = "Variance Explained",
 
 ```{r example, eval = FALSE}
 examples <- which(lod.p == 0)
-i <- examples[4]
+i <- examples[5]
 gene.name = gene.info[which(gene.info[,"ensembl_gene_id"] == names(lod.p)[i]),"external_gene_name"][1]
 xlim <- c(min(c(perm.rrbs.lod[i,], max.rrbs.lod[i])), max(c(perm.rrbs.lod[i,], max.rrbs.lod[i])))
 hist_with_points(c(perm.rrbs.lod[i,], max.rrbs.lod[i]), 
