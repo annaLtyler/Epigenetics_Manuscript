@@ -303,10 +303,11 @@ if(start.at < length(methyl.id)){
 
 if(start.at < length(methyl.id)){
   sink(here("Results", "RRBS", "progress.txt"))
-  for(tr in 3794:length(perm.rrbs.lod)){
+  for(tr in 3793:length(perm.rrbs.lod)){
+      if(tr == 3794){next()}
       print(tr)
       methyl.mat.locale <- which(names(methyl.mats) == ordered.transcript.info[tr,"external_gene_name"])
-      if(length(methyl.mats[[methyl.mat.locale]]) > 1 && nrow(methyl.mats[[methyl.mat.locale]]) <= 5000){
+      if(length(methyl.mats[[methyl.mat.locale]]) > 1 && ncol(methyl.mats[[methyl.mat.locale]]) <= 2000){
         transcript.chr <- ordered.transcript.info[i,"chromosome_name"]
         if(!is.na(transcript.chr) && transcript.chr != "X" && transcript.chr != "MT"){
             rrbs.mat <- methyl.mats[[methyl.mat.locale]][strain.order,,drop=FALSE]
