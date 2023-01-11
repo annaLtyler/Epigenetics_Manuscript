@@ -356,11 +356,11 @@ do.perm[to.perm] <- TRUE
 if(start.at < length(all.snp.lod)){
   sink(here("Results", "SNPs", "progress.txt"))
   for(tr in start.at:length(perm.snp.lod)){
-    print(tr)
+    cat(paste0(tr, ":"))
 
-    if(!do.perm[tr]){next}
+    if(!do.perm[tr]){cat(" LOD score < 6");next()}
 
-    if(nrow(snp.mats[[tr]]) > 2000){next()}
+    if(nrow(snp.mats[[tr]]) > 2000){cat(" SNP matrix too large\n");next()}
 
     gene.expr <- expr[,which(colnames(expr) == common.transcripts[tr]),drop=FALSE]
     adj.expr <- adjust(gene.expr, covar)
@@ -379,19 +379,22 @@ if(start.at < length(all.snp.lod)){
         p = p))
 
     #check for NAs
-    if(all(sapply(perm.snp.results, length) > 1)){
-        perm.tr.lod <- lapply(perm.snp.results, function(x) x$one.lod)
-        perm.tr.r2 <- lapply(perm.snp.results, function(x) x$one.r2)
+    if(!all(sapply(perm.snp.results, length) > 1)){cat(" No data returned from permutations\n"); next()}
 
-        #keep the maximum r2 and LOD values from each permutation.
-        perm.snp.lod[tr,] <- t(sapply(perm.tr.lod, function(x) max(x[,1])))
-        perm.snp.r2[tr,] <- t(sapply(perm.tr.r2, function(x) max(x, na.rm = TRUE)))
-    }#end case for data actually returned from the scans
+    perm.tr.lod <- lapply(perm.snp.results, function(x) x$one.lod)
+    perm.tr.r2 <- lapply(perm.snp.results, function(x) x$one.r2)
 
-      if(tr %% save.every == 0){
-          saveRDS(perm.snp.lod, perm.lod.snp.file)
-          saveRDS(perm.snp.r2, perm.r2.snp.file)
-      }
+    #keep the maximum r2 and LOD values from each permutation.
+    perm.snp.lod[tr,] <- t(sapply(perm.tr.lod, function(x) max(x[,1])))
+    perm.snp.r2[tr,] <- t(sapply(perm.tr.r2, function(x) max(x, na.rm = TRUE)))
+
+    if(tr %% save.every == 0){
+        saveRDS(perm.snp.lod, perm.lod.snp.file)
+        saveRDS(perm.snp.r2, perm.r2.snp.file)
+    }
+
+    cat(" Finished permutations\n")
+
   } #end looping over transcripts
   #save again at the very end
   saveRDS(perm.snp.lod, perm.lod.snp.file)
