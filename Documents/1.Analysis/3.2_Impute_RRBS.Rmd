@@ -303,7 +303,7 @@ if(start.at < length(methyl.id)){
 
 if(start.at < length(methyl.id)){
   sink(here("Results", "RRBS", "progress.txt"))
-  for(tr in 3793:length(perm.rrbs.lod)){
+  for(tr in 3700:length(perm.rrbs.lod)){
       if(tr == 3794){next()}
       print(tr)
       methyl.mat.locale <- which(names(methyl.mats) == ordered.transcript.info[tr,"external_gene_name"])
