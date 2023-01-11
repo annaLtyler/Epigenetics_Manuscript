@@ -314,6 +314,10 @@ if(start.at < length(methyl.id)){
 
       transcript.chr <- ordered.transcript.info[i,"chromosome_name"]
 
+      print(paste("transcript chr:", transcript.chr))
+      chr.choice <- transcript.chr != "X"
+      print(paste("Chr choice:", chr.choice))
+
       #checks for chromosome
       if(is.na(transcript.chr) || transcript.chr == "X" || transcript.chr == "MT"){next()}
       
