@@ -44,7 +44,7 @@ expr <- dataset.mrna$data$rz
 covar <- dataset.mrna$covar.matrix
 
 col.table <- as.matrix(read.table(here("Data", "support_files", "strain.color.table.txt"), 
-sep = "\t", comment.char = "%", stringsAsFactors = FALSE))
+sep = "", comment.char = "%", stringsAsFactors = FALSE))
 strains <- col.table[,6]
 ```
 
@@ -304,17 +304,17 @@ if(start.at < length(methyl.id)){
 if(start.at < length(methyl.id)){
   sink(here("Results", "RRBS", "progress.txt"))
   for(tr in 1:length(perm.rrbs.lod)){
-      print(tr)
+      cat(paste0(tr, ":"))
       methyl.mat.locale <- which(names(methyl.mats) == ordered.transcript.info[tr,"external_gene_name"])
 
       #checks for methylation matrix
-      if(length(methyl.mats[[methyl.mat.locale]]) <= 1){message("\tCannot locate array");next()} #it exists
-      if(ncol(methyl.mats[[methyl.mat.locale]]) > 2000){message("\tArray too large");next()} #is is of a reasonable size
+      if(length(methyl.mats[[methyl.mat.locale]]) <= 1){cat(" Cannot locate array\n");next()} #it exists
+      if(ncol(methyl.mats[[methyl.mat.locale]]) > 2000){cat(" Array too large\n");next()} #is is of a reasonable size
 
       transcript.chr <- ordered.transcript.info[tr,"chromosome_name"]
 
       #checks for chromosome
-      if(is.na(transcript.chr) || transcript.chr == "X" || transcript.chr == "MT"){message("\tTranscript not on autosome");next()}
+      if(is.na(transcript.chr) || transcript.chr == "X" || transcript.chr == "MT"){cat(" Transcript not on autosome\n");next()}
       
       rrbs.mat <- methyl.mats[[methyl.mat.locale]][strain.order,,drop=FALSE]
       hap.mat <- gene.marker[[tr]]
@@ -323,14 +323,14 @@ if(start.at < length(methyl.id)){
         gene.chr = ordered.transcript.info[i,"chromosome_name"])
 
       #check for rrbs.array
-      if(is.na(rrbs.array)){message("\tNo RRBS array"); next()}
+      if(is.na(rrbs.array)){cat(" No RRBS array\n"); next()}
 
       expr.locale <- which(colnames(expr) == methyl.id[tr])
 
       gene.expr.choice <- as.logical(length(expr.locale))
       
       #check for gene expr
-      if(length(expr.locale) == 0){message("\tCannot find expression");next()}
+      if(length(expr.locale) == 0){cat(" Cannot find expression\n");next()}
       gene.expr <- expr[,expr.locale,drop=FALSE]
       adj.expr <- adjust(gene.expr, covar)
       
@@ -347,7 +347,7 @@ if(start.at < length(methyl.id)){
           p = p))
 
       #check for data returned from permutations
-      if(!all(sapply(perm.rrbs.results, length) > 1)){message("\t No data returned");next()}
+      if(!all(sapply(perm.rrbs.results, length) > 1)){cat(" No data returned\n");next()}
       
       perm.tr.lod <- lapply(perm.rrbs.results, function(x) x$one.lod)
       perm.tr.r2 <- lapply(perm.rrbs.results, function(x) x$one.r2)
@@ -360,6 +360,7 @@ if(start.at < length(methyl.id)){
           saveRDS(perm.rrbs.lod, perm.lod.rrbs.file)
           saveRDS(perm.rrbs.r2, perm.r2.rrbs.file)
       }
+    cat(" Finished permutations\n")
   } #end looping over transcripts
   #save again at the very end
   saveRDS(perm.rrbs.lod, perm.lod.rrbs.file)

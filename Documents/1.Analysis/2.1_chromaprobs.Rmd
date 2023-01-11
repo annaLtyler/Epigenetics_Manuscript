@@ -554,7 +554,7 @@ if(start.at < max(to.perm)){
   #for(tr in 1:10){
     print(tr)
 
-    if(!do.perm[tr]){next}
+    if(!do.perm[tr]){next()}
 
     #gene.name = "Pkd2"
     #gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == gene.name)[1],"ensembl_gene_id"]
