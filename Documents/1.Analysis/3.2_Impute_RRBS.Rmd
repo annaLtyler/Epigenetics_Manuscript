@@ -309,13 +309,13 @@ if(start.at < length(methyl.id)){
       methyl.mat.locale <- which(names(methyl.mats) == ordered.transcript.info[tr,"external_gene_name"])
 
       #checks for methylation matrix
-      if(length(methyl.mats[[methyl.mat.locale]]) <= 1){next()} #it exists
-      if(ncol(methyl.mats[[methyl.mat.locale]]) > 2000){next()} #is is of a reasonable size
+      if(length(methyl.mats[[methyl.mat.locale]]) <= 1){message("\tCannot locate array");next()} #it exists
+      if(ncol(methyl.mats[[methyl.mat.locale]]) > 2000){message("\tArray too large");next()} #is is of a reasonable size
 
       transcript.chr <- ordered.transcript.info[tr,"chromosome_name"]
 
       #checks for chromosome
-      if(is.na(transcript.chr) || transcript.chr == "X" || transcript.chr == "MT"){next()}
+      if(is.na(transcript.chr) || transcript.chr == "X" || transcript.chr == "MT"){message("\tTranscript not on autosome");next()}
       
       rrbs.mat <- methyl.mats[[methyl.mat.locale]][strain.order,,drop=FALSE]
       hap.mat <- gene.marker[[tr]]
@@ -324,27 +324,20 @@ if(start.at < length(methyl.id)){
         gene.chr = ordered.transcript.info[i,"chromosome_name"])
 
       #check for rrbs.array
-      if(is.na(rrbs.array)){next()}
+      if(is.na(rrbs.array)){message("\tNo RRBS array"); next()}
 
       expr.locale <- which(colnames(expr) == methyl.id[tr])
 
       gene.expr.choice <- as.logical(length(expr.locale))
-      print(paste("Gene expression:", length(expr.locale)))
-      print(paste("choice:", as.character(gene.expr.choice)))
-
+      
       #check for gene expr
-      if(length(expr.locale) == 0){next()}
+      if(length(expr.locale) == 0){message("\tCannot find expression");next()}
       gene.expr <- expr[,expr.locale,drop=FALSE]
-
       adj.expr <- adjust(gene.expr, covar)
       
-      print("made it through the adjustment")
-
       perm.data <- list("gene.expr" = gene.expr, 
         "rrbs.mat" = rrbs.mat, "hap.mat" = hap.mat,
         "chr" = ordered.transcript.info[tr,"chromosome_name"])
-
-      print(str(perm.data))
 
       #send the new gene ID to the clusters
       clusterExport(cl, "perm.data")
@@ -355,7 +348,7 @@ if(start.at < length(methyl.id)){
           p = p))
 
       #check for data returned from permutations
-      if(!all(sapply(perm.rrbs.results, length) > 1)){next()}
+      if(!all(sapply(perm.rrbs.results, length) > 1)){message("\t No data returned");next()}
       
       perm.tr.lod <- lapply(perm.rrbs.results, function(x) x$one.lod)
       perm.tr.r2 <- lapply(perm.rrbs.results, function(x) x$one.r2)
