@@ -552,9 +552,9 @@ if(start.at < max(to.perm)){
 
   for(tr in start.at:length(common.transcripts)){
   #for(tr in 1:10){
-    print(tr)
+    cat(paste0(tr, ":\n"))
 
-    if(!do.perm[tr]){next()}
+    if(!do.perm[tr]){cat(" LOD score < 6\n");next()}
 
     #gene.name = "Pkd2"
     #gene.id <- transcript.info[which(transcript.info[,"external_gene_name"] == gene.name)[1],"ensembl_gene_id"]
@@ -565,37 +565,34 @@ if(start.at < max(to.perm)){
 
     perm.data <- get_data_for_perm(gene.id)
 
-    if(is.na(perm.data)){next()}
+    if(is.na(perm.data)){cat(" No data returned for permutations\n");next()}
+    if(dim(perm.data$chrom)[[3]] > 2000){cat(" Chromatin matrix too large\n"); next()}
 
-    if(dim(perm.data$chrom)[[3]] < 1000){
+    #send the new gene ID to the clusters
+    clusterExport(cl, "perm.data")
 
-      #send the new gene ID to the clusters
-      clusterExport(cl, "perm.data")
-
-      #do the permutations in parallel
-      perm.chrom.results <- parLapply(cl, 1:nperm, 
-          function(p) perm_one_transcript(perm.data, 
-          p = p))
+    #do the permutations in parallel
+    perm.chrom.results <- parLapply(cl, 1:nperm, 
+        function(p) perm_one_transcript(perm.data, 
+        p = p))
 
       #check for NAs
-      if(all(sapply(perm.chrom.results, length) > 1)){
+      if(!all(sapply(perm.chrom.results, length) > 1)){cat(" No data returned from permutations\n"); next()}
 
-        perm.chrom.coef <- lapply(perm.chrom.results, function(x) x$chrom.coef.list)
-        perm.chrom.lod <- lapply(perm.chrom.results, function(x) x$chrom.lod.table)
-        perm.chrom.r2 <- lapply(perm.chrom.results, function(x) x$chrom.r2.results)
+      perm.chrom.coef <- lapply(perm.chrom.results, function(x) x$chrom.coef.list)
+      perm.chrom.lod <- lapply(perm.chrom.results, function(x) x$chrom.lod.table)
+      perm.chrom.r2 <- lapply(perm.chrom.results, function(x) x$chrom.r2.results)
 
-        #keep the maximum r2 and LOD values from each permutation.
-        #also keep the permuted coefficients for each state
-        perm.lod[tr,] <- t(sapply(perm.chrom.lod, function(x) max(x[,"Additive"])))
-        perm.r2[tr,] <- t(sapply(perm.chrom.r2, function(x) max(x[,"Additive"])))
-      }#end case for data actually returned from the scans
-    } #end case for when chromatin matrix is too big
+      #keep the maximum r2 and LOD values from each permutation.
+      #also keep the permuted coefficients for each state
+      perm.lod[tr,] <- t(sapply(perm.chrom.lod, function(x) max(x[,"Additive"])))
+      perm.r2[tr,] <- t(sapply(perm.chrom.r2, function(x) max(x[,"Additive"])))
 
     if(tr %% save.every == 0){
       saveRDS(perm.lod, perm.lod.file)
       saveRDS(perm.r2, perm.r2.file)
     }
-
+    cat(" Finished permutations\n")
   } #end looping through transcripts
 
   #close the clusters at the end and save the final objects
