@@ -326,13 +326,15 @@ if(start.at < length(methyl.id)){
       #check for rrbs.array
       if(is.na(rrbs.array)){next()}
 
-      gene.expr <- expr[,which(colnames(expr) == methyl.id[tr]),drop=FALSE]
+      expr.locale <- which(colnames(expr) == methyl.id[tr])
+
+      gene.expr.choice <- as.logical(length(expr.locale))
+      print(paste("Gene expression:", length(expr.locale)))
+      print(paste("choice:", as.character(gene.expr.choice)))
 
       #check for gene expr
-      if(length(gene.expr) == 0){next()}
-      gene.expr.choice <- as.logical(length(gene.expr))
-      print(paste("Gene expression:", length(gene.expr)))
-      print(paste("choice:", as.character(gene.expr.choice)))
+      if(length(expr.locale) == 0){next()}
+      gene.expr <- expr[,expr.locale,drop=FALSE]
 
       adj.expr <- adjust(gene.expr, covar)
 
