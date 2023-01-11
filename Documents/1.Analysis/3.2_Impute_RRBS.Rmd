@@ -303,49 +303,56 @@ if(start.at < length(methyl.id)){
 
 if(start.at < length(methyl.id)){
   sink(here("Results", "RRBS", "progress.txt"))
-  for(tr in 3700:length(perm.rrbs.lod)){
+  for(tr in 6097:length(perm.rrbs.lod)){
       if(tr == 3794){next()}
       print(tr)
       methyl.mat.locale <- which(names(methyl.mats) == ordered.transcript.info[tr,"external_gene_name"])
-      if(length(methyl.mats[[methyl.mat.locale]]) > 1 && ncol(methyl.mats[[methyl.mat.locale]]) <= 2000){
-        transcript.chr <- ordered.transcript.info[i,"chromosome_name"]
-        if(!is.na(transcript.chr) && transcript.chr != "X" && transcript.chr != "MT"){
-            rrbs.mat <- methyl.mats[[methyl.mat.locale]][strain.order,,drop=FALSE]
-            hap.mat <- gene.marker[[tr]]
-            rrbs.array <- rrbs_geno(gene.rrbs.array = rrbs.mat, 
-              haplotype.matrix = hap.mat, 
-              gene.chr = ordered.transcript.info[i,"chromosome_name"])
-            
-            if(!is.na(rrbs.array)){
-              gene.expr <- expr[,which(colnames(expr) == methyl.id[tr]),drop=FALSE]
-              if(length(gene.expr) > 0){
-                adj.expr <- adjust(gene.expr, covar)
 
-                perm.data <- list("gene.expr" = gene.expr, 
-                  "rrbs.mat" = rrbs.mat, "hap.mat" = hap.mat,
-                  "chr" = ordered.transcript.info[tr,"chromosome_name"])
+      #checks for methylation matrix
+      if(length(methyl.mats[[methyl.mat.locale]]) <= 1){next()} #it exists
+      if(ncol(methyl.mats[[methyl.mat.locale]]) > 2000){next()} #is is of a reasonable size
 
-                  #send the new gene ID to the clusters
-                  clusterExport(cl, "perm.data")
+      transcript.chr <- ordered.transcript.info[i,"chromosome_name"]
 
-                  #do the permutations in parallel
-                  perm.rrbs.results <- parLapply(cl, 1:nperm, 
-                      function(p) scan_one_rrbs(perm.data, 
-                      p = p))
+      #checks for chromosome
+      if(is.na(transcript.chr) || transcript.chr == "X" || transcript.chr == "MT"){next()}
+      
+      rrbs.mat <- methyl.mats[[methyl.mat.locale]][strain.order,,drop=FALSE]
+      hap.mat <- gene.marker[[tr]]
+      rrbs.array <- rrbs_geno(gene.rrbs.array = rrbs.mat, 
+        haplotype.matrix = hap.mat, 
+        gene.chr = ordered.transcript.info[i,"chromosome_name"])
 
-                  #check for NAs
-                  if(all(sapply(perm.rrbs.results, length) > 1)){
-                    perm.tr.lod <- lapply(perm.rrbs.results, function(x) x$one.lod)
-                    perm.tr.r2 <- lapply(perm.rrbs.results, function(x) x$one.r2)
+      #check for rrbs.array
+      if(is.na(rrbs.array)){next()}
 
-                    #keep the maximum r2 and LOD values from each permutation.
-                    perm.rrbs.lod[tr,] <- t(sapply(perm.tr.lod, function(x) max(x[,1])))
-                    perm.rrbs.r2[tr,] <- t(sapply(perm.tr.r2, function(x) max(x, na.rm = TRUE)))
-                  }#end case for data actually returned from the scans
-              } #end case for existence of gene expression data
-            } #end case for existence of RRBS data
-        } #end case for chromosome check
-      } #end check for size of methylation matrix
+      gene.expr <- expr[,which(colnames(expr) == methyl.id[tr]),drop=FALSE]
+
+      #check for gene expr
+      if(length(gene.expr) == 0){next()}
+      adj.expr <- adjust(gene.expr, covar)
+
+      perm.data <- list("gene.expr" = gene.expr, 
+        "rrbs.mat" = rrbs.mat, "hap.mat" = hap.mat,
+        "chr" = ordered.transcript.info[tr,"chromosome_name"])
+
+      #send the new gene ID to the clusters
+      clusterExport(cl, "perm.data")
+
+      #do the permutations in parallel
+      perm.rrbs.results <- parLapply(cl, 1:nperm, 
+          function(p) scan_one_rrbs(perm.data, 
+          p = p))
+
+      #check for data returned from permutations
+      if(!all(sapply(perm.rrbs.results, length) > 1)){next()}
+      
+      perm.tr.lod <- lapply(perm.rrbs.results, function(x) x$one.lod)
+      perm.tr.r2 <- lapply(perm.rrbs.results, function(x) x$one.r2)
+
+      #keep the maximum r2 and LOD values from each permutation.
+      perm.rrbs.lod[tr,] <- t(sapply(perm.tr.lod, function(x) max(x[,1])))
+      perm.rrbs.r2[tr,] <- t(sapply(perm.tr.r2, function(x) max(x, na.rm = TRUE)))
 
       if(tr %% save.every == 0){
           saveRDS(perm.rrbs.lod, perm.lod.rrbs.file)
