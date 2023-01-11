@@ -337,10 +337,14 @@ if(start.at < length(methyl.id)){
       gene.expr <- expr[,expr.locale,drop=FALSE]
 
       adj.expr <- adjust(gene.expr, covar)
+      
+      print("made it through the adjustment")
 
       perm.data <- list("gene.expr" = gene.expr, 
         "rrbs.mat" = rrbs.mat, "hap.mat" = hap.mat,
         "chr" = ordered.transcript.info[tr,"chromosome_name"])
+
+      print(str(perm.data))
 
       #send the new gene ID to the clusters
       clusterExport(cl, "perm.data")
