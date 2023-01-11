@@ -330,6 +330,10 @@ if(start.at < length(methyl.id)){
 
       #check for gene expr
       if(length(gene.expr) == 0){next()}
+      gene.expr.choice <- as.logical(length(gene.expr))
+      print(paste("Gene expression:", length(gene.expr)))
+      print(paste("choice:", as.character(gene.expr.choice)))
+
       adj.expr <- adjust(gene.expr, covar)
 
       perm.data <- list("gene.expr" = gene.expr, 
