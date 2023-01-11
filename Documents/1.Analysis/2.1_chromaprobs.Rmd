@@ -621,22 +621,6 @@ the imputation itself.
 alpha = 0.01
 ```
 
-
-```{r emp_p}
-#our ecdf function seems to be underestinating p values
-#even if there are multiple values in the null that
-#are identical to the observed value, we still get a
-#p value of 0
-
-emp.p <- function(obs.val, null.dist){
-  if(is.na(obs.val)){return(NA)}
-  as.or.more.extreme <- which(abs(null.dist) >= abs(obs.val))
-  p <- length(as.or.more.extreme)/length(null.dist)
-  return(p)
-}
-
-```
-
 The plots below show the distributions of p values for both 
 the R2 statistic and the LOD score statistic. Both are
 skewed toward 0. The dot plot shows that the p values for 

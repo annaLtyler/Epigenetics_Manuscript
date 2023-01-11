@@ -300,6 +300,7 @@ if(start.at < length(methyl.id)){
 
 
 ```{r perm_rrbs}
+
 if(start.at < length(methyl.id)){
   sink(here("Results", "RRBS", "progress.txt"))
   for(tr in start.at:length(perm.rrbs.lod)){
@@ -370,22 +371,6 @@ then it is the imputation itself that is explaining the
 LOD scores we see. If the distribution is skewed toward
 0, then the DNA methylation is adding something beyond
 the imputation itself.
-
-
-```{r emp_p}
-#our ecdf function seems to be underestinating p values
-#even if there are multiple values in the null that
-#are identical to the observed value, we still get a
-#p value of 0
-
-emp.p <- function(obs.val, null.dist){
-  if(is.na(obs.val)){return(NA)}
-  as.or.more.extreme <- which(abs(null.dist) >= abs(obs.val))
-  p <- length(as.or.more.extreme)/length(null.dist)
-  return(p)
-}
-
-```
 
 The plots below show the distributions of p values for both 
 the R2 statistic and the LOD score statistic. Both are
