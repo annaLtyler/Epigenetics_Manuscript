@@ -1,0 +1,87 @@
+---
+title: "5.0 Compare Permutations"
+author: Anna L Tyler
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  html_document:
+    code_folding: hide
+    collapsed: no
+    toc: yes
+    toc_float: yes
+---
+
+
+## Introduction
+The purpose of this workflow is to compare the permuted
+effects of the different genomic features: chromatin state,
+SNPs, and DNA methylation.
+
+```{r libraries}
+library(here)
+num.states = 14
+```
+
+```{r source_code}
+all.code.dir <- list.files(here("Code"), full.names = TRUE)
+for(i in 1:length(all.code.dir)){
+	all.fun <- list.files(all.code.dir[i], full.names = TRUE)
+	for(j in 1:length(all.fun)){source(all.fun[j])}
+}
+```
+
+```{r load_other_lib}
+needed.packages <- c("gprofiler2")
+load_libraries(needed.packages)
+```
+
+
+```{r read_data}
+chrom.results <- readRDS(here("Results", "ChromHMM", paste0(num.states, "_states_C"), "Perm_results.RDS")) 
+rrbs.results <- readRDS(here("Results", "RRBS", "Perm_results.RDS"))
+snp.results <- readRDS(here("Results", "SNPs", "Perm_results.RDS"))
+
+all.results <- list("Chromatin" = chrom.results, "DNA Methylation" = rrbs.results,
+    "SNPs" = snp.results)
+common.transcripts <- Reduce("intersect", lapply(all.results, rownames))
+matched.idx <- lapply(all.results, 
+    function(x) match(common.transcripts, rownames(x)))
+feature.pairs <- pair.matrix(1:length(all.results))
+
+matched.results <- lapply(1:length(all.results), 
+    function(x) all.results[[x]][matched.idx[[x]],])
+names(matched.results) <- names(all.results)
+```
+
+```{r alpha}
+alpha = 1/1000
+```
+
+The following Venn diagram shows the number of 
+transcripts that had significant (p = `r alpha`) 
+effects from each feature according to the permutations.
+
+DNA methylation actually has the largest number of 
+significant transcripts. And there is very little
+overlap among the groups.
+
+```{r sig_idx}
+sig.idx <- lapply(matched.results, function(x) which(x[,2] <= alpha))
+plotVenn(sig.idx)
+```
+
+```{r enrich}
+sig.enrich <- lapply(sig.idx, function(x) gost(names(x), organism = "mmusculus"))
+plot.enrichment.group(sig.enrich)
+```
+
+```{r compare}
+par(mfrow = c(2,2))
+for(i in 1:nrow(feature.pairs)){
+    pair1 <- feature.pairs[i,1]
+    pair2 <- feature.pairs[i,2]
+    plot(all.results[[pair1]][matched.idx[[pair1]],1], 
+        all.results[[pair2]][matched.idx[[pair2]],1], 
+        xlab = names(all.results)[pair1], ylab = names(all.results)[pair2])
+    abline(0,1,col = "red")
+}
+```
