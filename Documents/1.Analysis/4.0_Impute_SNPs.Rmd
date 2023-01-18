@@ -118,7 +118,7 @@ snp_geno <- function(gene.snp.array, haplotype.matrix, gene.chr, perm.order = NU
 
     if(!is.null(perm.order)){
         #reassign haplotypes if requested.
-        new.snps <- gene.snp.array[,perm.order,]
+        new.snps <- gene.snp.array[,perm.order,,drop=FALSE]
         colnames(new.snps) <- colnames(gene.snp.array)
         gene.snp.array <- new.snps
     }
@@ -347,6 +347,7 @@ if(start.at < length(all.snp.lod)){
 
 
 ```{r perm_snps}
+
 geno.lod.file <- here("Results", "ChromHMM", "14_states_C", "eQTL.lod.RDS")
 geno.lod <- readRDS(geno.lod.file)
 
@@ -362,16 +363,19 @@ if(start.at < length(all.snp.lod)){
 
     if(!do.perm[tr]){cat(" LOD score < 6\n");next()}
 
-    if(is.na(snp.mats[[tr]])){cat(" No SNP matrix\n");next()}
+    if(length(snp.mats[[tr]]) == 1){cat(" No SNP matrix\n");next()}
     if(nrow(snp.mats[[tr]]) > 2000){cat(" SNP matrix too large\n");next()}
 
     gene.expr <- expr[,which(colnames(expr) == common.transcripts[tr]),drop=FALSE]
     adj.expr <- adjust(gene.expr, covar)
 
+    if(nrow(snp.mats[[tr]]) < 2){cat(" Not enough SNPs to test\n");next()}
+
     perm.data <- list("snp.mat" = snp.mats[[tr]],
         "haps" = gene.marker[[tr]], 
         "chr" = transcript.info.table[tr,"chromosome_name"],
         "expr" = adj.expr)
+
 
     #send the new gene ID to the clusters
     clusterExport(cl, "perm.data")

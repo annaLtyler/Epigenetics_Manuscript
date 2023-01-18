@@ -30,7 +30,7 @@ for(i in 1:length(all.code.dir)){
 ```
 
 ```{r load_other_lib}
-needed.packages <- c("gprofiler2")
+needed.packages <- c("gprofiler2", "pheatmap")
 load_libraries(needed.packages)
 ```
 
@@ -67,11 +67,34 @@ overlap among the groups.
 ```{r sig_idx}
 sig.idx <- lapply(matched.results, function(x) which(x[,2] <= alpha))
 plotVenn(sig.idx)
+
+all.intersections <- lapply(1:nrow(feature.pairs), 
+    function(x) common.transcripts[intersect(sig.idx[[feature.pairs[x,1]]], sig.idx[[feature.pairs[x,2]]])])
+names(all.intersections) <- apply(feature.pairs, 1, 
+    function(x) paste0(names(matched.results)[x[1]], "_", names(matched.results)[x[2]]))
+
+intersected.effects <- lapply(matched.results, function(x) x[match(unlist(all.intersections), rownames(x)),1])
+boxplot(intersected.effects)
+```
+
+```{r eval = FALSE}
+#run Figures.Rmd to load data and code and then check the following
+
+plot_together("ENSMUSG00000007029")
+
 ```
 
 ```{r enrich}
 sig.enrich <- lapply(sig.idx, function(x) gost(names(x), organism = "mmusculus"))
-plot.enrichment.group(sig.enrich)
+plot.enrichment.group(sig.enrich, transformation = function(x) log(x+1e-6))
+```
+
+What are the effect sizes of these significant effects?
+
+```{r lod_comp}
+sig.effect <- lapply(1:length(sig.idx), function(x) matched.results[[x]][sig.idx[[x]],1])
+names(sig.effect) <- names(matched.results)
+boxplot(sig.effect, main = "LOD scores of significant effects")
 ```
 
 ```{r compare}
