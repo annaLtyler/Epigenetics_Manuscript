@@ -342,6 +342,7 @@ if(start.at < length(all.snp.lod)){
   #saves a huge amount of time overall
   clusterExport(cl, to.export) 
 }
+
 ```
 
 
@@ -361,6 +362,7 @@ if(start.at < length(all.snp.lod)){
 
     if(!do.perm[tr]){cat(" LOD score < 6\n");next()}
 
+    if(is.na(snp.mats[[tr]])){cat(" No SNP matrix\n");next()}
     if(nrow(snp.mats[[tr]]) > 2000){cat(" SNP matrix too large\n");next()}
 
     gene.expr <- expr[,which(colnames(expr) == common.transcripts[tr]),drop=FALSE]
