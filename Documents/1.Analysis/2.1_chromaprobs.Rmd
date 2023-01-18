@@ -507,6 +507,7 @@ if(file.exists(perm.lod.file)){
   perm.lod <- perm.r2 <- matrix(NA, nrow = length(common.transcripts), ncol = nperm)
   rownames(perm.lod) <- rownames(perm.r2) <- common.transcripts
 }
+
 ```
 
 ```{r set_perm}
@@ -615,7 +616,7 @@ the imputation itself.
 
 
 ```{r alpha}
-alpha = 0.01
+alpha = 1/nperm
 ```
 
 The plots below show the distributions of p values for both 
@@ -630,6 +631,9 @@ lod.p <- sapply(1:length(chrom.lod),
   function(x) if(!all(is.na(perm.lod[[x]]))){emp.p(max.chrom.lod[x], perm.lod[x,])}else{NA})
 r2.p <- sapply(1:length(chrom.lod), 
   function(x) if(!all(is.na(perm.r2[[x]]))){emp.p(max.chrom.r2[x], perm.r2[x,])}else{NA})
+results.table <- cbind(max.chrom.lod, lod.p, max.chrom.r2, r2.p)
+
+saveRDS(results.table, file.path(results.dir, "Perm_Results.RDS"))
 
 par(mfrow = c(2,2))
 hist(lod.p, breaks = 100, main = "LOD score p values",
@@ -666,7 +670,12 @@ plot(max.chrom.r2, -log10(r2.p+1e-3), xlab = "Variance Explained",
 
 
 ```{r example, eval = FALSE}
-example.gene <- sig.chrom[3]
+sig.chrom <- which(lod.p <= alpha)
+library(gprofiler2)
+enrich <- gost(common.transcripts[sig.chrom], organism = "mmusculus")
+plot.enrichment(enrich, max.term.size = 2000, num.terms = 30)
+
+example.gene <- sig.chrom[6]
 gene.name <- transcript.info[which(transcript.info[,"ensembl_gene_id"] == rownames(geno.lod)[example.gene])[1], "external_gene_name"]
 hap.lod <- geno.lod[example.gene,"Additive"]
 obs.lod <- max(chrom.lod[[example.gene]][,"Additive"])
@@ -676,5 +685,7 @@ xmax <- max(c(null.lod, obs.lod, hap.lod))
 hist(perm.lod[example.gene,], breaks = 50, xlim = c(xmin, xmax), main = gene.name,
   xlab = "LOD")
 abline(v = c(obs.lod, hap.lod), col = c("red", "blue"))
+legend("topleft", legend = c("observed", "haplotype"), col = c("red", "blue"), lty = 1)
+
 ```
 

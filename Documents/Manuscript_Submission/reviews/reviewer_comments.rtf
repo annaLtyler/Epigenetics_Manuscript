@@ -4,7 +4,7 @@
 }
 {\*\expandedcolortbl;;\cssrgb\c77647\c0\c11765;\cssrgb\c1680\c19835\c100000;\cssrgb\c50196\c50196\c50196;
 }
-\margl1440\margr1440\vieww20920\viewh12780\viewkind1
+\margl1440\margr1440\vieww21220\viewh13080\viewkind1
 \deftab720
 \pard\pardeftab720\partightenfactor0
 
@@ -30,11 +30,15 @@ We have added a section to the introduction describing work linking genetic vara
 \
 2. The authors make this claim in the abstract \'93This work suggests that chromatin state is highly influenced by local genotype and may be a primary mode through which expression quantitative trait loci (eQTLs) are mediated.\'94 I don\'92t think this claim is well supported by results shown in the paper. The authors did not show it was specifically local genotype differences that was driving the chromatin state differences in the inbred analyses. For the outbred analysis the imputed chromatin states were in effect defined based on the local genotypes, and also there was no independent data to support the accuracy of those imputations, so I think there is some circularity in reaching the conclusion stated in the abstract. A similar issue exists in the results where it is stated \'93Taken together, these results suggest that the majority of haplotype-associated variance is encoded by the chromatin state of the allele.\'94\
 \
-\
 \pard\pardeftab720\partightenfactor0
-\cf3 This point is well taken. We cannot verify the accuracy of the imputation, and cannot directly test the effect of chromatin state variation on gene expression with these data. Any feature imputed using haplotype will be positively correlated with gene expression because haplotype is positively correlated with gene expression. \
+\cf3 This point is well taken. We cannot verify the accuracy of the imputation experimentally, and we cannot directly test the effect of chromatin state variation on gene expression with these data. Any feature imputed using haplotype will be positively correlated with gene expression because haplotype is positively correlated with gene expression. \
 \
-We have added a permutation test to this part of the analysis. We permuted the labels on the chromatin state vectors in the founder population and recalculated the LOD scores, R2, and state coefficients. We performed 1000 permutations on each transcript with a local eQTL LOD score > 6. The permutations preseved all correlations between chromatin states and their positions, and all correlations between expression and covariates. Only the haplotype each chromatin state was assigned to was shuffled. These permutations showed that chromatin state explained more variance in gene expression in the DO mice than would be expected if we assigned chromatin states to haplotypes at random.  \
+To address this issue, we have implemented a permutatio-based strategy. We permuted the labels on the chromatin state vectors in the founder population prior to imputation, recalculated the imputation, and recalculated the LOD scores and variance explained for each transcript. We performed 1000 permutations on each transcript with a local eQTL LOD score > 6. This permutation strategy preserves all individual haplotypes, all chromatin states, and the correlations between covariates and expression, but randomizes which chromatin states are associated with each haplotype. \
+\
+After generating null distributions for each transcript, we calculated an empirical p value for each transcript by asking which permuted values were as large or larger than the original observed value. The distribution of p values across all transcripts was skewed toward small p values for all imputed features (chromatin state, DNA methylation, and SNPs). This is a new result that changes our interpretation of the contribution of each feature to eQTL. We originally underestimated the contribution of DNA methylation to eQTLs, but this result implies that all imputed features had an effect that exceeded the effect of the permutation alone. \
+\
+\
+These permutations showed that chromatin state explained more variance in gene expression in the DO mice than would be expected if we assigned chromatin states to haplotypes at random.  \
 \
 We have improved our discussion on these points in the paper. \
 \

@@ -276,6 +276,7 @@ if(file.exists(perm.lod.rrbs.file)){
   perm.rrbs.lod <- perm.rrbs.r2 <- matrix(NA, nrow = length(methyl.id), ncol = nperm)
   rownames(perm.rrbs.lod) <- rownames(perm.rrbs.r2) <- methyl.id
 }
+
 ```
 
 
@@ -303,7 +304,7 @@ if(start.at < length(methyl.id)){
 
 if(start.at < length(methyl.id)){
   sink(here("Results", "RRBS", "progress.txt"))
-  for(tr in 1:length(perm.rrbs.lod)){
+  for(tr in start.at:length(perm.rrbs.lod)){
       cat(paste0(tr, ":"))
       methyl.mat.locale <- which(names(methyl.mats) == ordered.transcript.info[tr,"external_gene_name"])
 
@@ -402,6 +403,9 @@ max.rrbs.r2 <- sapply(all.rrbs.r2, function(x) if(!all(is.na(x))){max(x, na.rm =
 r2.p <- sapply(1:length(all.rrbs.r2), 
   function(x) if(!all(is.na(perm.rrbs.r2[x,]))){emp.p(max.rrbs.r2[x], perm.rrbs.r2[x,])}else{NA})
 names(r2.p) <- names(all.rrbs.r2)
+
+results.table <- cbind(max.rrbs.lod, lod.p, max.rrbs.r2, r2.p)
+saveRDS(results.table, here("Results", "RRBS", "Perm_results.RDS"))
 
 par(mfrow = c(2,2))
 lod.p[low.lod.idx] <- NA

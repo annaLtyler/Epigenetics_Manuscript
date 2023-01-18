@@ -322,6 +322,7 @@ if(file.exists(perm.lod.snp.file)){
   perm.snp.lod <- perm.snp.r2 <- matrix(NA, nrow = length(all.snp.lod), ncol = nperm)
   rownames(perm.snp.lod) <- rownames(perm.snp.r2) <- names(all.snp.lod)
 }
+
 ```
 
 
