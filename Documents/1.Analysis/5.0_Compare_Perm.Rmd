@@ -36,6 +36,8 @@ load_libraries(needed.packages)
 
 
 ```{r read_data}
+gene.info <- read.csv(here("Data", "DOQTL", "mRNA_Info.csv"))
+
 chrom.results <- readRDS(here("Results", "ChromHMM", paste0(num.states, "_states_C"), "Perm_results.RDS")) 
 rrbs.results <- readRDS(here("Results", "RRBS", "Perm_results.RDS"))
 snp.results <- readRDS(here("Results", "SNPs", "Perm_results.RDS"))
@@ -107,4 +109,41 @@ for(i in 1:nrow(feature.pairs)){
         xlab = names(all.results)[pair1], ylab = names(all.results)[pair2])
     abline(0,1,col = "red")
 }
+```
+
+## Compare Degrees of Freedom
+
+Do chromatin state matrices explain more variance
+because they have more degrees of freedom?
+
+```{r df}
+chrom.dir <- here("Results", "ChromHMM", paste0(num.states, "_states_C"))
+chrom.mats <- readRDS(file.path(chrom.dir, paste0("Chromatin_States_", num.states, "_full_gene_1000.RData")))
+
+methyl.mat.file <- here("Results", "RRBS", "Aligned.Methyl.Mats.RDS")
+methyl.mats <- readRDS(methyl.mat.file)
+
+snp.by.position.file <- here("Results", "SNPs", "SNP.by.Position.RDS")
+snp.mats <- readRDS(snp.by.position.file)
+
+gene.names <- gene.info[match(common.transcripts, gene.info[,1]),"symbol"]
+
+for(tr in 1:length(common.transcripts)){
+    chrom.idx <- which(names(chrom.mats) == common.transcripts[tr])
+    methyl.idx <- which(names(methyl.mats) == gene.names[tr])
+    snp.idx <- which(names(snp.mats) == common.transcripts[tr])
+
+    if(length(chrom.idx) > 0){
+        chrom.df <- apply(chrom.mats[[chrom.idx]], 1, function(x) length(unique(x))-1)
+    }
+    if(length(methyl.idx)){
+        rounded.mat <- round(methyl.mats[[methyl.idx]]/50)*50
+        methyl.df <- apply(rounded.mat, 2, function(x) length(unique(x))-1)
+    }
+    if(length(snp.idx) > 0){
+        snp.df <- apply(snp.mats[[snp.idx]], 1, function(x) length(which(colSums(x) > 0))-1)
+    }
+
+}
+
 ```
