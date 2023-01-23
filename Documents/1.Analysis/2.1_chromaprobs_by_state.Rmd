@@ -290,7 +290,7 @@ The following boxplot shows the distribution of variance
 explained by each state. 
 
 ```{r var_exp_state}
-boxplot(chrom.r2)
+boxplot(chrom.r2, las = 2)
 ```
 
 The following boxplot shows the variance explained
@@ -314,8 +314,8 @@ explains more variance than any individual chromatin state.
 
 
 ```{r var_exp}
-max.chrom.r2 <- apply(chrom.r2, 1, function(x) max(x, na.rm = TRUE))
-max.geno.r2 <- apply(geno.r2, 1, function(x) max(x, na.rm = TRUE))
+max.chrom.r2 <- apply(chrom.r2, 1, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
+max.geno.r2 <- apply(geno.r2, 1, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
 
 plot(max.geno.r2, max.chrom.r2, xlab = "R2 Haplotype",
     ylab = "R2 Chromatin State")
@@ -323,8 +323,10 @@ abline(0,1)
 ```
 
 ```{r examples, eval = FALSE}
+#example of haplotype explaining more than chromatin
 test <- which(apply(cbind(max.geno.r2, max.chrom.r2), 1, function(x) x[1] > x[2]))
 
+#example of chromatin explaining more than haplotype
 test <- which(apply(cbind(max.geno.r2, max.chrom.r2), 1, function(x) x[1] > x[2]))
 
 gene.id <- names(test)[3]

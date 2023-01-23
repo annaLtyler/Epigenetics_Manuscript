@@ -17,7 +17,7 @@ perm.order = NULL){
     chrom.states, strain.key = strain.key, perm.order = perm.order))
   }else{
     gene.locale <- which(names(transcript.haplotypes) == gene.id)
-    if(length(gene.locale) == 1){return(NA)}
+    if(length(gene.locale) < 1){return(NA)}
     one.geno <- list(transcript.haplotypes[[gene.locale]])
   }
 
