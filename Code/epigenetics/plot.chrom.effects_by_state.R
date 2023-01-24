@@ -1,5 +1,5 @@
-plot.chrom.effects_by_state <- function(gene.name, expr, covar, chrom.mats, transcript.info, 
-transcript.haplotypes, chrom.states, strain.key){
+plot.chrom.effects_by_state <- function(gene.name, expr, covar, chrom.mats, 
+    transcript.info, transcript.haplotypes, chrom.states, strain.key){
     
     #use the chromatin state object to determine the number of states
     num.states = max(sapply(chrom.mats, 
