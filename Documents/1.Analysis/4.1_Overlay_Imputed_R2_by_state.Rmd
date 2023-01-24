@@ -1,0 +1,522 @@
+---
+title: "Imputation in the DO"
+author: Anna L Tyler
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  html_document:
+    code_folding: hide
+    collapsed: no
+    toc: yes
+    toc_float: yes
+---
+
+
+## Introduction
+
+The purpose of this workflow is to compare the eQTL scans with imputed SNPs
+to eQTL scans with chromatin states.
+
+This workflow looks at individual state effects, as opposed to 
+4.1_Overlay_Imputed_R2.Rmd, which looks at the effects of
+the full model.
+
+```{r set_param}
+library(here)
+param <- read.delim(here("Data", "support_files", "param.txt"), header = FALSE, 
+    stringsAsFactors = FALSE, row.names = 1)
+num.states = as.numeric(param["num_states",])
+
+is.interactive = FALSE
+#is.interactive = TRUE
+```
+
+The figures in this document refer to the `r num.states`-state model.
+
+```{r load_libraries}
+library(here)
+```
+
+```{r source_code}
+all.code.dir <- list.files(here("Code"), full.names = TRUE)
+for(i in 1:length(all.code.dir)){
+	all.fun <- list.files(all.code.dir[i], full.names = TRUE)
+	for(j in 1:length(all.fun)){source(all.fun[j])}
+}
+```
+
+```{r load_other_lib}
+needed.packages <- c("grid", "gprofiler2", "knitr", "qtl2")
+load_libraries(needed.packages)
+```
+
+```{r read_data}
+results.dir <- here("Results", "ChromHMM", paste0(num.states, "_states_C"))
+
+gene.info <- readRDS(here("Data", "RNASeq", "RNASeq_gene_info.RData"))
+strain.table <- as.matrix(read.delim(here("Data", "support_files", "strain.color.table.txt"),
+comment.char = "!", header = FALSE))
+
+expr.data <- readRDS(here("Data", "DOQTL", "DO_Expression.RDS")) 
+expr <- expr.data$expr
+covar <- expr.data$covar
+
+chrom.mats <- readRDS(file.path(results.dir, 
+    paste0("Chromatin_States_", num.states, "_full_gene_1000.RData")))
+
+chrom.r2 <- readRDS(file.path(results.dir, "chQTL.state.R2.RDS"))
+methyl.r2 <- readRDS(here("Results", "RRBS", "RRBS.R2.RDS"))
+snp.r2 <- readRDS(here("Results", "SNPs", "SNP.R2.RDS"))
+eqtl.r2 <- readRDS(file.path(results.dir, "eQTL.hap.R2.RDS"))
+
+inbred.expr <- readRDS(here("Data", "RNASeq", "Strain_Scaled_C_Expression.RData"))
+
+snp.alleles <- readRDS(here("Results", "SNPs", "SNP.by.Position.RDS"))
+methyl.mats <- readRDS(here("Results", "RRBS", "Aligned.Methyl.Mats.RDS"))
+```
+
+## r2 Score Distributions
+
+The following plots show the distributions of r2 scores from different
+modalities: Haplotypes, Imputed Chromatin State, Imputed SNPs, and 
+imputed DNA methylation.
+
+For the imputed r2 scores, we used the maximum r2 score calculated
+for each transcript. 
+
+```{r find_max_r2}
+max.snp <- sapply(snp.r2, function(x) if(length(x) > 1){max(x, na.rm = TRUE)}else{NA})
+max.methyl <- sapply(methyl.r2, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
+max.chrom <- apply(chrom.r2, 1, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
+max.eqtl <- apply(eqtl.r2, 1, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
+```
+
+
+```{r r2_dist}
+#r2.list <- list("Haplotype" = eqtl.r2[,1], "Chromatin_State" = max.chrom,
+#    "SNP" = max.snp, "DNA_Methylation" = max.methyl)
+
+r2.list <- list("Haplotype" = max.eqtl, "Chromatin_State" = max.chrom, "SNP" = max.snp,
+    "DNA_methylation" = max.methyl)
+
+no.na <- lapply(r2.list, function(x) x[which(!is.na(x))])
+common.id <- Reduce("intersect", lapply(no.na, names))
+common.list <- lapply(1:length(no.na), function(x) no.na[[x]][match(common.id, names(no.na[[x]]))])
+names(common.list) <- names(r2.list)
+boxplot(common.list)
+
+plot(density(common.list[[1]]), xlab = "Variance Explained", 
+    main = "", type = "n", ylim = c(0, 11.5))
+for(i in 1:length(common.list)){
+    type.dens <- density(common.list[[i]])
+    max.dens <- type.dens$x[which.max(type.dens$y)]
+    points(type.dens, col = i+1, type = "l", lwd = 3)
+    #abline(v = max.dens, col = i, lwd = 3)
+}
+legend("topright", legend = names(r2.list), col = 1:(length(r2.list))+1, lty = 1, lwd = 3)
+
+if(is.interactive){quartz(height = 9, width = 5)}
+stripchart(lapply(common.list, function(x) round(x, 2)), pch = 16, 
+    col = "darkgray", method = "stack", offset = 0.0085, vertical = TRUE)
+
+kable(round(sapply(r2.list, summary), 2))
+```
+
+
+The following plot shows the comparison between the maximum SNP r2
+score, chromatin r2 score, haplotype r2 score and DNA methylation 
+r2 score.
+
+These are quite highly correlated. Across all genes, chromatin state does 
+better than SNPs in explaining gene expression. There is more weight
+above the line y=x in the middle plot. Although there are 
+many cases for which an individual SNP has a higher r2 score than the 
+chromatin state (points below the y=x line). 
+
+There is also a set of genes for which the best SNP r2 score is 0
+but the best chromatin r2 scores run the gamut up to about 100, with
+haplotype r2 scores for these genes going up to 150.
+
+```{r snp_v_chrom, fig.width = 9, fig.height = 9}
+common.transcripts <- Reduce("intersect", list(rownames(chrom.r2), rownames(eqtl.r2), 
+    names(methyl.r2), names(max.snp)))
+common.chrom.idx <- match(common.transcripts, rownames(chrom.r2))
+common.eqtl.idx <- match(common.transcripts, rownames(eqtl.r2))
+common.methyl.idx <- match(common.transcripts, names(methyl.r2))
+common.snp.idx <- match(common.transcripts, names(max.snp))
+
+all.r2 <- cbind(eqtl.r2[common.eqtl.idx,1], max.chrom[common.chrom.idx],
+    max.snp[common.snp.idx], max.methyl[common.methyl.idx])
+colnames(all.r2) <- c("Haplotype_R2", "Chromatin_R2", "SNP_R2", "Methylation_R2")
+all.r2[which(all.r2 == -Inf)] <- NA
+if(is.interactive){quartz()}
+pairs(all.r2)
+
+saveRDS(all.r2, file.path(results.dir, "All.Variance.Explained.RDS"))
+```
+
+```{r plot_comp, fig.width = 9, fig.height = 6}
+r2.pairs <- pair.matrix(1:ncol(all.r2))
+layout.mat <- matrix(c(1,2,4,3,5,6), nrow = 2, byrow = TRUE)
+if(is.interactive){quartz(width = 9, height = 6)}
+layout(layout.mat)
+
+axis.min <- 0
+axis.max <- 0.8
+
+for(i in 1:nrow(r2.pairs)){
+    idx1 <- r2.pairs[i,1]
+    idx2 <- r2.pairs[i,2]
+    plot.new()
+    plot.window(xlim = c(axis.min, axis.max), ylim = c(axis.min, axis.max))
+    abline(0,1, col = "lightblue", lwd = 3)
+    points(all.r2[,idx1], all.r2[,idx2], pch = 16,col = "darkgray", cex = 0.7)
+    axis(1);axis(2)    
+    mtext(colnames(all.r2)[idx1], side = 1, line = 2.5)
+    mtext(colnames(all.r2)[idx2], side = 2, line = 2.5)
+    mtext(paste(colnames(all.r2)[idx1], "v.", colnames(all.r2)[idx2]), side = 3)
+}
+
+```
+
+```{r retrieval_fun}
+get_snp_scan <- function(gene.id){
+    snp.idx <- which(names(snp.r2) == gene.id)
+    if(length(snp.idx) == 0){
+        return(NA)
+    }else{
+        return(snp.r2[[snp.idx]])
+    }
+}
+
+get_chrom_mat <- function(gene.id){
+    chrom.idx <- which(names(chrom.mats) == gene.id)
+    return(chrom.mats[[chrom.idx]])
+}
+
+get_chrom_scan <- function(gene.id){
+    chrom.idx <- which(rownames(chrom.r2) == gene.id) 
+    if(length(chrom.idx) == 0){
+    return(matrix(NA, ncol = chrom.r2))
+    }
+    return(chrom.r2[chrom.idx,])
+}
+
+get_methyl_mat <- function(gene.id){
+    gene.name <- gene.info[which(gene.info[,"ensembl_gene_id"] == gene.id)[1],"external_gene_name"]
+    gene.locale <- which(names(methyl.mats) == gene.name)
+    if(length(gene.locale) == 0){return(NULL)}
+    gene.mat <- methyl.mats[[gene.locale]]
+    return(gene.mat)
+}
+
+get_methyl_r2 <- function(gene.id){
+    gene.locale <- which(names(methyl.r2) == gene.id)
+    r2.scores <- methyl.r2[[gene.locale]]
+}
+
+get_expr_order <- function(gene.id){
+    gene.idx <- which(names(inbred.expr) == gene.id)
+    gene.expr <- inbred.expr[[gene.idx]]
+    return(gene.expr[order(gene.expr),,drop=FALSE])
+}
+
+get_snp_alleles <- function(gene.id){
+    gene.idx <- which(names(snp.alleles) == gene.id)
+    if(length(gene.idx) == 0){
+        return(NA)
+    }
+    snp.array <- snp.alleles[[gene.idx]]
+    #flatten to letters by position for each strain
+    allele.calls <- apply(snp.array, 1, function(x) apply(x, 1, function(y) which(y > 0)[1]))
+    #reduce complexity to show only where variants differ from reference (B6)
+    has.diff <- which(apply(allele.calls, 2, function(x) length(unique(x))) > 1)
+    if(length(has.diff) == 0){return(NULL)}
+    trimmed.alleles <- allele.calls[,has.diff,drop=FALSE]
+    for(p in 1:ncol(trimmed.alleles)){
+        trimmed.alleles[which(trimmed.alleles[,p] == unlist(trimmed.alleles[2,p])),p] <- NA
+    }
+    return(trimmed.alleles)
+}
+
+get_haplotype_r2 <- function(gene.id){
+    gene.idx <- which(rownames(eqtl.r2) == gene.id)
+    return(eqtl.r2[gene.idx,])
+}
+
+plot_together <- function(gene.id){
+        
+    gene.info.idx <- which(gene.info[,1] == gene.id)[1]
+    if(is.na(gene.info.idx)){
+        return(NULL)
+    }
+
+    gene.name <- gene.info[gene.info.idx,"external_gene_name"]
+    gene.strand <- gene.info[gene.info.idx,"strand"]
+    if(gene.strand == 1){
+        tss.pos <- gene.info[gene.info.idx,"start_position"]
+        tes.pos <- gene.info[gene.info.idx,"end_position"]
+    }else{
+        tss.pos <- gene.info[gene.info.idx,"end_position"]
+        tes.pos <- gene.info[gene.info.idx,"start_position"]
+    }
+
+    hap.r2 <- get_haplotype_r2(gene.id)
+
+    if(length(hap.r2) == 0){
+    return(NULL)
+    }
+
+    gene.snp.r2 <- get_snp_scan(gene.id)
+    gene.snp.alleles <- get_snp_alleles(gene.id)
+    if(length(gene.snp.alleles) > 1){
+        rownames(gene.snp.alleles) <- strain.table[order.strains(rownames(gene.snp.alleles), 
+        strain.table[,1], strain.table),6]
+    }
+
+    gene.chrom.r2 <- get_chrom_scan(gene.id)
+    gene.chrom.mat <- get_chrom_mat(gene.id)
+    
+    gene.methyl.mat1 <- get_methyl_mat(gene.id)
+    if(length(gene.methyl.mat1) > 0){
+        #quartz();pheatmap(gene.methyl.mat1, cluster_rows = FALSE, cluster_cols = FALSE)
+        gene.methyl.mat2 <- t(apply(gene.methyl.mat1, 1, function(x) bin.vector(x, c(0, 50, 100))))
+        #quartz();plot(gene.methyl.mat1, gene.methyl.mat2)
+        #quartz();pheatmap(gene.methyl.mat2, cluster_rows = FALSE, cluster_cols = FALSE)
+        gene.methyl.mat3 <- gene.methyl.mat2[,apply(gene.methyl.mat2, 2, function(x) all(!is.na(x))),drop=FALSE]
+        #quartz();pheatmap(gene.methyl.mat3, cluster_rows = FALSE, cluster_cols = FALSE)
+        gene.methyl.r2 <- get_methyl_r2(gene.id)
+    }else{
+        gene.methyl.mat3 <- gene.methyl.mat1
+        gene.methyl.r2 <- NULL
+        }
+    
+    expr.order <- get_expr_order(gene.id)
+
+    if(length(expr.order) > 1){
+        strain.order <- rev(order.strains(rownames(expr.order), 
+            colnames(gene.chrom.mat), strain.table))
+        if(length(gene.snp.alleles) > 1){
+            snp.strain.order <- rev(order.strains(rownames(expr.order), 
+            rownames(gene.snp.alleles), strain.table))
+            snp.strain.order <- snp.strain.order[which(!is.na(snp.strain.order))]
+        }
+        methyl.strain.order <- order.strains(rownames(expr.order), 
+            rownames(gene.methyl.mat3), strain.table)
+    }else{
+        strain.order <- 1:ncol(gene.chrom.mat)
+        snp.strain.order <- 1:nrow(gene.snp.alleles)
+        methyl.strain.order <- 1:nrow(gene.methyl.mat3)
+    }
+    
+    if(length(gene.snp.r2) > 0 && !is.na(gene.snp.r2)){
+        snp.pos <- as.numeric(sapply(strsplit(names(gene.snp.r2), "_"), function(x) x[2]))
+    }
+    chrom.pos <- as.numeric(rownames(gene.chrom.mat))
+    methyl.pos <- as.numeric(rownames(gene.methyl.r2))
+
+    all.pos <- c(snp.pos, chrom.pos, methyl.pos)
+    #boxplot(list(snp.pos, chrom.pos, methyl.pos, c(tss.pos, tes.pos)))
+    global.max.pos <- max(all.pos)
+    global.min.pos <- min(all.pos)
+    
+    global.max.r2 <- max(c(gene.chrom.r2, gene.snp.r2, gene.methyl.r2, 
+        hap.r2), na.rm = TRUE)
+
+    if(!is.finite(global.max.r2)){
+        return(NULL)
+    }
+
+    if(is.interactive){quartz(width = 8, height = 8)}
+    layout.mat <- matrix(c(1:5, 0, 0, 6, 6, 0), ncol = 2, byrow = FALSE)
+    layout(layout.mat, heights = c(1,0.5, 1, 1, 1), widths = c(1,0.4))
+    
+    #maybe do coef here instead?
+    par(mar = c(0,4,4,4))
+    plot(x = snp.pos, gene.snp.r2, pch = "X", col = "#e41a1c", cex = 1.5,
+        ylab = "r2 Score", axes = FALSE,
+    xlim = c(global.min.pos, global.max.pos), ylim = c(0, global.max.r2))
+    segments(x0 = global.min.pos, x1 = global.max.pos, y0 = gene.chrom.r2,
+        col = CCcolors)
+    #points(x = as.numeric(rownames(gene.chrom.r2)), gene.chrom.r2, pch = "+", 
+    #    col = "#377eb8", cex = 2)
+    points(x = as.numeric(names(gene.methyl.r2)), gene.methyl.r2, pch = "O",
+        col = "#4daf4a", cex = 1)
+    abline(h = hap.r2, lty = 2)
+    axis(2)
+
+    par(xpd = NA)
+    legend(x = global.max.pos, y = global.max.r2, pch = c("X", "+", "O"), 
+        col = c("#e41a1c", "#377eb8", "#4daf4a"), legend = c("SNP", "Chrom", "Methyl"))
+    par(xpd = TRUE)
+
+    par(mar = c(0,4,0,4))
+    plot.new()
+    plot.window(xlim = c(global.min.pos, global.max.pos), ylim = c(0,1))
+    arrows(x0 = tss.pos, y0 = 0.5, x1 = tes.pos)
+
+    par(mar = c(1,4,0,4))
+  
+    plot.chrom.mat(t(gene.chrom.mat[,strain.order]), num.states = num.states, 
+        xlim = c(global.min.pos, global.max.pos))
+
+    par(mar = c(2,4,1,4))
+
+    if(length(gene.snp.alleles) > 0 && ncol(gene.snp.alleles) > 1){
+        plot.chrom.mat(gene.snp.alleles[snp.strain.order,], num.states = 4, 
+        xlim = c(global.min.pos, global.max.pos), ylab = "SNPs", 
+        state.labels = c("A", "C", "G", "T"))
+    }
+    if(length(gene.snp.alleles) > 0 && ncol(gene.snp.alleles) == 1){
+        barplot(gene.snp.alleles[snp.strain.order,], horiz = TRUE, 
+        las = 2, main = paste(round(as.numeric(colnames(gene.snp.alleles))/1e6, 2), "Mb"))
+        legend.labels = paste0(1:4, "=", c("A", "C", "G", "T"))
+        legend("topleft", legend = legend.labels)
+    }
+    if(length(gene.snp.alleles) == 0){
+        plot.text("No SNPs")
+    }
+
+    if(length(gene.methyl.mat3) > 0){
+    plot.methyl.mat(gene.methyl.mat3[methyl.strain.order,,drop=FALSE], 
+        xlim = c(global.min.pos, global.max.pos))
+    }else{
+    plot.text("No Methylation Information")
+    }
+
+    par(mar = c(4,4,4,4))
+    if(length(expr.order) > 1){
+        bar.cols <- strain.table[order.strains(rownames(expr.order), strain.table[,1], 
+        strain.table),3]
+        barplot(expr.order[,1], horiz = TRUE, col = bar.cols, las = 2, 
+            main = "Inbred Hepatocyte Expression")
+    }else{
+        plot.text("No Inbred Expression Data")
+    }
+
+    mtext(gene.name, side = 3, outer = TRUE, line = -2.5)
+}
+#plot_together(gene.id)
+```
+
+
+## Maximum Effect {.tabset .tabset-fade .tabset-pills}
+
+The following plots show examples of genes for which the maximum effect is 
+from one of the three non-haplotype modalities.
+
+```{r max_r2, results = "asis", fig.width = 10, fig.height = 8}
+n.sample = 3
+high.r2 <- which(all.r2[,1] > 0.5)
+max.r2 <- apply(all.r2[high.r2,2:4], 1, function(x) which.max(x))
+max.counts <- lapply(1:3, function(x) which(max.r2 == x))
+#sapply(max.counts, length)
+
+for(i in 1:3){
+    cat("###", colnames(all.r2)[i+1], "{.tabset .tabset-fade .tabset-pills}\n")
+    sample.genes <- sample(names(max.r2), n.sample)
+    for(b in 1:length(sample.genes)){
+        gene.id <- rownames(all.r2)[high.r2[sample.genes[b]]]
+        gene.name <- gene.info[which(gene.info[,1] == gene.id)[1], "external_gene_name"]
+        cat("####", gene.name, "\n")
+        plot_together(gene.id)
+        cat("\n\n")
+    }
+    cat("\n\n")
+}
+```
+
+
+## Pkd2 and Irf5
+
+The following plot shows data for Pkd2 and Irf5, which both have very clean haplotype 
+and chromatin stories. Interestingly, there are no SNPs that we can attribute
+to the haplotype or chromatin effect.
+
+```{r pkd2, fig.width = 10, fig.height = 8}
+gene.name <- "Pkd2"
+gene.id <- gene.info[which(gene.info[,"external_gene_name"] == gene.name)[1],1]
+plot_together(gene.id)
+```
+
+
+```{r irf5, fig.width = 10, fig.height = 8}
+gene.name <- "Irf5"
+gene.id <- gene.info[which(gene.info[,"external_gene_name"] == gene.name)[1],1]
+plot_together(gene.id)
+```
+
+There are many genes that have identical r2 scores for SNPs
+and methylation. I checked a few below, and they are not in the
+same positions. I gather that this is simply a case of the SNPs
+and the DNA mathylation coincidentally having the same haplotype
+pattern. It is not causal.
+
+```{r examples, eval = FALSE}
+#head(all.r2)
+gene.name = "Irf5"
+gene.name = "Pkd2"
+#gene.name = "Cyp46a1"
+gene.id <- gene.info[match(gene.name, gene.info[,"external_gene_name"]),"ensembl_gene_id"]
+
+#gene.id <- 
+#gene.name <- gene.info[match(gene.id, gene.info[,"ensembl_gene_id"]),"external_gene_name"]
+
+pdf(paste0("~/Desktop/", gene.name, "_", num.states, ".pdf"))
+plot_together(gene.id)
+dev.off()
+
+cent_chrom <- readRDS(here("Results", "ChromHMM", "9_states_C", "Chromatin.States.Gene.Coords.RDS"))
+
+get_state_switch <- function(gene.id, state1 = 7, state2 = 3, min.r2 = 0){
+    chrom.mat.locale <- which(names(cent_chrom) == gene.id)
+    if(length(chrom.mat.locale) == 0){return(0)}
+    chrom.r2.locale <- which(names(chrom.r2) == gene.id)
+    if(length(chrom.r2.locale) == 0){return(0)}
+    chrom.mat <- cent_chrom[[chrom.mat.locale]]
+    chrom.r2.mat <- chrom.r2[[chrom.r2.locale]]
+    tss.locale <- get.nearest.pt(as.numeric(rownames(chrom.mat)), 0)
+    tss.r2 <- chrom.r2.mat[tss.locale]
+    if(length(tss.r2) == 0){return(0)}
+    if(tss.r2 > min.r2){
+        has.state1 <- length(which(chrom.mat[tss.locale,] == state1))
+        has.state2 <- length(which(chrom.mat[tss.locale,] == state2))
+        if(has.state1 > 0 && has.state2 > 0){
+            return(1)
+        }else{
+            return(0)
+        }
+    }else{
+        return(0)
+    }    
+}
+
+
+chr_state1 = 7; chr_state2 = 3
+example_switch <- sapply(names(cent_chrom), 
+    function(x) if(length(cent_chrom[[x]]) > 1){get_state_switch(x, chr_state1, chr_state2, 0.1)}else{NA})
+
+has.switch <- which(example_switch > 0)
+length(has.switch)
+pdf("~/Desktop/example_state_switch.pdf")
+for(i in 1:length(has.switch)){
+    print(i)
+    plot_together(gene.id = names(has.switch)[i])
+}
+dev.off()
+
+#potential examples: Irf5, Pkd2, Snhg11, Rarres1, Capg, Kcp, CCnd1
+```
+
+## Conclusions
+
+There are high correlations between haplotype r2 score, SNP r2 score,
+and chromatin r2 score, but they are not 1:1.
+
+There are positions without SNPs that have variation in chromatin.
+There are positions with variation in SNPs that do not have variation in 
+chromatin.
+
+The haplotype always does better than either SNPs or chromatin state.
+Chromatin state usually does better than SNPs, but not always.
+
+
