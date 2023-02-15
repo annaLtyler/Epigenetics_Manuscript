@@ -51,6 +51,15 @@ for(i in 1:length(chrom.bed)){
 
 }
 
+#also write the full set of enhancers to the mm10 folder
+orig.file <- file.path(reg.dir, "liver_chrom.bed")
+compress.line <- paste("gzip", orig.file)
+system(compress.line)
+
+move.line <- paste("mv", paste0(orig.file, ".gz"), here("Data", "mm10"))
+system(move.line)
+
+
 ```
 
 
