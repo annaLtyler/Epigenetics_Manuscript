@@ -64,6 +64,8 @@ strain.expr <- readRDS(here("Data", "RNASeq", "Strain_Mean_C_Expression.RData"))
 scaled.expr <- lapply(strain.expr, scale)
 #scaled.expr <- lapply(strain.expr, function(x) x - x[2]) #center on B6
 
+ind.expr <- readRDS(here("Data", "RNASeq", "StrainsEffCts9_norm.RDS"))
+
 col.table <- as.matrix(read.table(here("Data", "support_files", "strain.color.table.txt"), 
 sep = "\t", comment.char = "%", stringsAsFactors = FALSE))
 
@@ -125,8 +127,10 @@ measured values across all strains.
 ```{r full_methylome_decomp}
 all.present <- lapply(all_sites, function(x) x[which(apply(x, 1, function(y) all(!is.na(y)))),])
 full.methylome <- Reduce("rbind", all.present)
-full.methylome.decomp.file <- here("Results", "RRBS", "Full.Methylome.Decomposition.RDS") #keep just the PC values for the individuals
 
+methylome.cor <- cor(full.methylome) 
+saveRDS(methylome.cor, here("Results", "RRBS", "Methylome.Correlations.RDS")) #save for supplemental figure
+full.methylome.decomp.file <- here("Results", "RRBS", "Full.Methylome.Decomposition.RDS") #keep the PC values for the individuals for main figure
 if(!file.exists(full.methylome.decomp.file)){
   full.methyl.decomp <- plot.decomp(t(full.methylome))
   methyl.strain.pc <- full.methyl.decomp$u
@@ -203,7 +207,44 @@ num_strain_spec <- sapply(strain.spec.sites, nrow)
 num_all <- sapply(all_sites, nrow)
 prop_spec <- num_strain_spec/num_all
 names(prop_spec) <- 1:19 #one element per chromosome
-barplot(prop_spec, ylim = c(0, 0.2))
+barplot_with_num(round(prop_spec, 2)*100, ylab = "Percent Strain-Specific", 
+  text.gap = 0.5, text.shift = 0.15, las = 1, srt = 0, adj = 0.5)
+```
+
+The following plot shows how the strain-specific sites are distributed
+across strains.
+
+```{r strain_breakdown}
+prop.cpg.file <- here("Results", "CpG_proportion_by_strain.RDS")
+
+if(!file.exists(prop.cpg.file) || delete.previous){
+  strain.names <- sapply(colnames(strain.spec.sites[[1]]), function(x) substr(x, 1, (nchar(x)-2)))
+  prop.cpg <- matrix(NA, nrow = length(strain.spec.sites), ncol = length(unique(strain.names)))
+  rownames(prop.cpg) <- 1:nrow(prop.cpg)
+  colnames(prop.cpg) <- unique(strain.names)
+  for(ch in 1:length(strain.spec.sites)){
+    site.table <- strain.spec.sites[[ch]]
+    #for each row, identify which strains have the site and which don't
+    has.cpg <- apply(site.table, 1, function(x) unique(strain.names[which(!is.na(x))]))
+    has.cpg.table <- table(unlist(has.cpg))
+    prop.cpg[ch,] <- has.cpg.table/nrow(site.table)
+  }
+saveRDS(prop.cpg, prop.cpg.file)
+}else{
+prop.cpg <- readRDS(prop.cpg.file)
+}
+
+pheatmap(t(prop.cpg), cluster_cols = FALSE, display_numbers = TRUE)
+```
+
+The following figure shows that the strains CAST, PWK, and B6 had the 
+largest number of strain-specific CpG sites.
+
+```{r strain_abundance}
+strain.cpg.mean <- colMeans(prop.cpg)
+mean.order <- order(strain.cpg.mean, decreasing = FALSE)
+box.col <- col.table[order.strains(names(strain.cpg.mean), col.table[,1], col.table),3]
+boxplot(prop.cpg[,mean.order], col = box.col[mean.order], ylab = "Proportion CpGs present")
 ```
 
 The following plot shows the fold enrichment of strain-specific CpG
@@ -232,12 +273,99 @@ save_bed <- function(bed.table, filename){
   }
   return(gz_file)
 }
+```
 
+The following plot shows the positional enrichments of the 
+CpG sites common to the B6 individuals.
+
+```{r b6_cpg_enrichment}
+
+background.files <- list.files(here("Data", "mm10"), full.names = TRUE)
+
+b6.cpg.enrich.file <- here("Data", "RRBS", "CpG_Enrichment_B6.RDS")
+
+if(!file.exists(b6.cpg.enrich.file)){
+
+    #identify sites in B6 animals as the reference
+    ref.ind <- "B6"
+    ref.idx <- grep(ref.ind, names(all.rrbs))
+    bed.tables <- all.rrbs[ref.idx]
+    common.sites <- Reduce("intersect", lapply(bed.tables, function(x) paste(x[,1], x[,2], sep = "_")))
+    
+    common.chr <- paste0("chr", sapply(strsplit(common.sites, "_"), function(x) x[1]))
+    common.pos <- as.numeric(sapply(strsplit(common.sites, "_"), function(x) x[2]))
+    
+    common.bed <- cbind(common.chr, common.pos-1, common.pos+1)
+    b6_gz_file <- save_bed(common.bed, here("Data", "RRBS", "B6_CpG.bed"))
+    
+    B6_CpG_enrich <- rep(NA, length(background.files))
+    names(B6_CpG_enrich) <- gsub(".bed.gz", "", basename(background.files))
+
+    for(i in 1:length(background.files)){
+      if(is.interactive){cat(basename(background.files[i]), ":")}
+      B6_CpG_enrich[i] <- enrichment_bed(
+        state.bed = b6_gz_file, 
+        annotation.bed = background.files[i], 
+        chrom.size.file = here("Data", "support_files", "mm10.txt"))
+        if(is.interactive){cat(log10(B6_CpG_enrich[i]), "\n")}
+    }
+  saveRDS(B6_CpG_enrich, b6.cpg.enrich.file)
+}else{
+  B6_CpG_enrich <- readRDS(b6.cpg.enrich.file)
+}
+
+par(mar = c(4, 12, 4, 4))
+barplot(sort(log10(B6_CpG_enrich)), las = 2, xlab = "lo10(Fold Enrichment)", 
+horiz = TRUE, main = "log10 Fold Enrichment for B6 CpG Sites")
+```
+
+The following plot shows the positional enrichments for 
+CpG sites shared by all strains. 
+
+```{r common_cpg_enrichment}
+background.files <- list.files(here("Data", "mm10"), full.names = TRUE)
+
+common.cpg.enrich.file <- here("Data", "RRBS", "CpG_Enrichment_common.RDS")
+
+if(!file.exists(common.cpg.enrich.file)){
+
+    common.sites <- lapply(all_sites, function(x) which(apply(x, 1, function(y) all(!is.na(y)))))
+    common.chr <- unlist(lapply(1:length(common.sites), function(x) rep(paste0("chr", x), length(common.sites[[x]]))))
+    common.pos <- unlist(lapply(common.sites, names))
+    common.bed <- cbind(common.chr, common.pos, common.pos)
+    common.bed[,2] <- as.numeric(common.bed[,2])-1
+    common.bed[,3] <- as.numeric(common.bed[,3])+1
+    common_gz_file <- save_bed(common.bed, here("Data", "RRBS", "common_CpG.bed"))
+
+    common_CpG_enrich <- rep(NA, length(background.files))
+    names(common_CpG_enrich) <- gsub(".bed.gz", "", basename(background.files))
+
+    for(i in 1:length(background.files)){
+      if(is.interactive){cat(basename(background.files[i]), ":")}
+      common_CpG_enrich[i] <- enrichment_bed(
+        state.bed = common_gz_file, 
+        annotation.bed = background.files[i], 
+        chrom.size.file = here("Data", "support_files", "mm10.txt"))
+        if(is.interactive){cat(log10(common_CpG_enrich[i]), "\n")}
+    }
+  saveRDS(common_CpG_enrich, common.cpg.enrich.file)
+}else{
+  common_CpG_enrich <- readRDS(common.cpg.enrich.file)
+}
+
+par(mar = c(4, 12, 4, 4))
+barplot(sort(log10(common_CpG_enrich)), las = 2, xlab = "lo10(Fold Enrichment)", 
+horiz = TRUE, main = "log10 Fold Enrichment for B6 CpG Sites")
+```
+
+
+The following plot shows the enrichments for strain-specific CpG
+sites.
+
+```{r specific_enrichment}
 strain_bed <- Reduce("rbind", lapply(1:length(strain.spec.sites), 
   function(x) sites_to_bed(strain.spec.sites[[x]], x, 1)))
 strain_gz_file <- save_bed(strain_bed, here("Data", "RRBS", "Strain_Specific_CpG.bed"))
-
-background.files <- list.files(here("Data", "mm10"), full.names = TRUE)
 
 strain.spec.enrich.file <- here("Data", "RRBS", "strain-specific_site_enrichment.RDS")
 
@@ -246,22 +374,47 @@ if(!file.exists(strain.spec.enrich.file)){
   names(strain_spec_CpG_enrich) <- gsub(".bed.gz", "", basename(background.files))
 
   for(i in 1:length(background.files)){
-          if(is.interactive){cat(basename(background.files[i]), "\n")}
+          if(is.interactive){cat(basename(background.files[i]), ": ")}
           strain_spec_CpG_enrich[i] <- enrichment_bed(
-          state.bed = strain_gz_file, 
-          annotation.bed = background.files[i], 
-          chrom.size.file = here("Data", "support_files", "mm10.txt"))
+            state.bed = strain_gz_file, 
+            annotation.bed = background.files[i], 
+            chrom.size.file = here("Data", "support_files", "mm10.txt"))
+          cat(log10(strain_spec_CpG_enrich[i]), "\n")
   }
   saveRDS(strain_spec_CpG_enrich, strain.spec.enrich.file)
 }else{
   strain_spec_CpG_enrich <- readRDS(strain.spec.enrich.file)
 }
 
-if(is.interactive){quartz()}
+
 par(mar = c(4, 12, 4, 4))
 barplot(sort(log10(strain_spec_CpG_enrich)), las = 2, xlab = "lo10(Fold Enrichment)", 
 horiz = TRUE, main = "log10 Fold Enrichment for Strain-Specific CpG Sites")
 ```
+
+The following plot shows the proportional enrichment of 
+strain-specific sites/B6 sites
+
+strain-specific sites are more enriched in enhancers 
+than B6 sites.
+
+```{r enrich_diff}
+enrich.prop <- strain_spec_CpG_enrich/B6_CpG_enrich
+par(mar = c(4, 12, 4, 4))
+enrich.order <- order(enrich.prop)
+barplot(enrich.prop[enrich.order], horiz = TRUE, las = 2, 
+  main = "strain-specific enrichment vs. B6 enrichment")
+abline(v = 1)
+
+enrich.prop <- strain_spec_CpG_enrich/common_CpG_enrich
+par(mar = c(4, 12, 4, 4))
+enrich.order <- order(enrich.prop)
+barplot(enrich.prop[enrich.order], horiz = TRUE, las = 2, 
+  main = "strain-specific enrichment vs. common enrichment")
+abline(v = 1)
+
+```
+
 
 The following plots show PC plots for each chromosome to indicate
 how the strain-specific sites were distributed.
@@ -306,6 +459,7 @@ methylation into 0, 50, and 100%.
 
 
 ```{r strain_spec_perc, fig.width = 10, fig.height = 8}
+
 #subset to sites that are present across all strains
 full_methyl <- lapply(all_sites, function(x) x[which(!is.na(rowSums(x))),])
 #count the number of methylation levels across all sites
@@ -360,6 +514,8 @@ site_prop <- apply(site_counts, 2, function(x) x/sum(x))
 type.cols <- brewer.pal(5, "Set1")
 
 boxplot(t(site_prop), main = "Proportion of CpG sites", ylab = "Proportion", col = type.cols)
+abline(h = seq(0.05, 0.55, 0.05), lty = "dotted", col = "gray")
+abline(v = 1:5, lty = "dotted", col = "gray")
 ```
 
 The following heat map shows the log10(Fold Enrichment) 
@@ -410,26 +566,34 @@ imageWithText(round(log10(t(CpG.enrich.mat[row.order,col.order])),2),
 Get methylation percentages for all genes and all strains given the above bp buffers.
 
 ```{r gene_methyl}
-strain.gene.methylation <- vector(mode = "list", length = length(strains))
-names(strain.gene.methylation) <- strains
+strain.methylation.file <- here("Results", "RRBS", "DNA_Methylation_By_Strain.RDS")
 
-for(st in 1:length(strains)){
-  gene.methyl.file <- here("Data", "RRBS", paste0("All.Gene.Methylation.", strains[st], ".RDS"))
+if(!file.exists(strain.methylation.file)){
+  strain.gene.methylation <- vector(mode = "list", length = length(strains))
+  names(strain.gene.methylation) <- strains
 
-  if(!file.exists(gene.methyl.file) || delete.previous){
-    cat("Getting methylation for", strains[st], "\n")
-    gene.methyl <- lapply_pb(u_genes[1:test.num], 
-    function(x) get.methyl.by.gene(x, gene.info.table = transcript.info, 
-    methyl.data = all.rrbs, methyl.id.table = id.table, 
-    upstream.buffer = survey.buffer, downstream.buffer = survey.buffer, 
-    strains = strains[st], treatment = "C", strain.means = FALSE))
-    names(gene.methyl)  <- u_genes[1:test.num]
-    saveRDS(gene.methyl, gene.methyl.file)
-  }else{
-    gene.methyl <- readRDS(gene.methyl.file)
+  for(st in 1:length(strains)){
+    gene.methyl.file <- here("Data", "RRBS", paste0("All.Gene.Methylation.", strains[st], ".RDS"))
+
+    if(!file.exists(gene.methyl.file) || delete.previous){
+      cat("Getting methylation for", strains[st], "\n")
+      gene.methyl <- lapply_pb(u_genes[1:test.num], 
+      function(x) get.methyl.by.gene(x, gene.info.table = transcript.info, 
+      methyl.data = all.rrbs, methyl.id.table = id.table, 
+      upstream.buffer = survey.buffer, downstream.buffer = survey.buffer, 
+      strains = strains[st], treatment = "C", strain.means = FALSE))
+      names(gene.methyl)  <- u_genes[1:test.num]
+      saveRDS(gene.methyl, gene.methyl.file)
+    }else{
+      gene.methyl <- readRDS(gene.methyl.file)
+    }
+    strain.gene.methylation[[st]] <- gene.methyl
   }
-  strain.gene.methylation[[st]] <- gene.methyl
+saveRDS(strain.gene.methylation, strain.methylation.file)
+}else{
+  strain.gene.methylation <- readRDS(strain.methylation.file)
 }
+
 ```
 
 Calculate average RRBS for each gene across replicates. 
@@ -493,7 +657,7 @@ saveRDS(methyl.mats, methyl.mat.file)
   methyl.mats <- readRDS(methyl.mat.file)
 }
 
-#quartz();pheatmap(methyl.mats[[1]], cluster_rows = FALSE, cluster_cols = FALSE)
+#pheatmap(methyl.mats[[1]], cluster_rows = FALSE, cluster_cols = FALSE)
 ```
 
 Normalize gene coordinates to run from 0 to 1 from the TSS to the TES.
@@ -518,7 +682,7 @@ if(!file.exists(norm.rrbs.file) || delete.previous){
 }else{
     norm_rrbs <- readRDS(norm.rrbs.file)
 }
-#quartz();pheatmap(norm_rrbs[[1]], cluster_rows = FALSE, cluster_cols = FALSE)
+#pheatmap(norm_rrbs[[1]], cluster_rows = FALSE, cluster_cols = FALSE)
 
 ```
 
@@ -543,7 +707,7 @@ for(i in 1:length(methyl_dist)){
     names(methyl_dist[[i]]) <- mean.coords
   }
 }
-if(is.interactive){quartz()}
+
 methyl_dens_file <- here("Results", "RRBS", "Methylation_Density.RDS")
 if(!file.exists(methyl_dens_file) || delete.previous){
   avg_methyl_dist <- plot.centered.vals(val.list = methyl_dist, 
@@ -560,7 +724,6 @@ if(!file.exists(methyl_dens_file) || delete.previous){
       abline(v = c(0,1))
 }
 ```
-
 
 
 ## DNA methylation percentage {.tabset .tabset-fade .tabset-pills}
@@ -779,6 +942,7 @@ on gene expression near the TSS. Other than that, there
 is no overall effect of DNA methylation.
 
 ```{r rrbs_expr_cor, fig.width = 7, fig.height = 5, warning = FALSE}
+
 rrbs.expr.effect <- vector(mode = "list", length = length(strains))
 names(rrbs.expr.effect) <- strains
 strain.expr.order <- order.strains(strains,names(strain.expr[[1]]), col.table)
@@ -794,6 +958,8 @@ colnames(strain.expr.mat) <- rownames(strain.expr[[1]])
 
 for(st in 1:length(strains)){
   strain_mat <- strain_rrbs_mat[[st]][match(common.genes, rownames(strain_rrbs_mat[[st]])),]
+  #assign NA to 0. A missing CpG cannot be methylated
+  strain_mat[which(is.na(strain_mat))] <- 0
   rrbs.expr.effect[[st]] <- apply(strain_mat, 2, 
     function(x) plot.with.model(x, strain.expr.mat[,strain.expr.order[st]], 
     confidence = 0.99, plot.results = FALSE))
@@ -820,7 +986,7 @@ mtext(text = "Relative Gene Position", side = 1, line = 2.5)
 mtext(text = "Effect Size", side = 2, line = 2.5)
 abline(v = c(0,1), lwd = 2, col = "gray60", lty = 2)
 abline(h = 0, col = "gray40", lty = 2)
-#pheatmap(rrbs.expr.cor, cluster_cols = FALSE, cluster_rows = FALSE)
+
 
 within.strain.plotting.data <- cbind(rel.pos, all.lwr, all.fit, all.upr)
 colnames(within.strain.plotting.data) <- c("position", "lwr", "fit", "upr")
@@ -849,6 +1015,8 @@ for(st in 1:length(strains)){
   strain_mat <- strain_rrbs_mat[[st]][match(common.genes, rownames(strain_rrbs_mat[[st]])),]
   common.gene.idx <- match(intersect(rownames(strain_mat), rownames(bimodal_mat)), rownames(strain_mat))
   strain_mat <- strain_mat[common.gene.idx,]
+  #replace NA's with 0s because sites that don't have CpG's aren't methylated
+  strain_mat[which(is.na(strain_mat))] <- 0
   strain.expr.mat <- strain.expr.mat[common.gene.idx,]
   common.bimodal.idx <- match(intersect(rownames(strain_mat), rownames(bimodal_mat)), rownames(bimodal_mat))
   non.bimodal <- which(bimodal_mat[common.bimodal.idx,] == 0)
@@ -903,6 +1071,8 @@ for(st in 1:length(strains)){
   strain_mat <- strain_rrbs_mat[[st]][match(common.genes, rownames(strain_rrbs_mat[[st]])),]
   common.gene.idx <- match(intersect(rownames(strain_mat), rownames(trimodal_mat)), rownames(strain_mat))
   strain_mat <- strain_mat[common.gene.idx,]
+  #replace NA's with 0s because sites that don't have CpG's aren't methylated
+  strain_mat[which(is.na(strain_mat))] <- 0
   strain.expr.mat <- strain.expr.mat[common.gene.idx,]
   common.trimodal.idx <- match(intersect(rownames(strain_mat), rownames(trimodal_mat)), rownames(trimodal_mat))
   non.trimodal <- which(trimodal_mat[common.trimodal.idx,] == 0)
@@ -966,16 +1136,22 @@ if(!file.exists(gene.expr.cor.file) || delete.previous){
   expr.gene.names <- transcript.info[match(names(strain.expr), 
       transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
   common.genes <- Reduce("intersect", lapply(strain_rrbs_mat, rownames))
+  expr.order <- order.strains(strains, names(strain.expr[[1]]), col.table)
   scaled.expr.mat <- t(sapply(scaled.expr[match(common.genes, expr.gene.names)], 
     function(x) if(length(x) > 1){x[expr.order,]}else{rep(NA, 9)}))
-  expr.order <- order.strains(strains, names(strain.expr[[1]]), col.table)
-
+  
   stat.mat <- matrix(NA, nrow = ncol(strain_rrbs_mat[[1]]), ncol = 5)
   colnames(stat.mat) <- c("r.cor", "p", "slope.fit", "slope.lwr", "slope.upr")
   rownames(stat.mat) <- colnames(strain_rrbs_mat[[1]])
-  
+
+  #replace NA's with 0s because non-CpG sites are not methylated
+  with_zeros_mat <- strain_rrbs_mat
+  for(st in 1:length(with_zeros_mat)){
+    with_zeros_mat[[st]][which(is.na(strain_rrbs_mat[[st]]))]  <- 0
+  }
+
   for(pos in 1:ncol(strain_rrbs_mat[[1]])){
-    pos.rrbs <- sapply(strain_rrbs_mat, function(x) x[match(common.genes, rownames(x)),pos])
+    pos.rrbs <- sapply(with_zeros_mat, function(x) x[match(common.genes, rownames(x)),pos])
     stat.mat[pos,] <- plot.with.model(as.vector(pos.rrbs), as.vector(scaled.expr.mat), 
       report = "cor.test", confidence = 0.95, plot.results = FALSE)
   }
@@ -984,9 +1160,9 @@ if(!file.exists(gene.expr.cor.file) || delete.previous){
   stat.mat <- readRDS(gene.expr.cor.file)
 }
 
-if(is.interactive){quartz()}
+
 plot.new()
-plot.window(xlim = c(-0.5, 1.5), ylim = c(-0.01, 0.01))
+plot.window(xlim = c(-0.5, 1.5), ylim = c(-0.001, 0.001))
 plot.poly.xy(rel.pos, stat.mat[,"slope.lwr"], rel.pos, stat.mat[,"slope.upr"],
 col = "gray80", border = "gray80")
 points(rel.pos, stat.mat[,"slope.fit"], type = "l", col = "gray40", lwd = 2)
@@ -1014,16 +1190,190 @@ as it might be due to a SNP that either creates or destroys the site.
 Therefore, we also want to look at the correlation between site
 presence/absence and gene expression across strains.
 
+First look at each individual transcript to see how the presence
+or absence of CpG sites affects expression.
+
+```{r ind_transcripts}
+
+pres.coef.file <- here("Results", "RRBS", "Presence_Absence_Coef.RDS")
+nbins <- 15
+gene.bins <- segment_region(-0.6, 1.6, nbins+1, "ends")
+save.every = 100
+
+#set up variables and checks
+expr.gene.names <- transcript.info[match(rownames(ind.expr), 
+  transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
+common.genes <- Reduce("intersect", list(names(strain.gene.methylation[[1]]), expr.gene.names))
+
+#strain.gene.methylation
+#ind.expr 
+methyl.names <- gsub("129", "S1", gsub("_", "", unlist(lapply(strain.gene.methylation, function(x) colnames(x[[1]])))))
+ind.order <- match(colnames(ind.expr), methyl.names)
+#cbind(colnames(ind.expr), methyl.names[ind.order])
+all.ind <- unlist(lapply(strain.gene.methylation, function(x) colnames(x[[1]])))
+
+if(!file.exists(pres.coef.file) || delete.previous){
+  start.at <- 1
+  all.bin.coef <- vector(mode = "list", length = length(common.genes))
+  names(all.bin.coef) <- common.genes
+}else{
+  all.bin.coef <- readRDS(pres.coef.file)
+  results.len <- sapply(all.bin.coef, length)
+  start.at <- max(which(results.len > 0))+1
+}
+
+if(start.at < length(common.genes)){
+  
+  sink(here("Results", "RRBS", "progress.txt"))
+  for(i in start.at:length(common.genes)){
+    #if(is.interactive){report.progress(i, length(gene.names))}
+    cat(i, ":")
+    expr.idx <- which(expr.gene.names == common.genes[i])
+    methyl.idx <- lapply(strain.gene.methylation, function(x) which(names(x) == common.genes[i]))
+
+    gene.expr <- rankZ(ind.expr[expr.idx,])
+    methyl.mat <- lapply(1:length(methyl.idx), function(x) strain.gene.methylation[[x]][[methyl.idx[[x]]]])
+
+    all.strains.pres <- all(sapply(methyl.mat, length) > 1)
+    if(!all.strains.pres){cat(" Not all strains have methylation data\n");next()}
+
+    #get all uniqe positions
+    u_pos <- sort(unique(as.numeric(unlist(lapply(methyl.mat, rownames)))))
+
+    if(length(u_pos) == 0){cat(" No methylation matrix\n");next()}
+    if(length(u_pos) > 2000){cat(" Methylation matrix is too large\n");next()}
+
+    #make one big matrix for all strains
+    combined.mat <- matrix(NA, nrow = length(all.ind), ncol = length(u_pos))
+    rownames(combined.mat) <- all.ind
+    colnames(combined.mat) <- u_pos
+    for(st in 1:length(methyl.mat)){
+      combined.mat[colnames(methyl.mat[[st]]),rownames(methyl.mat[[st]])] <- methyl.mat[[st]]
+    }
+  #pheatmap(combined.mat, cluster_rows = FALSE, cluster_cols = FALSE)
+  #binarize the matrix
+  bin.mat <- combined.mat
+  bin.mat[which(!is.na(combined.mat))] <- 1
+  bin.mat[which(is.na(combined.mat))] <- 0
+
+  combined.model <- apply(bin.mat[ind.order,], 2,
+    function(x) lm(gene.expr~x)) 
+  combined.coef <- t(sapply(combined.model, 
+    function(x) if(!is.na(coef(x)[2])){coef(summary(x))[2,]}else{rep(NA, 4)}))
+  colnames(combined.coef) <- colnames(coef(summary(combined.model[[1]])))
+  all.bin.coef[[i]] <- combined.coef
+
+  #plot(combined.coef[,1], -log10(combined.coef[,4]))
+  #sig.idx <- which(combined.coef[,4] < 1e-3)
+  #combined.coef[sig.idx,]
+  #plot.with.model(bin.mat[ind.order,"3221219"], gene.expr, col = strain.col, main = common.genes[i])
+  #norm.coord  <- center.on.feature(gene.name = common.genes[i], gene.info = transcript.info, vals = rownames(combined.coef), feature = "full")
+  #p.col <- colors.from.values(-log10(combined.coef[,4]), col.scale = "blue", grad.dir = "high")
+  #p.order <- order(-log10(combined.coef[,4]), decreasing = FALSE)
+  #plot(as.numeric(names(norm.coord))[p.order], combined.coef[p.order,1], type = "h", col = p.col[p.order], main = common.genes[i], lwd = 3);abline(h = 0, v = c(0,1))
+
+  if(i %% save.every == 0){
+    saveRDS(all.bin.coef, pres.coef.file)
+  }
+  cat("\n")
+  }
+  saveRDS(all.bin.coef, pres.coef.file)
+}else{
+  all.bin.coef <- readRDS(pres.coef.file)
+}
+sink()
+```
+
+The following figure shows the distribution of p values for
+presence/absence CpG sites and gene expression. There is an
+enrichment of significant p values.
+
+```{r pres_abs_p}
+all.p <- unlist(lapply(all.bin.coef, function(x) if(length(x) > 1){x[,4]}))
+hist(all.p, breaks = 25)
+sig.genes <- sapply(all.bin.coef, function(x) length(which(x[,4] <= 1e-5)))
+#length(which(sig.genes > 1))
+```
+
+The following plot shows the distribution of coefficients of disrupted
+CpGs. There is no predominant direction of effect either up or down.
+
+```{r coef_dist}
+all.coef <- unlist(lapply(all.bin.coef, function(x) if(length(x) > 1){x[,1]}))
+hist(all.coef, main = "All Coefficients")
+abline(v = mean(all.coef, na.rm = TRUE), col = "red")
+```
+
+The following plot shows the distribution of coefficients that
+were significant at the 10^-5 level. There is still no predominant
+direction of effects. CpG disruptions are just as likely to increase
+expression as decresae expression.
+
+```{r sig_coef}
+hist(all.coef[which(all.p <= 1e-5)], breaks = 100, main = "Significant Coefficients")
+```
+
+The following plot shows that most CpG islands that are affected by 
+loss/gain across strains are concentrated at the TSS, although, I think
+that this is probably because we measured most near the TSS.
+
+
+```{r pres_abs_dist, fig.width = 10, fig.height = 4}
+pres.norm.coord <- lapply(1:length(all.bin.coef), function(x) if(length(all.bin.coef[[x]] > 0)){center.on.feature(names(all.bin.coef)[x], gene.info = transcript.info, vals = rownames(all.bin.coef[[x]]), feature = "full")}else{NA})
+
+all.coord <- unlist(lapply(1:length(pres.norm.coord), function(x) if(length(all.bin.coef[[x]] > 1)){as.numeric(names(pres.norm.coord[[x]]))}))
+all.neg.log.p <- unlist(lapply(1:length(pres.norm.coord), function(x) if(length(all.bin.coef[[x]] > 1)){-log10(all.bin.coef[[x]][,4])}))
+all.coord.coef <- unlist(lapply(1:length(pres.norm.coord), function(x) if(length(all.bin.coef[[x]] > 1)){all.bin.coef[[x]][,1]}))
+
+region.bins <- segment.region(-0.6, 1.6, 42)
+
+bin.idx <- lapply(1:(length(region.bins)-1), 
+  function(x) intersect(which(all.coord >= region.bins[x]),
+  which(all.coord <= region.bins[(x+1)])))
+
+binned.log.p <- lapply(bin.idx, function(x) all.neg.log.p[x])
+binned.coef <- lapply(bin.idx, function(x) all.coord.coef[x])
+
+bin.coord <- region.bins[1:(length(region.bins)-1)]
+num.log.p <- sapply(binned.log.p, function(x) length(x))
+plot(bin.coord, num.log.p, type = "h", lwd = 3, xlab = "Relative Position",
+  ylab = "Count", main = "Number of CpG sites with strain-specific presence")
+```
+
+The following plot shows the mean -log10(p) for CpG effects
+on expression in each region. This shows that although the
+number of sites disrupted near the TSS is the greatest, these
+are some of the least significant changes in terms of expression
+across the gene body.
+
+```{r mean_p, fig.width = 10, fig.height = 4}
+plot_mean_conf(bin.coord, binned.log.p, conf.level = 0.95, spar = 0.4, 
+  xlab = "Relative Position", ylab = "Mean log10(p)", main = "Mean log10(p)")
+```
+
+The plot below shows the mean effect of each CpG disruption
+on gene expression. There is no consisten direction of 
+change in gene expression based on disrupted CpG sites.
+
+```{r mean_coef}
+plot_mean_conf(bin.coord, binned.coef, conf.level = 0.95, spar = 0.4, 
+  xlab = "Relative Position", ylab = "Mean Coef", main = "Mean Coef")
+abline(h = 0)
+```
+
+Should we say something about specific genes with CpG disruptions?
+
 ```{r presence_absence}
+
 pres.expr.cor.file <- here("Results", "RRBS", "RRBS.presence.Expr.Cor.Across.Strains.RDS")
 
 if(!file.exists(pres.expr.cor.file) || delete.previous){
   expr.gene.names <- transcript.info[match(names(strain.expr), 
       transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
   common.genes <- Reduce("intersect", lapply(strain_rrbs_mat, rownames))
+  expr.order <- order.strains(strains, names(strain.expr[[1]]), col.table)
   scaled.expr.mat <- t(sapply(scaled.expr[match(common.genes, expr.gene.names)], 
     function(x) if(length(x) > 1){x[expr.order,]}else{rep(NA, 9)}))
-  expr.order <- order.strains(strains, names(strain.expr[[1]]), col.table)
 
   stat.mat <- matrix(NA, nrow = ncol(strain_rrbs_mat[[1]]), ncol = 5)
   colnames(stat.mat) <- c("r.cor", "p", "slope.fit", "slope.lwr", "slope.upr")
@@ -1045,7 +1395,7 @@ if(!file.exists(pres.expr.cor.file) || delete.previous){
 }
 
 coords <- as.numeric(colnames(strain_rrbs_mat[[1]]))
-if(is.interactive){quartz()}
+
 plot.new()
 plot.window(xlim = c(-0.5, 1.5), ylim = c(-0.1, 0.1))
 plot.poly.xy(coords, stat.mat[,"slope.lwr"], coords, stat.mat[,"slope.upr"],

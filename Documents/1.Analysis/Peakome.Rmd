@@ -73,6 +73,11 @@ norm_fun <- function(bed.table){
 }
 
 norm.peakomes <- lapply(peakomes, norm_fun)
+peakome.cor <- lapply(norm.peakomes, cor)
+for(i in 1:length(peakome.cor)){
+    rownames(peakome.cor[[i]]) <- colnames(peakome.cor[[i]]) <- gsub("ac", "", gsub("kac", "", samples[[1]]))
+}
+saveRDS(peakome.cor, here("Results", "Peakome", "Histone_Correlation.RDS")) #save for Supplemental Figure 1
 ```
 
 Plot the decompositions of the normalized data.

@@ -178,12 +178,14 @@ if(!file.exists(rrbs.r2.file) || delete_previous){
     for(i in 1:length(all.rrbs.r2)){
         cat(i, ":")
         methyl.mat.locale <- which(names(methyl.mats) == ordered.transcript.info[i,"external_gene_name"])
-        if(length(methyl.mats[[methyl.mat.locale]]) <= 1 || nrow(methyl.mats[[methyl.mat.locale]]) >= 2000){cat("No DNA methylation matrix\n");next()}
+        if(length(methyl.mats[[methyl.mat.locale]]) <= 1 || ncol(methyl.mats[[methyl.mat.locale]]) >= 2000){cat("No DNA methylation matrix\n");next()}
 
         transcript.chr <- ordered.transcript.info[i,"chromosome_name"]
         if(is.na(transcript.chr) || transcript.chr == "X" || transcript.chr == "MT"){cat(" Not on an autosome\n");next()}
 
         rrbs.mat <- methyl.mats[[methyl.mat.locale]][strain.order,,drop=FALSE]
+        #replace NAs with 0s becuase missing CpG sites will not be methylated
+        rrbs.mat[which(is.na(rrbs.mat))] <- 0
         hap.mat <- gene.marker[[i]]
         rrbs.array <- rrbs_geno(gene.rrbs.array = rrbs.mat, 
           haplotype.matrix = hap.mat, 
@@ -243,6 +245,17 @@ binned.coef <- lapply(1:(length(coord.bins)-1),
 
 coef.mean <- sapply(binned.coef, function(x) mean(x, na.rm = TRUE))
 coef.se <- sapply(binned.coef, function(x) sd(x, na.rm = TRUE)/sqrt(length(which(!is.na(x)))))
+coef.conf <- sapply(binned.coef, function(x) t.test(x, conf.int = 99)$conf.int)
+
+#ylim = c(min(coef.conf), max(coef.conf))
+#plot(1:length(binned.coef), coef.mean, type = "l", ylim = ylim)
+#points(1:14, coef.conf[1,], col = "red", type = "l")
+#points(1:14, coef.conf[2,], col = "red", type = "l")
+#abline(h = 0)
+
+imp.rrbs.effect <- rbind(coef.mean, coef.conf)
+colnames(imp.rrbs.effect) <- plot.coord
+saveRDS(imp.rrbs.effect, here("Results", "RRBS", "Imputed_RRBS_effect.RDS"))
 
 plot.new()
 plot.window(xlim = c(-0.5, 1.5), ylim = c(min(coef.mean-coef.se), max(coef.mean+coef.se)))
@@ -254,6 +267,7 @@ axis(1)
 axis(2)
 abline(v = c(0, 1), col = "gray", lty = 2, lwd = 2)
 mtext("Mean DNA Methylation Effect on Transcription in DO", side = 3, line = 1.5)
+
 ```
 
 ```{r centered_r2}
@@ -279,4 +293,236 @@ axis(1)
 axis(2)
 abline(v = c(0, 1), col = "gray", lty = 2, lwd = 2)
 mtext("Mean DNA Methylation Variance Explained in DO", side = 3, line = 1.5)
+```
+
+## Permutations for RRBS
+
+From 3.2_Impute_RRBS.Rmd
+
+## Permute RRBS
+
+We permuted the DNA methylation as we did for chromatin 
+states. We permute the haplotype that is assigned to 
+each DNA methylation vector, re-do the imputation, 
+and recalculate the LOD scores and R2 values.
+
+
+```{r perm_fun}
+
+#This function and the perm data will be exported to the
+#clusters
+scan_one_rrbs <- function(perm.data, p){
+    
+  perm.order <- order.mat[p,]
+
+  imp.geno <- rrbs_geno(gene.rrbs.array = perm.data$rrbs.mat, 
+            haplotype.matrix = perm.data$hap.mat, 
+            gene.chr = perm.data$chr, perm.order)
+          
+  if(is.na(imp.geno)){return(NA)}
+
+  one.lod <- scan1(imp.geno, perm.data$gene.expr)
+  #quartz();plot(as.numeric(rownames(all.rrbs.lod[[i]])), all.rrbs.lod[[i]][,1], type  = "h",xlab = "Genomic Position", ylab = "DNA Methylation LOD score")
+  regression.models <- apply(imp.geno[[1]][common.genoprob.locale,1,], 2, 
+      function(x) if(var(x) > 0){lm(perm.data$gene.expr[common.expr.locale,]~x)}else{NA})
+  one.rrbs.r2 <- sapply(regression.models, function(x) if(length(x) > 1){summary(x)$adj.r.squared}else{NA})
+
+  results <- list("one.lod" = one.lod, 
+    "one.r2" = one.rrbs.r2)
+
+  return(results)
+}
+```
+
+```{r select_nperm}
+nperm = 1000
+```
+
+
+```{r set_perm}
+#select a set of permutations for which none of 
+#the haplotypes remain in their original position.
+#these are called derrangements
+perm.mat <- derrangements(8)
+#sample a random set of derraangements to use
+#for all transcripts
+perm.rows <- sample(1:nrow(perm.mat), nperm)
+order.mat <- perm.mat[perm.rows,]
+```
+
+
+
+```{r perm_files}
+
+perm.lod.rrbs.file <- here("Results", "RRBS", "Perm.RRBS.LOD.RDS")
+perm.r2.rrbs.file <- here("Results", "RRBS", "Perm.RRBS.R2.RDS")
+
+if(file.exists(perm.lod.rrbs.file)){
+  perm.rrbs.lod <- readRDS(perm.lod.rrbs.file)
+  perm.rrbs.r2 <- readRDS(perm.r2.rrbs.file)
+
+  #figure out where we left off.
+  not.na <- which(!is.na(perm.rrbs.lod[,1]))  
+  left.off <- max(not.na)
+  start.at <- left.off + 1
+}else{
+  start.at <- 1
+  #if we are at the beginning, intialize all the objects for holding
+  #results. 
+  perm.rrbs.lod <- perm.rrbs.r2 <- matrix(NA, nrow = length(methyl.id), ncol = nperm)
+  rownames(perm.rrbs.lod) <- rownames(perm.rrbs.r2) <- methyl.id
+}
+
+```
+
+
+```{r set_cl, warning = FALSE}
+save.every = 100
+if(start.at < length(methyl.id)){
+  #set up the clusters if we need to run perutations
+  n.cores <- detectCores() - 1
+  to.export <- c("scan1", "scan1coef", "scan_one_rrbs", "rrbs_geno", 
+    "order.mat", "bin.vector", "abind", "common.genoprob.locale", 
+    "common.expr.locale")
+
+  #create and register multiple cores for parallele permutations
+  cl <- makeCluster(n.cores)
+  registerDoParallel(cl)
+  #export everything we need to the cluster
+  #this takes time upfront, but the parallelization
+  #saves a huge amount of time overall
+  clusterExport(cl, to.export) 
+}
+```
+
+
+```{r perm_rrbs}
+
+if(start.at < length(methyl.id)){
+  sink(here("Results", "RRBS", "progress.txt"))
+  for(tr in start.at:length(perm.rrbs.lod)){
+      cat(paste0(tr, ":"))
+      methyl.mat.locale <- which(names(methyl.mats) == ordered.transcript.info[tr,"external_gene_name"])
+
+      #checks for methylation matrix
+      if(length(methyl.mats[[methyl.mat.locale]]) <= 1){cat(" Cannot locate array\n");next()} #it exists
+      if(ncol(methyl.mats[[methyl.mat.locale]]) > 2000){cat(" Array too large\n");next()} #is is of a reasonable size
+
+      transcript.chr <- ordered.transcript.info[tr,"chromosome_name"]
+
+      #checks for chromosome
+      if(is.na(transcript.chr) || transcript.chr == "X" || transcript.chr == "MT"){cat(" Transcript not on autosome\n");next()}
+      
+      rrbs.mat <- methyl.mats[[methyl.mat.locale]][strain.order,,drop=FALSE]
+      #change missing CpG sites to 0 because if they are not a CpG site, they will not be methylated.
+      rrbs.mat[which(is.na(rrbs.mat))] <- 0
+      hap.mat <- gene.marker[[tr]]
+      rrbs.array <- rrbs_geno(gene.rrbs.array = rrbs.mat, 
+        haplotype.matrix = hap.mat, 
+        gene.chr = ordered.transcript.info[i,"chromosome_name"])
+
+      #check for rrbs.array
+      if(is.na(rrbs.array)){cat(" No RRBS array\n"); next()}
+
+      expr.locale <- which(colnames(expr) == methyl.id[tr])
+
+      gene.expr.choice <- as.logical(length(expr.locale))
+      
+      #check for gene expr
+      if(length(expr.locale) == 0){cat(" Cannot find expression\n");next()}
+      gene.expr <- expr[,expr.locale,drop=FALSE]
+      adj.expr <- adjust(gene.expr, covar)
+      
+      perm.data <- list("gene.expr" = gene.expr, 
+        "rrbs.mat" = rrbs.mat, "hap.mat" = hap.mat,
+        "chr" = ordered.transcript.info[tr,"chromosome_name"])
+
+      #send the new gene ID to the clusters
+      clusterExport(cl, "perm.data")
+
+      #do the permutations in parallel
+      perm.rrbs.results <- parLapply(cl, 1:nperm, 
+          function(p) scan_one_rrbs(perm.data, 
+          p = p))
+
+      #check for data returned from permutations
+      if(!all(sapply(perm.rrbs.results, length) > 1)){cat(" No data returned\n");next()}
+      
+      perm.tr.lod <- lapply(perm.rrbs.results, function(x) x$one.lod)
+      perm.tr.r2 <- lapply(perm.rrbs.results, function(x) x$one.r2)
+
+      #keep the maximum r2 and LOD values from each permutation.
+      perm.rrbs.lod[tr,] <- t(sapply(perm.tr.lod, function(x) max(x[,1])))
+      perm.rrbs.r2[tr,] <- t(sapply(perm.tr.r2, function(x) max(x, na.rm = TRUE)))
+
+      if(tr %% save.every == 0){
+          saveRDS(perm.rrbs.lod, perm.lod.rrbs.file)
+          saveRDS(perm.rrbs.r2, perm.r2.rrbs.file)
+      }
+    cat(" Finished permutations\n")
+  } #end looping over transcripts
+  #save again at the very end
+  saveRDS(perm.rrbs.lod, perm.lod.rrbs.file)
+  saveRDS(perm.rrbs.r2, perm.r2.rrbs.file)
+
+  sink()
+
+  #close the clusters at the end and save the final objects
+  stopCluster(cl)
+
+} #end case for needing to do more permutations.
+```
+
+## Assess permutations
+
+To assess the permutations, we look at the distribution
+of empirical p values. If this distribution is uniform,
+then it is the imputation itself that is explaining the
+LOD scores we see. If the distribution is skewed toward
+0, then the DNA methylation is adding something beyond
+the imputation itself.
+
+The plots below show the distributions of p values for both 
+the R2 statistic and the LOD score statistic. Both are
+skewed toward 0. The dot plot shows that the p values for 
+these two statistics are highly correlated, but not identical.
+
+```{r assess_lod_perm, fig.width = 4, fig.height = 4}
+geno.lod <- readRDS(here("Results", "ChromHMM", "14_states_C", "eQTL.lod.RDS"))
+low.lod <- which(geno.lod[,"Additive"] <= 6)
+low.lod.idx <- match(rownames(geno.lod)[low.lod], names(all.rrbs.r2))
+
+max.rrbs.r2 <- sapply(all.rrbs.r2, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
+r2.p <- sapply(1:length(all.rrbs.r2), 
+  function(x) if(!all(is.na(perm.rrbs.r2[x,]))){emp.p(max.rrbs.r2[x], perm.rrbs.r2[x,])}else{NA})
+names(r2.p) <- names(all.rrbs.r2)
+
+results.table <- cbind(max.rrbs.r2, r2.p)
+saveRDS(results.table, here("Results", "RRBS", "Perm_results.RDS"))
+
+r2.p[low.lod.idx] <- NA
+hist(r2.p, breaks = 100, main = "R2 p",
+  xlab = "p value")
+
+```
+
+The following plots show each test statistic vs. its
+p values. In general higher test statistics have lower
+p values, but this is not strictly true. 
+
+
+```{r stat_v_p, fig.width = 4, fig.height = 4}
+
+plot(max.rrbs.r2, -log10(r2.p+1e-3), xlab = "Variance Explained", 
+  ylab = "-log10(p)", main = "R2 vs. R2-log10(p)")
+```
+
+```{r example, eval = FALSE}
+examples <- which(r2.p == 0)
+i <- examples[5]
+gene.name = gene.info[which(gene.info[,"ensembl_gene_id"] == names(r2.p)[i]),"external_gene_name"][1]
+xlim <- c(min(c(perm.rrbs.r2[i,], max.rrbs.r2[i])), max(c(perm.rrbs.r2[i,], max.rrbs.r2[i])))
+hist_with_points(c(perm.rrbs.r2[i,], max.rrbs.r2[i]), 
+  col = c(rep("gray", ncol(perm.rrbs.r2)), "red"), xlab = "LOD", main = gene.name)
+abline(v = max.rrbs.r2[i], col = "red")
 ```

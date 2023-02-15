@@ -1,19 +1,19 @@
 {\rtf1\ansi\ansicpg1252\cocoartf2639
 \cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Verdana;\f1\fswiss\fcharset0 ArialMT;}
-{\colortbl;\red255\green255\blue255;\red183\green0\blue24;\red0\green0\blue255;\red109\green109\blue109;
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red183\green0\blue24;\red109\green109\blue109;
 }
-{\*\expandedcolortbl;;\cssrgb\c77647\c0\c11765;\cssrgb\c1680\c19835\c100000;\cssrgb\c50196\c50196\c50196;
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0;\cssrgb\c77647\c0\c11765;\cssrgb\c50196\c50196\c50196;
 }
-\margl1440\margr1440\vieww21220\viewh13080\viewkind1
+\margl1440\margr1440\vieww13440\viewh7800\viewkind1
 \deftab720
 \pard\pardeftab720\partightenfactor0
 
 \f0\fs26 \cf0 \expnd0\expndtw0\kerning0
-\
+\outl0\strokewidth0 \strokec2 \
 \pard\pardeftab720\partightenfactor0
 
-\f1 \cf2 Reviewer 1 Comments for the Author...
-\f0 \cf0 \
+\f1 \cf3 \strokec3 Reviewer 1 Comments for the Author...
+\f0 \cf0 \strokec2 \
 In \'93Variation in histone configurations correlates with gene expression across nine inbred strains of mice\'94, Tyler, Spruce et al. map four histone modifications, gene expression, and DNA methylation in nine inbred mouse strains. They demonstrate how some chromatin state differences across mice strains correlate with gene expression. They also use their data to impute chromatin state and DNA methylation in outbred mice and then relate that to expression data. The data generated in this paper has the potential to be a resource also for other studies.\
 \
 As discussed in my specific comments below I do have some concerns about this manuscript in its current form.\
@@ -21,178 +21,66 @@ As discussed in my specific comments below I do have some concerns about this ma
 Specific Comments\
 1. One major concern I have with this manuscript is the authors did not place their work in the proper context of existing work and are overstating the novelty. As the introduction currently reads the novelty is presented as mapping epigenetic modifications across individuals within the same cell type instead of mapping across different cell types. However, there are a number of papers already looking at histone modification variation across individuals in human or mice (see work from labs of Mike Snyder, Manolis Dermitzakis, Yoav Gilad/Jonathan Pritchard, Christopher Glass, among others). \
 \
-\pard\pardeftab720\partightenfactor0
-\cf3 We sincerely apologize for this oversight in our characterization of the literature, and we are grateful to the reviewer for pointing us toward related studies. We have done a more extensive review of the literature and updated the introduction to include references from the labs mentioned. This helped us narrow the focus of introduction of the paper to state what is unique about our study.\
-\
-We have added a section to the introduction describing work linking genetic varation to epigenetic variation in both humans and model organisms. We then place our own work into this context. Our work documents variation in epigenetic states across widely used and genetically diverse mouse models of human disease. The genetic variation in these mice has previously been associated with variation in gene expression and phenotype. Our work adds to this literature by providing another layer of genomic data that can be mapped to these outcomes and potentially provide mechanistic insight into variation in gene regulation previously observed in these mice.\
-\pard\pardeftab720\partightenfactor0
-\cf0 \
-\
 2. The authors make this claim in the abstract \'93This work suggests that chromatin state is highly influenced by local genotype and may be a primary mode through which expression quantitative trait loci (eQTLs) are mediated.\'94 I don\'92t think this claim is well supported by results shown in the paper. The authors did not show it was specifically local genotype differences that was driving the chromatin state differences in the inbred analyses. For the outbred analysis the imputed chromatin states were in effect defined based on the local genotypes, and also there was no independent data to support the accuracy of those imputations, so I think there is some circularity in reaching the conclusion stated in the abstract. A similar issue exists in the results where it is stated \'93Taken together, these results suggest that the majority of haplotype-associated variance is encoded by the chromatin state of the allele.\'94\
 \
-\pard\pardeftab720\partightenfactor0
-\cf3 This point is well taken. We cannot verify the accuracy of the imputation experimentally, and we cannot directly test the effect of chromatin state variation on gene expression with these data. Any feature imputed using haplotype will be positively correlated with gene expression because haplotype is positively correlated with gene expression. \
-\
-To address this issue, we have implemented a permutatio-based strategy. We permuted the labels on the chromatin state vectors in the founder population prior to imputation, recalculated the imputation, and recalculated the LOD scores and variance explained for each transcript. We performed 1000 permutations on each transcript with a local eQTL LOD score > 6. This permutation strategy preserves all individual haplotypes, all chromatin states, and the correlations between covariates and expression, but randomizes which chromatin states are associated with each haplotype. \
-\
-After generating null distributions for each transcript, we calculated an empirical p value for each transcript by asking which permuted values were as large or larger than the original observed value. The distribution of p values across all transcripts was skewed toward small p values for all imputed features (chromatin state, DNA methylation, and SNPs). This is a new result that changes our interpretation of the contribution of each feature to eQTL. We originally underestimated the contribution of DNA methylation to eQTLs, but this result implies that all imputed features had an effect that exceeded the effect of the permutation alone. \
-\
-\
-These permutations showed that chromatin state explained more variance in gene expression in the DO mice than would be expected if we assigned chromatin states to haplotypes at random.  \
-\
-We have improved our discussion on these points in the paper. \
-\
-We have also \
-\
-I am really struggling with the circular stuff. Two reviewers mentioned this, and I go back and forth as to whether this is a circular analysis or not. \
-\
-The expression in the DO is totally independent of the expression in the inbred founders. But because expression is correlated with haplotype, and we use haplotype impute chromatin state, it seems that we are setting ourselves up for a high correlation between chromatin state and gene expression, particularly for transcripts with high LOD scores. \
-\
-Can we use DNA methylation as a floor of the effect here? We also imputed DNA methylation using haplotype, so it will also tend to be correlated with gene expression. However, we showed in the inbred mice that variation in DNA methylation was not correlated with variation in gene expression across strains. Thus the amount of correlation we see in the DNA methylation gives us a sense of how correlated the two pieces are simply because of the imputation effects. The correlation of chromatin state is higher than exptected at random. \
-\
-Should we generate an actual null distribution for this? How would we do that? \
-\pard\pardeftab720\partightenfactor0
-\cf0 \
 3. Fig. 7 and the text associated with it was based on a single gene, Pkd2, and lacked a corresponding genome-wide analysis to support the conclusions. For instance the analysis appears to be implying they can detect individual eQTLs with their data, but there is not a systematic statistically controlled eQTL analysis.\
-\
-\pard\pardeftab720\partightenfactor0
-\cf3 I'm not sure what this means. We can detect individual eQTL in our analysis, and we did do a systematically controlled eQTL analysis.\
-offer to reword. example of one dot in figure 6.\
-didn't do eQTL analysis with chromatin state in DO because we don't have those data, we did the analysis with imputed data, need to clarify that\cf0 \
 \
 4. From Fig. 1, it is hard to tell to what extent the data actually separates the 7-strains that are not CAST/EiJ and DBA/2J. A hierarchical clustering might be better for assessing this. Alternative possibilities could include showing additional PCs, or a PCA excluding CAST/EiJ and DBA/2J.\
 \
-\cf3 Not sure how to address this either. We could add supplemental figures showing hierarchically clustered correlation matrices with numerical values in the cells. We don't have space in the paper though because there are so many individuals in the analysis.\
-u-map\
-explain substrains, reference older papers (2010, from Gary's lab, origins of laboratory mice)\cf0 \
-\
 5. In Fig. 2b, it was not clear how values were mapped to the -1 to 1 range. It would be helpful to also report the actual fold enrichments of the overlaps. Are the enrichments supposed to be on a global scale or a column specific scale? Some but not all columns appear visually to hit the maximum color value so it is not clear why that is the case. Also how were enrichments across multiple strains combined?\
-\
-\cf3 We need to add some more methods here:\
-	we scaled the rows of the enrichment matrix to run \
-	between -1 and 1 for the visualization - most enrichment values\
-		were less than 20, but a substantial fraction ran between\
-		20 and 132, so we could not visualize these on their original 		scale\
-	We used the same scaling method used by ChromHMM for\
-		visualization\
-	We did not combine the enrichments across strains because this is just the enrichment matrix for the run, in which all strains were included. We treated the strains as if they were different cell types in ChromHMM.\cf0 \
 \
 6. The authors characterize H3K4me1 alone as being associated with intragenic enhancers. I am surprised they are able to effectively differentiate intragenic from intergenic enhancers without having mapped any transcription associated marks. Related to the above point it is not quantified how specific this state is to intergenic regions.\
 \
-\cf3 We did not look at intergenic enhancers, so we are not distinguishing. We should add some text to say that we did not look at anything intragenic. This fact, along with the fact that we did not look at any trans effects could be discussed in the discussion as caveats of the study. \cf0 \
-take out word intragenic\
-\
 7. States 5 and 7 have a biologically unexpected combination of H3K27me3 and H3K27ac. Are these states associated with specific families/classes of repeats that might suggest some technical mapping artifact?\
 \
-\cf3 Interesting question - We looked at this, and none of the states we detected are enriched around repeats (fold enrichments ran from 0.95 to 1.3)\
-these states are also incredibly rare - I wouldn't put too much stock into these states given that they are rare and had no obvious effect on transcription.\
-\pard\pardeftab720\partightenfactor0
-\cf0 \
 8. In Fig. 1, the legend states \'93Histone modifications - the peak heights of the indicated histone modification for sites shared across all individuals\'94 \'96 Are the sites being shared defined at the sequence level or is at the peak level? It would not make sense to me to restrict the analysis to places that have a peak in all individuals.\
-\
-\pard\pardeftab720\partightenfactor0
-\cf3 This is based on positions mapped to the reference mouse genome using g2gtools. The ChIP-Seq sequences were mapped to individual strain genomes and then mapped to the reference B6 genome. We used all measurements that mapped to the same B6 reference position. Heights of peaks at these positions could be 0. We did not limit ourselves to positions where there were positive histone peaks, but rather to shared positions in the reference mouse genome. \
-I probably need to change the language here but I'm not sure how to do it.\
-not restricting to shared peaks\cf0 \
 \
 9. The authors state \'93Chromatin state is largely determined by local genotype, especially early in life (Fraga et al., 2005), and can thus be reliably imputed from local genotype\'94 \'96 I feel the authors are overstating the evidence that the paper provides to conclude their imputations are actually accurate, which was not tested directly. \
 \
-\cf3 Has anybody tested this directly? Should we just tone down the language?\
-add a caveat\cf0 \
-\
 Also, the authors state \'93The imputation of DNA methylation thus serves as a negative control\'96an estimate of a lower bound the ability of a feature imputed from local haplotype.\'94 This could depend on the specific histone modification/chromatin state one considers. It is not clear that all histone modifications or chromatin states have to be higher than DNA methylation. \
-\
-\cf3 That's true. I just meant the overall effect, not the effect for individual positions. How do I restate this?\
-making a statement about the data,  not a biological statement about DNA methylation\
-or just remove\cf0 \
 \
 10. The methods sections corresponding to some of the analyses presented in the figures either were lacking or the correspondence wasn\'92t that clear, particularly for Figs. 4-6. \
 \
-\cf3 Okay, I'll check it.\cf0 \
-\
-11. For Fig. 1 it would help to state in legend how many samples are being shown for each strain.\
-\
-\cf3 We added a sentence to the legend of Fig 1 indicating that there are three individuals per strain.\cf0 \
-\
+11. For Fig. 1 it would help to state in legend how many samples are being shown for each strain\
 \
 12. On p. 5 the authors refer to \'91known enhancers\'92 but these appear based on the methods to be predicted enhancers based on ChromHMM \
 \
-\cf3 Thank you for catching this. We have changed the text to predicted enhancers.\cf0 \
-\
 13. For the ChromHMM enhancer annotations obtained from UCSC, the authors could provide more details in terms of the specific cell type or file and the states of the model they considered to be enhancers.\
-\
-\cf3 I will do my best.\cf0 \
 \
 14. The terminology in some places was conflating causal with associative evidence (e.g. \'93Effects of chromatin state on gene expression\'94, \'93DNA methylation did not contribute at all\'85\'94, \'93whose presence upregulated genes within\'94, etc.)\
 \
-\cf3 I will check this.\cf0 \
-\
 15. The methods could provide some more details on how ChromHMM was run, in particular how the data was binarized and if any non-default parameters were used.\
-\
-\cf3 I will do this.\cf0 \
 \
 16. \'93We used the enrichment function in ChromHMM described above to identify enrichment of CpG sites around functional elements in the mouse genome.\'94 \'96 this could be clearer, in particular what are the \'91functional elements\'92\
 \
-\cf3 This is basically a repeat of the methods in the histone section for the CpG section. I will clarify that this is a repeat and that readers should look in the "Genome distribution of chromatin states" section to see the elements we looked for.\cf0 \
-\
 17. The text makes reference to the lack of variance of DNA methylation across strains, but I did not see the actual variance reported, only a median value.\
-\
-\cf3 The variance is too small to see. How do we say that and have people believe us? variance is roughly the thickness of the line in caption\cf0 \
 \
 18. When first discussing the analysis in Fig. 2C it would help to clarify how chromatin states are associated with genes in order to produce the correlations\
 \
-\cf3 We will add a bit of methods to the paragraph that begins "Most states were also associated with variation in gene expression"\cf0 \
-\
 19. \'93To investigate whether natural variation in chromatin state can be used to functionally annotate the mouse genome,\'85\'94 \'96 should clarify what is meant by \'91functionally annotate\'92 in this context and how that differs from the annotation of chromatin states directly\
-\
-\cf3 We will clarify this. By functionally annotate, I mean basically adding to the body of predicted enhancers, insulators, and other regulatory regions. Were the enhancers we saw in Pkd2 previously predicted?\
-I am checking this now.\cf0 \
 \
 20. The authors should provide units for and label the x and y axes on all figures. This was not done or done consistently in Figs. 3, 4, 5, and 7\
 \
-\cf3 Do we just add "relative genomic position" in a few places, or something more extensive?\cf0 \
-\
 21. For Fig. 3, consider showing or also showing enrichment profiles, as for example state 14 is actually depleted in gene bodies but one would not get that impression from the figure. \
-\
-\cf3 It depends on your reference point. It is depleted in gene bodies relative to intergenic spaces, but it is not depleted relative to the TSS. How should we address this?\cf0 \
 \
 22. In Fig. 3b, consider labeling some of the key states directly on the panel\
 \
-\cf3 Sure, we can do that.\cf0 \
-\
 23. In Fig. 4, \'93All y-axes show the \uc0\u946  coefficient from the linear model shown in the equation.\'94 but the equation being referred to wasn\'92t shown in the figure\
-\
-\cf3 This is because LaTeX is finicky. We can number the only equation in the paper, but that is also not standard. How should we refer to the equation other than "The Equation?"\cf0 \
 \
 24. In Fig. 4 legend, explain what the intervals correspond to\
 \
-\cf3 We will add that the polygons show the standard error.of the mean.\cf0 \
-\
 25. For Fig. 6, why is there not a single gene above the y=x line? This could be more directly explained.\
-\
-\cf3 Yes, I suppose we should. There are eight haplotypes at every position, but fewer chromatin states at each position. The most variance we can explain is with eight states. So the chromatin states, with fewer states, can never explain more variance than the haplotypes. \
-\
-Does this mean we are comparing apples to oranges? Also, for the DNA methylation, there can never be more than three states. Does this mean we can't actually compare the variance explained across these different features? Should we generate a different null for each?\cf0 \
 \
 26. In Fig. 7 the TSS should be labeled\
 \
-\cf3 Okay. We can also tty to put some exons in there.\cf0 \
-\
 27. Typo Fig. 7 legend \'91imuptation\'92 \
-\cf3 \
-Thanks! Fixed it.\cf0 \
 \
 28. Typo \'91imfornation\'92\
 \
-\cf3 Thanks! Fixed it.\cf0 \
-\
 29. Typo \'91Figure Figure 7C\'92\
-\
-\cf3 Thanks! Fixed it.\cf0 \
 \
 30. There is a \'91?\'92 after the Dreos et al, 2017 reference in the Methods\
 \
-\cf3 Thanks! Fixed it.\cf0 \
 \
 \pard\pardeftab720\partightenfactor0
 \cf0 \cb4 \
@@ -201,8 +89,8 @@ Thanks! Fixed it.\cf0 \
 \
 \pard\pardeftab720\partightenfactor0
 
-\f1 \cf2 Reviewer 2 Comments for the Author...
-\f0 \cf0 \
+\f1 \cf3 \strokec3 Reviewer 2 Comments for the Author...
+\f0 \cf0 \strokec2 \
 Tyler et al., conducted a survey of epigenetic modifications and gene expression in hepatocytes across 9 inbred strains. They found variation in chromatin states correlated strongly with gene expression while methylation did not. \
 \
 I think the study is clear and interesting and novel. However, I am not convinced that the claims can be taken as far as they take them with regards to DNA methylation. It seems to me that the authors think DNA methylation has zero heritability due to its association with epigenetic phenomena. So they included it as essentially a negative control. Overall, I think the study is interesting, but if they want to make the same (largely unqualified) claims, they need to show at least another cell type, they need to handle the fact the DNA methylation relates to genetic variation quite differently than expression or histone modification. In that DNA methylation only exists where there are cytosines. If you change a single base you get rid of methylation of that site, whereas changing a single base doesn\'92t remove the existence of a gene.\
@@ -210,50 +98,24 @@ I think the study is clear and interesting and novel. However, I am not convince
 Specific comments:\
 Page 3 penultimate paragraph \'96 Methylation of promoters represses gene expression, but methylation of insulators promotes gene expression.\
 \
-\pard\pardeftab720\partightenfactor0
-\cf3 Thank you! We have fixed this sentence.\cf0 \
-\
 Page 4 first paragraph \'96 The idea of imputation in a DO population is a cool idea, but there are serious issues with imputation in this context. I am not convinced that one can assume that epigenetic states are overwhelming the product of cis (and not trans) genetic effects.\
-\
-\cf3 What do we do about this? The first reviewer also had this complaint, and it seems pretty big. I don't know of a way to show that our imputation is accurate. But I'm not sure that we need to either. Maybe we can soften our language around this.\cf0 \
 \
 Figure 1 part B \'96 what was the data that was fed into this? Was the DNA methylation data that went into this rounded? If so, you are artifactually removing variation. Are the individual CpGs being considered? Binned CpGs?\
 \
-\cf3 Here are my methods from when I did this:\
-We created a matrix for each chromosome containing each unique methylated position, and its methylation percent across all individuals. We binned the percent methylation for each position into bins for unmethylated (0%), hemimethylated (50%), and methylated (100%). \
-Should we also try not binning to see if it is any different? We need to bin for the associations, because biologically irrelevant variation can drive seeminly large effects.\cf0 \
-\
-\
 Also evaluating DNA global DNA methylation patterns like this has to be taken with a grain of salt, because there are many CpGs which are simply absent from some genetic backgrounds. How variation affects the existence of CpGs needs to be explained/explored very clearly (and it is not in this study).\
-\
-\cf3 Yes, I think this is a good discussion point.\cf0 \
 \
 If this has not been considered, that complicates comparing even superficially part A to part B.\
 \
-\cf3 What are part A and B?\cf0 \
-\
 Page 7 first paragraph \'96 No mention of strain specific CpGs? They definitely exist and definitely matter. How many are there? Where are they?\
-\
-\cf3 I did look at strain-specific CpGs, and I will add those statistics.\cf0 \
 \
 Figure 3 -  I would want to see this broken down by strain.\
 \
-\cf3 Really? There aren't going to be any differences. These are global statistics. The variation is at individual positions, not at the global level. Can we just add text for this? Statistics? I'm not sure how to convey this.\cf0 \
-\
 Page 9 \'96 penultimate paragraph \'96 I straight up do not believe that \'93DNA methylation did not contribute at all to expression variation\'85\'94. It is a major thing to claim that an entire mechanism of gene regulation doesn\'92t contribute to gene expression across strains. This study lacks the degree of evidence to make such a claim. Especially given that strain specific CpG sites aren\'92t being addressed and I am not convinced RRBS is sufficient to make such a claim. RRBS gives you information about promoters, but enhancers and other regulatory features are not as likely to get capture by RRBS.\
-\
-\cf3 Okay, we definitely need to soften the language here. We should make clear that RRBS mostly captures promoters (even though we do have data at other positions). We need to make our claim much more specific to what data we actually have.\cf0 \
 \
 Page 12 first paragraph \'96 If I understand correctly, you are using the haplotype to impute chromatin state. So of course, chromatin state is going to co-vary with things which haplotype co-varies withs. This seems circular to me.\
 \
-\cf3 Reviewer 1 also brought this up, and I'm still not sure what to do about it. Generate a null? How would we do that?\
-\pard\pardeftab720\partightenfactor0
-\cf0 \
-\
 Page 15 first paragraph \'96 C to T mutations are fairly common and by their nature have the potential to remove CpGs and thus change chromatin state. If you are constraining yourself to only CpGs whose existence is the same across mouse strains that\'92s ignoring a lot of variation. The existence of a CpG island in a region may be conserved but the composition of the island is variable.\
 \
-\pard\pardeftab720\partightenfactor0
-\cf3 I use the word CpG, but I don't know that that's really the word I should use. I should probably define a new word and use that. \cf0 \
 \
 \pard\pardeftab720\partightenfactor0
 \cf0 \cb4 \
@@ -262,57 +124,18 @@ Page 15 first paragraph \'96 C to T mutations are fairly common and by their nat
 \
 \pard\pardeftab720\partightenfactor0
 
-\f1 \cf2 Reviewer 3 Comments for the Author...
-\f0 \cf0 \
+\f1 \cf3 \strokec3 Reviewer 3 Comments for the Author...
+\f0 \cf0 \strokec2 \
 In this manuscript, Tyler et al. provide a novel perspective about the effects of chromatin variation in gene expression. Rather than looking at individual histone modifications, they examined combinations of four histones in diverse mouse inbred strains and found a strong correlation between local chromatin variation and gene expression changes. However, no such correlation was found with the most commonly analyzed epigenetic mark: DNA methylation. This findings were confirmed in an independent, outbred mouse sample (the DO mice) and exemplified with a particular gene analysis. Hence, this is a very extensive and rigorous study that required complex analyses, which were very well resolved. \
 Several important conclusions can be extracted from their results about the connections between local genetic variation, histone modification patterns and gene expression, conclusions that are very well presented in the Discussion section. Among them, the study reveals the effect of combinatorial states, rather than individual histone modifications, as mediators between genetic and gene expression variation. These findings are very relevant for genome-wide genetic and expression studies. They provide a novel perspective about the complex role of epigenetic marks and innovative approaches to their analysis that will be of great use to the community.  I suggest the following changes that might help to improve it:\
 \
 -Page 2: the examples mentioned at the end of the abstract, do they refer just to the Pkd2 gene study (in which case it should be singular) or to anything else?\
-\
-\pard\pardeftab720\partightenfactor0
-\cf3 Yes, I guess we just mean Pkd2. We will make it singular (unless authors think we should add another example). I think this would make the paper too long.\cf0 \
-\
 -Figure 1:  Do "principle components" actually mean principal components?\
-\
-\cf3 Yes! Thank you for catching this!\
-\pard\pardeftab720\partightenfactor0
-\cf0 \
 -Figure 2: It is a bit unclear how annotations were performed. For instance, state 1 has been associated to active enhancers, though in panel B the state seems to be depleted near enhancers. Also in this figure, panel C, the color choice and description (darker/tan bars) are a bit confusing, as many shades of blue and red are used and, for instance, in state 7 both types of bars look alike -maybe using grey bars rather than tan bars might help?\
-\
-\pard\pardeftab720\partightenfactor0
-\cf3 Hmm... it's true that state 1 is not enriched near predicted enhancers (fold enrichment = 0.523). Is there another word we should use here? I don't really know all the words that we could use. It's a functional element that seems to increase expression. It is enriched around CpG sites, TFBS, and predicted cis regulatory elements. Could we just call it regulatory?\
-\
-on the tan bars, yes, the two bars do look the same for state 7. I will experiment with other colors here.\
-\
-I'm not sure how to clarify the description. I have taken many stabs at it already. Any ideas?\cf0 \
-\
 -Page 7: the last paragraph reminds that all genes used in this analysis were expressed. If stated earlier, it may facilitate the interpretation of the results. \
-\cf3 \
-That is a good point. We will mention that earlier in the paper.\
-\
-\pard\pardeftab720\partightenfactor0
-\cf0 \
 -Figure 4: This is an excellent figure that summarizes the results of the chromatin states on gene expression analyses. However, it is the most difficult to interpret for the reader that is not familiar with this type of graphs, so it would benefit from further explanations about the y-axis and what the colored area represents.\
-\
-\pard\pardeftab720\partightenfactor0
-\cf3 Thank you! We will add more explanation about what the shaded areas are and how to interpret the figures.\
-\pard\pardeftab720\partightenfactor0
-\cf0 \
 -Page 13, line 3: "These two regions were both strongly associated expression levels". As written, it is not clear what this sentence means.\
-\
-\
-\pard\pardeftab720\partightenfactor0
-\cf3 We will add to this sentence to clarify where the reader should look in figure 7 to see this.\cf0 \
-\
 -Figure 7: Panel E seems to be part of panel B. This could be avoided by separating panels E and F a bit more from the rest.\
-\
-\cf3 I will separate these more.\cf0 \
-\
 -Materials and Methods: Inbred mice were females while DO mice were both males and females. Any reason for these choices? Could gene expression or chromatin state differences between males and females hepatocytes affect your results?\
-\
-\cf3 No reason. These were two separate experiments. \
-We could either explain this away, or do the analysis with only female DO mice, but that will reduce our n by quite a bit, since we are already only using control mice (I think).\cf0 \
-\
 -Page 23: this page, as well as the previous and following ones, describe the varied and enormous amount of data that were analyzed in this study. But in line 15 there is a minor typo: a question mark after Dreso et al., 2017. Another minor mistake is found on page 30, as the article by Ernst and Kellis 2012 was actually published in Nature Methods.\
-\
-\cf3 Thank you for catching these errors! We have fixed them.}
+}

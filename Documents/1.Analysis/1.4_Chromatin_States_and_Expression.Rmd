@@ -658,6 +658,7 @@ of different states.
 #closer than 2000 bp away. This is to look at whether the 
 #uptick in state 8 after the TSS is due to bleeding into the 
 #next gene or related to the post-transcriptional region
+
 far.position.file <- file.path(results.dir, "Chromatin.State.Position.Far.Genes.RDS")
 if(!file.exists(far.position.file) || delete.previous){
     far.genes <- get.distant.genes(rnaseq.gene.info, 2000) 
@@ -683,6 +684,23 @@ for(s in 1:length(state.position)){
     max.abundance[s] <- max(state.position[[s]]$state.avg, na.rm = TRUE)
 }
 #dev.off()
+```
+
+```{r state_abundance_by_strain}
+
+par(mfrow = c(3,3), mar = c(2,2,2,2))
+for(st in 1:num.states){
+    state.sum.mat <- state.position[[st]]$state.by.strain
+    plot.new()
+    plot.window(xlim = c(-2, 2), ylim = c(0, max(state.sum.mat, na.rm = TRUE)))
+
+    for(i in 1:nrow(state.sum.mat)){
+        points(as.numeric(colnames(state.sum.mat)), state.sum.mat[i,], type = "l", col = col.table[i,3], lwd = 3)
+    }
+    axis(1);abline(v = c(0,1))
+    mtext(paste("State", st), side = 3)
+}
+
 ```
 
 ## Enrichment by state and position
@@ -819,6 +837,7 @@ Overall there is very little effect of any state on expression near the TES
 specifically.
 
 ```{r gene_coord_expr, fig.height = 9, fig.width = 9}
+
 common.genes <- intersect(names(cent.mats), names(scaled.mean.expr))
 #generate sliding windows each containing five normalized positions, 
 #and overlapping by one position.
@@ -848,7 +867,6 @@ colnames(scaled.expr.mat) <- rownames(scaled.mean.expr[[1]])
 
 across.strain.window.state.file <- file.path(results.dir, "State.Window.Effects.Across.Strains.RDS")
 within.strain.window.state.file <- file.path(results.dir, "State.Window.Effects.Within.Strains.RDS")
-
 
 if(!file.exists(across.strain.window.state.file) || delete.previous){
     across.strain.window.results <- vector(mode = "list", length = length(gene.windows))
@@ -922,7 +940,6 @@ for(state in 1:num.states){
     abline(v = c(0,1), lty = 2, col = "darkgray")
 }
 ```
-
 
 ### Correlation by position within-strain {.tabset .tabset-fade .tabset-pills}
 

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.24 (TeX Live 2022) (preloaded format=pdflatex 2022.10.6)  20 DEC 2022 12:33
+This is pdfTeX, Version 3.141592653-2.6-1.40.24 (TeX Live 2022) (preloaded format=pdflatex 2022.10.6)  10 FEB 2023 11:48
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -567,11 +567,11 @@ File: Figures/Fig4_Effects.png Graphic file (type png)
 <use Figures/Fig4_Effects.png>
 Package pdftex.def Info: Figures/Fig4_Effects.png  used on input line 395.
 (pdftex.def)             Requested size: 328.82626pt x 455.2979pt.
-<Figures/Fig5_methylation_effect.png, id=316, 1204.5pt x 1505.625pt>
+<Figures/Fig5_methylation_effect.png, id=316, 1204.5pt x 2107.875pt>
 File: Figures/Fig5_methylation_effect.png Graphic file (type png)
 <use Figures/Fig5_methylation_effect.png>
 Package pdftex.def Info: Figures/Fig5_methylation_effect.png  used on input line 441.
-(pdftex.def)             Requested size: 216.80064pt x 271.00081pt.
+(pdftex.def)             Requested size: 216.80064pt x 379.40114pt.
 
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
@@ -592,7 +592,15 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
 [10 <./Figures/Fig4_Effects.png>]
-<Figures/Fig6_Imputation.png, id=335, 3011.25pt x 752.8125pt>
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.59999pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.59999pt}.
+(fancyhdr)                You might also make \topmargin smaller to compensate:
+(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
+
+[11 <./Figures/Fig5_methylation_effect.png>]
+<Figures/Fig6_Imputation.png, id=342, 3011.25pt x 752.8125pt>
 File: Figures/Fig6_Imputation.png Graphic file (type png)
 <use Figures/Fig6_Imputation.png>
 Package pdftex.def Info: Figures/Fig6_Imputation.png  used on input line 483.
@@ -605,16 +613,8 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller to compensate:
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
-[11 <./Figures/Fig5_methylation_effect.png>]
-
-Package fancyhdr Warning: \headheight is too small (12.0pt): 
-(fancyhdr)                Make it at least 13.59999pt, for example:
-(fancyhdr)                \setlength{\headheight}{13.59999pt}.
-(fancyhdr)                You might also make \topmargin smaller to compensate:
-(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
-
 [12 <./Figures/Fig6_Imputation.png>]
-<Figures/Fig7_Example.png, id=357, 1957.3125pt x 1806.75pt>
+<Figures/Fig7_Example.png, id=356, 1957.3125pt x 1806.75pt>
 File: Figures/Fig7_Example.png Graphic file (type png)
 <use Figures/Fig7_Example.png>
 Package pdftex.def Info: Figures/Fig7_Example.png  used on input line 533.
@@ -660,10 +660,6 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
 [17]
-LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 777.
- (/Users/atyler/Library/TinyTeX/texmf-dist/tex/latex/lm/ts1lmr.fd
-File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
-)
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 13.59999pt, for example:
@@ -672,6 +668,10 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
 [18]
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 777.
+ (/Users/atyler/Library/TinyTeX/texmf-dist/tex/latex/lm/ts1lmr.fd
+File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
+)
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 13.59999pt, for example:
@@ -869,16 +869,16 @@ Package rerunfilecheck Info: File `Epigenetics_Manuscript_submitted.out' has not
 Here is how much of TeX's memory you used:
  13880 strings out of 477031
  224028 string characters out of 5827371
- 603133 words of memory out of 5000000
+ 604133 words of memory out of 5000000
  34418 multiletter control sequences out of 15000+600000
  528342 words of font info for 167 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  60i,12n,67p,1809b,677s stack positions out of 10000i,1000n,20000p,200000b,200000s
 {/Users/atyler/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/Users/atyler/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}{/Users/atyler/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{/Users/atyler/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}{/Users/atyler/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}</Users/atyler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></Users/atyler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></Users/atyler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></Users/atyler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi8.pfb></Users/atyler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb></Users/atyler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr17.pfb></Users/atyler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr8.pfb></Users/atyler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmri10.pfb></Users/atyler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></Users/atyler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy8.pfb>
-Output written on Epigenetics_Manuscript_submitted.pdf (35 pages, 2022706 bytes).
+Output written on Epigenetics_Manuscript_submitted.pdf (35 pages, 2026502 bytes).
 PDF statistics:
- 730 PDF objects out of 1000 (max. 8388607)
- 648 compressed objects within 7 object streams
+ 732 PDF objects out of 1000 (max. 8388607)
+ 650 compressed objects within 7 object streams
  182 named destinations out of 1000 (max. 500000)
  31036 words of extra memory for PDF output out of 35830 (max. 10000000)
 

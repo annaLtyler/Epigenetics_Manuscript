@@ -60,6 +60,7 @@ enrichment_bed <- function(state.bed, annotation.bed, chrom.size.file){
         return(overlap.size)
     }
 
+    #calculate the amount of overlap
     all.overlap <- apply(overlap.only, 1, get_num_overlap)
     C <- sum(all.overlap)
 

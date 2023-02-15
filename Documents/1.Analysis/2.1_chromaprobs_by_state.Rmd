@@ -325,17 +325,165 @@ plot(max.geno.r2, max.chrom.r2, xlab = "R2 Haplotype",
 abline(0,1)
 ```
 
+```{r counts}
+r2.table <- cbind(round(max.chrom.r2, 3), round(max.geno.r2, 3))
+chrom.better <- length(which(apply(r2.table, 1, function(x) x[1] > x[2])))
+hap.better <- length(which(apply(r2.table, 1, function(x) x[1] < x[2])))
+both.same <- length(which(apply(r2.table, 1, function(x) x[1] == x[2])))
+counts <- c("Chromatin" = chrom.better, "Equal" = both.same, 
+  "Haplotype" = hap.better)
+barplot_with_num(counts, main = "Feature with Greater R2", ylab = "# Transcripts")
+```
+
+
+## Coefficients by position {.tabset .tabset-fade .tabset-pills}
+
+```{r coef_by_pos, results = "asis", fig.width = 7, fig.height = 5}
+
+gene.names <- transcript.info[match(names(chrom.coef), transcript.info[,"ensembl_gene_id"]),"external_gene_name"]
+matched.chrom.mats <- chrom.mats[match(names(chrom.coef), names(chrom.mats))]
+centered.coord <- lapply(1:length(gene.names),
+  function(x) if(length(matched.chrom.mats[[x]]) > 1){center.on.feature(gene.names[x], 
+  transcript.info, as.numeric(rownames(matched.chrom.mats[[x]])), feature = "full")}else{NA})
+
+ymin <- min(sapply(chrom.coef, min), na.rm = TRUE)
+ymax <- max(sapply(chrom.coef, max), na.rm = TRUE)
+
+#find indices where both coordinates and coefficients have data
+coord.len <- sapply(centered.coord, length)
+coef.len <- sapply(chrom.coef, function(x) if(length(x) > 1){return(ncol(x))}else{1})
+use.idx <- intersect(which(coord.len > 1), which(coef.len > 1))
+
+nbins = 25
+coord.bins <- segment.region(-0.5, 1.5, nbins)
+plot.coord <- coord.bins[1:(length(coord.bins)-1)]
+all.coord <- unlist(lapply(use.idx, function(x) as.numeric(names(centered.coord[[x]]))))
+
+state.coef.file <- file.path(results.dir, "State_Coef_SE_DO.RDS")
+
+if(!file.exists(state.coef.file)){
+
+  state.coef.se <- vector(mode = "list", length = num.states)
+  names(state.coef.se) <- 1:num.states
+
+  for(st in 1:num.states){
+    state.coef <- unlist(lapply(use.idx, function(x) chrom.coef[[x]][st,]))
+
+    binned.coef <- lapply(1:(length(coord.bins)-1), 
+      function(x) state.coef[intersect(which(all.coord >= coord.bins[x]), 
+      which(all.coord < coord.bins[(x+1)]))])
+    #boxplot(binned.coef)
+
+    coef.mean <- sapply(binned.coef, function(x) mean(x, na.rm = TRUE))
+    #coef.se <- sapply(binned.coef, function(x) sd(x, na.rm = TRUE)/sqrt(length(which(!is.na(x)))))
+    coef.test <- lapply(binned.coef, function(x) t.test(x, conf.level = 0.99))
+    coef.conf <- sapply(coef.test, function(x) x$conf.int)
+
+    coef.info <- rbind(coef.mean, coef.conf)
+    colnames(coef.info) <- plot.coord
+    state.coef.se[[st]] <- coef.info
+  }
+  saveRDS(state.coef.se, state.coef.file)
+}else{
+  state.coef.se <- readRDS(state.coef.file)
+}
+
+#plot results
+#pdf("~/Desktop/state.effects.in.DO.pdf")
+for(st in 1:num.states){
+  cat("### State", st, "\n")
+
+  coef.mean <- state.coef.se[[st]]["coef.mean",]
+  #coef.se <- state.coef.se[[st]]["coef.se",]
+  coef.conf <- state.coef.se[[st]][2:3,]
+
+  plot.new()
+  #plot.window(xlim = c(-0.5, 1.5), ylim = c(min(coef.mean-coef.se, na.rm = TRUE), max(coef.mean+coef.se, na.rm = TRUE)))
+  plot.window(xlim = c(-0.5, 1.5), ylim = c(min(coef.conf, na.rm = TRUE), max(coef.conf, na.rm = TRUE)))
+  #plot.poly.xy(poly.top.x = plot.coord, poly.top.y = coef.mean+coef.se, 
+  #  poly.bottom.x = plot.coord, poly.bottom.y = coef.mean-coef.se,
+  #  border = NULL, col = "gray", lwd = 1, new.plot = FALSE)
+  plot.poly.xy(poly.top.x = plot.coord, poly.top.y = coef.conf[1,], 
+    poly.bottom.x = plot.coord, poly.bottom.y = coef.conf[2,],
+    border = NULL, col = "gray", lwd = 1, new.plot = FALSE)
+
+  abline(h = 0)
+  axis(1)
+  axis(2)
+  abline(v = c(0, 1), col = "gray", lty = 2, lwd = 2)
+  mtext(paste("State", st, "Effects in DO"), side = 3, line = 1.5)
+  cat("\n\n")
+}
+#dev.off()
+```
+
+
+## Variance Explained by Position {.tabset .tabset-fade .tabset-pills}
+
+```{r var_by_pos, results = "asis", fig.width = 7, fig.height = 5}
+
+ymin <- min(sapply(chrom.r2, min), na.rm = TRUE)
+ymax <- max(sapply(chrom.r2, max), na.rm = TRUE)
+
+state.var.file <- file.path(results.dir, "State_Var_SE_DO.RDS")
+if(!file.exists(state.var.file)){
+
+  state.var.se <- vector(mode = "list", length = num.states)
+  names(state.var.se) <- 1:num.states
+
+  for(st in 1:num.states){
+    state.r2 <- unlist(lapply(use.idx, function(x) chrom.r2[[x]][st,]))
+
+    binned.r2 <- lapply(1:(length(coord.bins)-1), 
+      function(x) state.r2[intersect(which(all.coord >= coord.bins[x]), 
+      which(all.coord < coord.bins[(x+1)]))])
+    #boxplot(binned.r2)
+
+    r2.mean <- sapply(binned.r2, function(x) mean(x, na.rm = TRUE))
+    r2.se <- sapply(binned.r2, function(x) sd(x, na.rm = TRUE)/sqrt(length(which(!is.na(x)))))
+
+    var.info <- rbind(r2.mean, r2.se)
+    colnames(var.info) <- plot.coord
+    state.var.se[[st]] <- var.info
+}
+  saveRDS(state.var.se, state.var.file)
+}else{
+  state.var.se <- readRDS(state.var.file)
+}
+
+
+for(st in 1:num.states){
+  cat("### State", st, "\n")
+
+  r2.mean <- state.var.se[[st]]["r2.mean",]
+  r2.se <- state.var.se[[st]]["r2.se",]
+
+  plot.new()
+  plot.window(xlim = c(-0.5, 1.5), ylim = c(min(r2.mean-r2.se, na.rm = TRUE), 
+    max(r2.mean+r2.se, na.rm = TRUE)))
+  plot.poly.xy(poly.top.x = plot.coord, poly.top.y = r2.mean+r2.se, 
+    poly.bottom.x = plot.coord, poly.bottom.y = r2.mean-r2.se,
+    border = NULL, col = "gray", lwd = 1, new.plot = FALSE)
+  abline(h = 0)
+  axis(1)
+  axis(2)
+  abline(v = c(0, 1), col = "gray", lty = 2, lwd = 2)
+  mtext(paste("State", st, "Variance Explained in DO"), side = 3, line = 1.5)
+  cat("\n\n")
+}
+#dev.off()
+```
+
 ```{r examples, eval = FALSE}
 #example of haplotype explaining much more than chromatin
-r2.table <- cbind(max.geno.r2, max.chrom.r2)
-test <- which(apply(r2.table, 1, function(x) x[1] > 0.4 && x[2] < 0.2))
+test <- which(apply(r2.table, 1, function(x) x[1] <= 0.4 && x[2] >= 0.2))
 
 #example of chromatin explaining more than haplotype
-test <- which(apply(r2.table, 1, function(x) x[1] < 0.2 && x[2] > 0.4))
+test <- which(apply(r2.table, 1, function(x) x[1] >= 0.2 && x[2] <= 0.4))
 
 test <- which(apply(r2.table, 1, function(x) x[1] == x[2]))
 
-boxplot(r2.table[test,])
+#boxplot(r2.table[test,])
 #gene.name = "Pkd2"
 
 pdf("~/Desktop/test.pdf", width = 9, height = 9)

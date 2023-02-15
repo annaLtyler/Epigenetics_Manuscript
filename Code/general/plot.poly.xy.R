@@ -10,7 +10,7 @@
 #poly.bottom.y <- 0:9
 
 plot.poly.xy <- function(poly.top.x, poly.top.y, poly.bottom.x, poly.bottom.y,
-border = NULL, col = "black", lwd = 1, new.plot = FALSE){
+border = NULL, col = "black", lwd = 1, new.plot = FALSE, xlim = NULL, ylim = NULL){
 
     #remove missing and infinite entries
     finite.entries <- Reduce("intersect", 
@@ -29,12 +29,19 @@ border = NULL, col = "black", lwd = 1, new.plot = FALSE){
     min.y <- min(c(poly.top.y, poly.bottom.y))
     max.y <- max(c(poly.top.y, poly.bottom.y))
 
+    if(is.null(ylim)){
+        ylim = c(min.y, max.y)
+    }
+    if(is.null(xlim)){
+        xlim <- c(min.x, max.x)
+    }
+
     poly.x <- c(poly.top.x, rev(poly.bottom.x))
     poly.y <- c(poly.top.y, rev(poly.bottom.y))
 
     if(new.plot){
         plot.new()
-        plot.window(xlim = c(min.x, max.x), ylim = c(min.y, max.y))
+        plot.window(xlim = xlim, ylim = ylim)
     }
     polygon(poly.x,poly.y, border = border, col = col, lwd = lwd)
 

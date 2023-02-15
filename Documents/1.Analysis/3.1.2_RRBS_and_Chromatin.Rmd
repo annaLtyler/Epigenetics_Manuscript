@@ -16,7 +16,7 @@ on expression is affected by chromatin state.
 
 
 ```{r load_libraries, echo = FALSE, message = FALSE}
-num.states = 9
+num.states = 14
 is.interactive = FALSE
 #is.interactive = TRUE
 needed.packages <- c("here", "pheatmap", "hexbin", "RColorBrewer", "gprofiler2",
@@ -38,7 +38,7 @@ for(i in 1:length(all.code.dir)){
 rrbs.strain.mat.file <- here("Results", "RRBS", "Aligned.Methyl.Mats.RDS")
 rrbs.mats <- readRDS(rrbs.strain.mat.file)
 norm.rrbs <- readRDS(here("Results", "RRBS", "RRBS.Normalized.Position.RDS"))
-norm.chrom <- readRDS(file.path(results.dir, "Centered_Chromatin_Mats.RDS"))
+norm.chrom <- readRDS(file.path(results.dir, "Chromatin.States.Gene.Coords.RDS"))
 strain.expr <- readRDS(here("Data", "RNASeq", "Strain_Mean_C_Expression.RData"))
 transcript.info <- readRDS(here("Data", "RNASeq", "RNASeq_gene_info.RData"))
 ```
@@ -169,21 +169,45 @@ get_methyl_by_state <- function(bin_state_mat, rrbs_mat){
 full_rrbs <- sapply(1:length(aligned_epi), function(x) if(length(aligned_epi[[x]][[1]]) > 1){aligned_epi[[x]][[2]]}else{NA})
 has.methyl <- which(sapply(full_rrbs, function(x) !all(is.na(x))))
 
+#pdf("~/Desktop/RRBS_in_States.pdf")
+all_state_methyl_levels <- vector(mode = "list", length = num.states)
+names(all_state_methyl_levels) <- 1:num.states
+
 if(is.interactive){quartz(width = 10, height = 7)}
-par(mfrow = c(3,3))
+par(mfrow = c(2,2))
 for(state in 1:num.states){
     state_methyl <- sapply(1:length(aligned_epi), function(x) if(length(aligned_epi[[x]][[1]]) > 1){get_methyl_by_state(aligned_epi[[x]][[1]][[state]], aligned_epi[[x]][[2]])}else{NA})
     has.methyl <- which(sapply(state_methyl, function(x) !all(is.na(x))))
 
     all_strain_list <- lapply(1:9, function(strain) t(sapply(state_methyl[has.methyl], function(x) x[strain,])))
+
+    coords <- as.numeric(colnames(all_strain_list[[1]]))
     all_strain_mat <- Reduce("rbind", all_strain_list)
     row.has.val <- which(apply(all_strain_mat, 1, function(x) !all(is.na(x))))
 
-    plot.centered.mat(all_strain_mat[row.has.val,], ylim = c(0,100), plot.fun = "median",
-        plot.label = paste("State", state), min.representation = 90,
-        min.upstream = -0.5, max.downstream = 1.5)
-    abline(v = c(0,1), lty = 2, lwd = 2, col = "darkgray")
+    percent_list <- lapply(1:ncol(all_strain_mat), function(x) all_strain_mat[,x])
+    has.vals <- which(sapply(percent_list, function(x) length(which(!is.na(x)))) > 3)
+    all_state_methyl_levels[[state]] <- plot_mean_conf(x = coords[has.vals], 
+        y.list = percent_list[has.vals], spar = 0.4,
+        xlab = "Relative Position", ylab = "Methylation Percent Mean", 
+        main = paste("State", state), ylim = c(0, 100))
 }
+saveRDS(all_state_methyl_levels, here("Results", "RRBS", 
+    "Methylation_Level_by_Chromatin_State.RDS"))
+#dev.off()
+```
+
+
+```{r max_min_methyl, eval = FALSE}
+imageWithText(all_state_methyl_levels, col.scale = "blue", grad.dir = "high")
+boxplot(all_state_methyl_levels)
+
+intragenic.idx <- intersect(which(coords >= 0), which(coords <= 1))
+barplot_with_num(sort(round(rowMeans(all_state_methyl_levels[,intragenic.idx]))))
+
+methyl.min <- apply(all_state_methyl_levels, 2, function(x) min(x, na.rm = TRUE))
+methyl.max <- apply(all_state_methyl_levels, 2, function(x) max(x, na.rm = TRUE))
+plot.poly.xy(coords, methyl.min, coords, methyl.max, new.plot = TRUE)
 ```
 
 ```{r all_together}
@@ -193,27 +217,22 @@ full_strain_mat <- Reduce("rbind", full_strain_list)
 row.has.val <- which(apply(full_strain_mat, 1, function(x) !all(is.na(x))))
 if(is.interactive){quartz(width = 10, height = 7)}
 par(mfrow = c(1,1))
-plot.centered.mat(full_strain_mat[row.has.val,], ylim = c(0,100), plot.fun = "median",
-    plot.label = "All methylation Across all states", min.representation = 90,
-    min.upstream = -0.5, max.downstream = 1.5)
+full.list <- lapply(1:ncol(full_strain_mat), function(x) full_strain_mat[row.has.val,x])
+plot_mean_conf(coords, full.list, spar = 0.4,
+    xlab = "Relative Position", ylab = "Methylation Percent Mean", 
+    main = "All methylation across all states", ylim = c(0, 100))
 abline(v = c(0,1), lty = 2, lwd = 2, col = "darkgray")
 ```
 
 ## Chromatin state, methylation, and expression {.tabset .tabset-fade .tabset-pills}
 
 We next investigated whether the chromatin state housing the 
-methylated DNA had any effect on the methylation's effect on expression.
+methylated DNA had any effect on the methylation's effect on 
+expression.
 
-For example, methylating DNA at the TSS in state 7 may have a negative
-effect on expression, whereas methylating DNA at the TSS in state 3
-may have no effect.
-
-However, for states 2, 4, and 5, it looks as if there is a weak negative
-correlation between gene expression and DNA methylation when those states
-are present at the TSS.
-
-State 3 is very interesting in that DNA methylation present in this state
-tends to have a slight positive correlation with gene expression.
+For example, methylating DNA at the TSS in a repressor state
+may have a positive effect on expression, whereas methylating
+DNA in an enhancer state may reduce gene expression.
 
 
 ```{r chrom_methyl_in_strain, results = "asis"}
@@ -224,6 +243,7 @@ names(methyl_expr_effect) <- 1:num.states
 for(state in 1:num.states){
     state_methyl <- sapply(1:length(aligned_epi), function(x) if(length(aligned_epi[[x]][[1]]) > 1){get_methyl_by_state(aligned_epi[[x]][[1]][[state]], aligned_epi[[x]][[2]])}else{NA})
     has.methyl <- which(sapply(state_methyl, function(x) !all(is.na(x))))
+    
     strain_cor_list <- vector(mode = "list", length = length(strains))
     names(strain_cor_list) <- strains
 
@@ -233,16 +253,22 @@ for(state in 1:num.states){
     for(strain in 1:length(strains)){
         methyl_by_strain <- t(sapply(state_methyl[has.methyl], function(x) x[strain,]))
         rownames(methyl_by_strain) <- names(aligned_epi)[has.methyl]
+        #replace NA's with 0's because non-CpG sites are not methylated
+        methyl_by_strain[which(is.na(methyl_by_strain))] <- 0
         all.strain.methyl[[strain]] <- methyl_by_strain
         expr.locale <- match(rownames(methyl_by_strain), names(strain.expr))
         comp.expr <- sapply(strain.expr[expr.locale], function(x) x[expr.order[strain]]) 
         all.strain.expr[[strain]] <- rankZ(comp.expr)
     }
 
+    #for each strain, calculate whether DNA methylation within each
+    #state has an effect on gene expression at all positions along
+    #the gene body
     strain_methyl_effect <- lapply(1:length(all.strain.methyl), 
         function(y) sapply(1:ncol(all.strain.methyl[[y]]), 
-        function(x) plot.with.model(rankZ(all.strain.methyl[[y]][,x]), all.strain.expr[[y]], 
-        confidence = 0.95, plot.results = FALSE)))
+        function(x) if(length(unique(all.strain.methyl[[y]][,x])) > 1){plot.with.model(rankZ(all.strain.methyl[[y]][,x]), all.strain.expr[[y]], 
+        confidence = 0.95, plot.results = FALSE)}else{rep(NA, 5)}))
+    #pheatmap(strain_methyl_effect[[1]], cluster_cols = FALSE, cluster_rows = FALSE)
 
     strain.effect.mat <- Reduce("+", strain_methyl_effect)/length(strain_methyl_effect)
     colnames(strain.effect.mat) <- colnames(all.strain.methyl[[1]])
@@ -250,11 +276,13 @@ for(state in 1:num.states){
 
     methyl_expr_effect[[state]] <- strain.effect.mat
 }
+saveRDS(methyl_expr_effect, here("Results", "RRBS", "Methylation_and_Expression_by_State.RDS"))
 
 coords <- as.numeric(colnames(methyl_expr_effect[[1]]))
 state.col <- colors.from.values(1:num.states, use.pheatmap.colors = TRUE, 
 	global.color.scale = TRUE, global.min = 1, global.max = num.states)
 
+#pdf("~/Desktop/Effect_of_DNA_Methylation_By_State.pdf")
 if(is.interactive){quartz(width = 9, height = 9)}
 par(mfrow = c(3,3), mar = c(2,4,2,2))
 for(state in 1:num.states){
@@ -269,6 +297,7 @@ for(state in 1:num.states){
     mtext(side = 3, paste("State", state), line = 0)
     abline(v = c(0,1), lty = 2, col = "darkgray")
 }
+#dev.off()
 ```
 
 ## DNA methylation effects across strains
@@ -278,11 +307,14 @@ This is the same code above, but draws on the scaled expression
 instead of the TPM data.
 
 ```{r across_strain_effect}
+methyl_cor_file <- here("Results", "RRBS", "Methylation_percent_by_state.RDS")
+methyl_bin_file <- here("Results", "RRBS", "Methylation_presence_by_state.RDS")
+
 strains <- colnames(matched.chrom[[1]])
 expr.order <- match.order(rownames(matched.norm.rrbs[[1]]), names(strain.expr[[1]]), col.table)
 min.n.gene = 50
-methyl_expr_cor <- vector(mode = "list", length = num.states)
-names(methyl_expr_cor) <- 1:num.states
+methyl_expr_cor <- methyl_bin_cor <- vector(mode = "list", length = num.states)
+names(methyl_expr_cor) <- names(methyl_bin_cor) <- 1:num.states
 for(state in 1:num.states){
     state_methyl <- sapply(1:length(aligned_epi), function(x) if(length(aligned_epi[[x]][[1]]) > 1){get_methyl_by_state(aligned_epi[[x]][[1]][[state]], aligned_epi[[x]][[2]])}else{NA})
     has.methyl <- which(sapply(state_methyl, function(x) !all(is.na(x))))
@@ -304,38 +336,92 @@ for(state in 1:num.states){
     overall_methyl <- Reduce("rbind", all.strain.methyl)
     overall_expr <- Reduce("c", all.strain.expr)
 
-    conf_mat <- matrix(NA, nrow = 5, ncol = ncol(methyl_by_strain))
-    colnames(conf_mat) <- colnames(methyl_by_strain)
-    rownames(conf_mat) <- c("r", "p.value", "slope.fit", "slope.lwr", "slope.upr")
+    conf_mat <- bin.conf.mat <- matrix(NA, nrow = 5, ncol = ncol(methyl_by_strain))
+    colnames(conf_mat) <- colnames(bin.conf.mat)  <- colnames(methyl_by_strain)
+    rownames(conf_mat) <- rownames(bin.conf.mat) <- c("r", "p.value", "slope.fit", "slope.lwr", "slope.upr")
 
-    min.samples <- which(apply(overall_methyl, 2, function(x) length(which(is.finite(x)))) >= min.n.gene)
+    #also look at presence/absence of a CpG site
+    bin.methyl <- overall_methyl
+    bin.methyl[which(is.na(overall_methyl))] <- 0
+    bin.methyl[which(!is.na(overall_methyl))] <- 1
+
+    #replace NA's with 0's in overall_methyl because non-CpG sites are not methylated
+    overall_methyl[which(is.na(overall_methyl))] <- 0
+
+    min.samples <- which(apply(overall_methyl, 2, function(x) length(which(x > 0))) >= min.n.gene)
     strain.cor.mat <- apply(overall_methyl[,min.samples], 2, 
         function(x) plot.with.model(rankZ(x), rankZ(overall_expr), 
         confidence = 0.95, plot.results = FALSE)) 
 
+    strain.bin.mat <- apply(bin.methyl[,min.samples], 2, 
+        function(x) plot.with.model(x, rankZ(overall_expr), 
+        confidence = 0.95, plot.results = FALSE)) 
+
     conf_mat[,min.samples] <- strain.cor.mat
     methyl_expr_cor[[state]] <- conf_mat
+
+    bin.conf.mat[,min.samples] <- strain.bin.mat
+    methyl_bin_cor[[state]] <- bin.conf.mat
 }
 
+saveRDS(methyl_expr_cor, methyl_cor_file)
+saveRDS(methyl_bin_cor, methyl_bin_file)
+```
+
+### DNA methylation percent
+
+The following plots show the association between DNA methylation
+percent and gene expression using only DNA methylation in each
+state.
+
+```{r plot_cor}
 
 coords <- as.numeric(colnames(methyl_expr_cor[[1]]))
 state.col <- colors.from.values(1:num.states, use.pheatmap.colors = TRUE, 
 	global.color.scale = TRUE, global.min = 1, global.max = num.states)
 
+#pdf("~/Desktop/percent_methylation.pdf")
 if(is.interactive){quartz(width = 9, height = 9)}
 par(mfrow = c(3,3), mar = c(2,4,2,2))
 for(state in 1:num.states){
-    plot.new()
-    plot.window(xlim = c(-0.1, 1.1), ylim = c(-0.5, 0.6))
-    points(coords, methyl_expr_cor[[state]]["slope.fit",], col = state.col[state], type = "l")    
+    #plot.new()
+    #plot.window(xlim = c(-0.1, 1.1), ylim = c(-0.5, 0.6))
     plot.poly.xy(coords, methyl_expr_cor[[state]]["slope.lwr",],
-    coords, methyl_expr_cor[[state]]["slope.upr",], col = state.col[state])
+    coords, methyl_expr_cor[[state]]["slope.upr",], col = state.col[state], new.plot = TRUE)
+    points(coords, methyl_expr_cor[[state]]["slope.fit",], col = state.col[state], type = "l")    
     abline(h = 0)
     axis(2)
     mtext(side = 2, "Effect", line = 2.5)
     mtext(side = 3, paste("State", state), line = -1.5)
     abline(v = c(0,1), lty = 2, col = "darkgray")
 }
+#dev.off()
+```
+
+### Presence/Absence of DNA methylation sites
+
+The following plots show the association between DNA methylation
+presence/absence gene expression using only DNA methylation in each
+state.
+
+```{r plot_bin_cor}
+#pdf("~/Desktop/presence_absence.pdf")
+if(is.interactive){quartz(width = 9, height = 9)}
+par(mfrow = c(3,3), mar = c(2,4,2,2))
+for(state in 1:num.states){
+    #plot.new()
+    #plot.window(xlim = c(-0.1, 1.1), ylim = c(-0.5, 0.6))
+    plot.poly.xy(coords, methyl_bin_cor[[state]]["slope.lwr",],
+    coords, methyl_bin_cor[[state]]["slope.upr",], col = state.col[state], new.plot = TRUE)
+    points(coords, methyl_bin_cor[[state]]["slope.fit",], col = state.col[state], type = "l")    
+    abline(h = 0)
+    axis(2)
+    mtext(side = 2, "Effect", line = 2.5)
+    mtext(side = 3, paste("State", state), line = -1.5)
+    abline(v = c(0,1), lty = 2, col = "darkgray")
+}
+#dev.off()
+
 ```
 
 There seems to be some interaction between chromatin state and the effect of
@@ -378,6 +464,9 @@ plot.example.cor <- function(state, position, confidence = 0.95){
         all.strain.all.expr <- c(all.strain.all.expr, scaled.vector)
     }
 
+    #replace NA's with 0's becahse non-CpGs will not be methylated
+    all.strain.all.methyl[which(is.na(all.strain.all.methyl))] <- 0
+
     if(is.interactive){quartz(width = 8, height = 8)}
     par(mfrow = c(2,2), mar = c(4, 4, 4, 2))
     #gene.strain <- sapply(strsplit(names(all.strain.all.expr), "[.]"), function(x) x[2])
@@ -413,13 +502,11 @@ plot.example.cor <- function(state, position, confidence = 0.95){
 }
 
 
-state = 3; pos = coords[19]
+state = 2; pos = coords[11]
 plot.example.cor(state = state, position = pos, confidence = 0.99)
 
-state = 6; pos = 0.025
+state = 6; pos = coords[13]
 plot.example.cor(state = state, position = pos, confidence = 0.99)
-
-
 
 ```
 

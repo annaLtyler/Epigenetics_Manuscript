@@ -1,0 +1,56 @@
+---
+title: "Parse Liver Enhancers"
+author: Anna L Tyler
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  html_document:
+    code_folding: hide
+    collapsed: no
+    toc: yes
+    toc_float: yes
+---
+
+The purpose of this workflow is to parse the liver enhancer bed file 
+for enrichment analysis of ChromHMM states.
+
+We started by downloading the Oreganno files from [UCSC](http://genome.ucsc.edu/cgi-bin/hgTables)
+Select Mouse assembly mm10
+Select Expression and regulation
+Select Chromatin State
+Select cHMM liver P0 (encode3RenChromHmmLiverP0)
+Download the bed file associated with this track and name it liver_chrom.bed
+
+It includes different types of enhancers, some with non-signiticant
+associations with gene expression. Here we parse the bed file to 
+create one file for each type of enhancer. We will look at each of 
+these separately.
+
+
+```{r download_files}
+reg.dir <- here("Data", "regulatory_annot")
+reg.bed <- read.table(file.path(reg.dir, "liver_chrom.bed"), header = FALSE,
+stringsAsFactors = FALSE)
+
+#identify all unique types of enhancers
+u_chrom <- unique(reg.bed[,4])
+
+#create separate bed files for each
+chrom.bed <- lapply(u_chrom, function(x) reg.bed[which(reg.bed[,4] == x),])
+
+#write out the bed files, compress them, and move them to the mm10 folder 
+for(i in 1:length(chrom.bed)){
+    filename <- file.path(reg.dir, paste0("Liver_", u_chrom[i], ".bed"))
+    write.table(chrom.bed[[i]], filename, quote = FALSE, sep = "\t",
+    row.names = FALSE, col.names = FALSE)
+
+    compress.line <- paste("gzip", filename)
+    system(compress.line)
+
+    move.line <- paste("mv", paste0(filename, ".gz"), here("Data", "mm10"))
+    system(move.line)
+
+}
+
+```
+
+

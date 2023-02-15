@@ -1,5 +1,5 @@
 ---
-title: "Compare ChromHMM Models"
+title: "Parse OregAnno"
 author: Anna L Tyler
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
 output: 

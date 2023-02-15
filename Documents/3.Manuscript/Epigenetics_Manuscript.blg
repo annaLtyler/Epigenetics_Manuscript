@@ -3,44 +3,44 @@ Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: Epigenetics_Manuscript.aux
 The style file: genome_research.bst
 Database file #1: epigenetics.bib
-You've used 60 entries,
+You've used 79 entries,
             2730 wiz_defined-function locations,
-            956 strings with 47729 characters,
-and the built_in function-call counts, 120161 in all, are:
-= -- 13398
-> -- 3234
-< -- 12
-+ -- 3402
-- -- 925
-* -- 8571
-:= -- 11870
-add.period$ -- 120
-call.type$ -- 60
-change.case$ -- 761
-chr.to.int$ -- 61
-cite$ -- 60
-duplicate$ -- 12667
-empty$ -- 8335
-format.name$ -- 1057
-if$ -- 24723
+            1060 strings with 53100 characters,
+and the built_in function-call counts, 158871 in all, are:
+= -- 17785
+> -- 4193
+< -- 15
++ -- 4409
+- -- 1199
+* -- 11335
+:= -- 15639
+add.period$ -- 158
+call.type$ -- 79
+change.case$ -- 993
+chr.to.int$ -- 80
+cite$ -- 79
+duplicate$ -- 16828
+empty$ -- 11046
+format.name$ -- 1375
+if$ -- 32707
 int.to.chr$ -- 1
 int.to.str$ -- 1
-missing$ -- 883
-newline$ -- 187
-num.names$ -- 180
-pop$ -- 6431
+missing$ -- 1153
+newline$ -- 244
+num.names$ -- 237
+pop$ -- 8577
 preamble$ -- 1
-purify$ -- 702
+purify$ -- 915
 quote$ -- 0
-skip$ -- 2451
+skip$ -- 3141
 stack$ -- 0
-substring$ -- 16224
-swap$ -- 2065
+substring$ -- 21643
+swap$ -- 2706
 text.length$ -- 1
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 358
+type$ -- 472
 warning$ -- 0
-while$ -- 748
+while$ -- 978
 width$ -- 0
-write$ -- 672
+write$ -- 881

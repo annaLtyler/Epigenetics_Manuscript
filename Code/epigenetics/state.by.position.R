@@ -39,12 +39,16 @@ state.by.position <- function(gene.ids, group.gene.expr, state.id, binned.chrom)
     state.sum.vec <- colSums(state.sum.mat, na.rm = TRUE)
     state.count.vec <- colSums(state.count.mat, na.rm = TRUE)
     state.avg <- state.sum.vec/state.count.vec
+
+    avg.by.strain <- state.sum.mat/state.count.mat
+
     #plot(state.avg, type = "l")
     state.var <- colSums(state.ssq.mat, na.rm = TRUE)/state.count.vec - (state.avg)^2
     state.sd <- sqrt(state.var)
     state.se <- state.sd/sqrt(state.count.vec)
 
     results <- list("position" = as.numeric(colnames(state.sum.mat)), 
-        "state.avg" = state.avg, "state.sd" = state.sd, "state.se" = state.se)
+        "state.avg" = state.avg, "state.sd" = state.sd, "state.se" = state.se,
+        "state.by.strain" = avg.by.strain)
     return(results)
 }
