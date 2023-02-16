@@ -180,7 +180,7 @@ scan_chrom_transcript_by_state <- function(gene.id,
     if(is.na(geno)){return(NA)}
 
     #limit to only females because only females are in the inbred data
-    geno[[1]] <- geno[[1]][grep("F", rownames(geno[[1]])),,]
+    geno[[1]] <- geno[[1]][grep("F", rownames(geno[[1]])),,,drop=FALSE]
 
     #check for variation
     test.var <- round(apply(geno[[1]], 3, function(x) apply(x, 2, function(y) var(y))), 2)
