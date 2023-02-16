@@ -378,7 +378,7 @@ scan_chrom_transcript_by_state <- function(gene.id,
 
 ```{r run_remaining, eval = FALSE}
 #original testing using full matrices
-
+stop()
 if(start.at < length(common.transcripts)){ #if we haven't scanned all the transcripts yet
   sink(file.path(results.dir, "progress.txt"))
   #for each remaining transcript
@@ -509,141 +509,6 @@ if(start.at < length(common.transcripts)){ #if we haven't scanned all the transc
 }
 ```
 
-```{r select_nperm}
-nperm = 1000
-```
-
-```{r perm_fun}
-get_data_for_perm <- function(gene.id){
-
-    info.locale <- which(transcript.info[,"ensembl_gene_id"] == gene.id)[1]
-    gene.name <- transcript.info[info.locale,"external_gene_name"]
-    if(is.na(gene.name)){return(NA)}
-
-    expr.locale <- which(colnames(expr) == gene.id)
-    chrom.locale <- which(names(chrom.mats) == gene.id)
-
-    if(length(expr.locale) == 0 || length(chrom.locale) == 0){
-        return(NA)
-    }
-
-    one.chrom <- chrom.states[[chrom.locale]]
-    one.expr <- expr[,expr.locale,drop=FALSE]
-    gene.idx <- which(names(transcript.haplotypes) == gene.id)
-    haps <- transcript.haplotypes[[gene.idx]]
-    gene.chr <- transcript.info[info.locale,"chromosome_name"]
-
-    data.for.perm <- list("name" = gene.name, "chrom" = one.chrom, 
-        "expr" = one.expr, "haps" = haps, "chr" = gene.chr)
-    return(data.for.perm)
-}
-
-imp_chrom <- function(perm.data, perm.order){
- 
-  chrom.order <- match.order(colnames(perm.data$haps),
-    rownames(perm.data$chrom), strain.key)
-
-    ref.chroms <- perm.data$chrom
-    if(!is.null(perm.order)){
-        ref.chroms <- ref.chroms[perm.order,,]
-        rownames(ref.chroms) <- colnames(perm.data$haps)
-    }
-
-    haps <- perm.data$haps
-    chrom.array <- array(NA, dim = c(nrow(haps), ncol(ref.chroms), dim(ref.chroms)[3]))
-    rownames(chrom.array) <- rownames(haps)
-    colnames(chrom.array) <- paste0("State", colnames(ref.chroms))
-    dimnames(chrom.array)[[3]] <- dimnames(ref.chroms)[[3]]
-  
-    for(p in 1:dim(ref.chroms)[3]){ #for each position
-        chrom.mat <- ref.chroms[,,p]
-        chrom.array[,,p] <- haps[,,1] %*% chrom.mat
-        }
-
-    #add attributes
-    gene.chr <- perm.data$chr
-    one.geno <- list(chrom.array)
-    names(one.geno) <- gene.chr
-    if(gene.chr == "X"){
-      attr(one.geno, "is_x_chr") <- TRUE
-    }else{
-      attr(one.geno, "is_x_chr") <- FALSE
-    }
-    attr(one.geno, "crosstype") <- "do"
-    attr(one.geno, "alleles") <- LETTERS[1:8]
-    attr(one.geno, "alleleprobs") <- TRUE
-    attr(one.geno, "class") <- c("calc_genoprob", "list")
- 
-    return(one.geno)
-}
-
-
-#This function and the perm data will be exported to the
-#clusters
-perm_one_transcript <- function(perm.data, p, 
-  geno_type = c("chromatin", "genotype")){
-  
-  if(length(perm.data) == 1){return(NA)}
-  
-  perm.order <- order.mat[p,]
-
-  imp.geno <- imp_chrom(perm.data, perm.order)
-
-  if(is.na(imp.geno)){return(NA)}
-
-  #check for variation
-  test.var <- round(apply(imp.geno[[1]], 3, function(x) apply(x, 2, function(y) var(y))), 2)
-  no.var <- length(which(apply(test.var, 1, function(x) length(unique(x))) > 1)) <= 1
-    
-  if(no.var){return(NA)}
-       
-  #calculate chromatin LOD scores
-  chrom.lod.table <- scan1(imp.geno, perm.data$expr, addcovar = covar)
-  colnames(chrom.lod.table) <- "Additive"
-
-  #calculate chromatin state coefficients
-  chrom.add.coef <- scan1coef(genoprobs = imp.geno, pheno = perm.data$expr, 
-    addcovar = covar)
-  chrom.coef.list <- list(chrom.add.coef[,1:num.states])
-  names(chrom.coef.list) <- "Additive"
-
-    #calculate chromatin R2
-    #adjust expression for covariates first, so we don't include 
-    #the covariates in the variance explained
-    adj.expr <- adjust(perm.data$expr, covar)
-    chrom.models.add <- apply(imp.geno[[1]], 3, function(x) lm(adj.expr~x))
-    ch.add.r2 <- sapply(chrom.models.add, function(x) summary(x)$adj.r.squared)
-    chrom.r2.results <- matrix(ch.add.r2, ncol = 1)
-    colnames(chrom.r2.results) <- "Additive"
-
-  results <- list("chrom.lod.table" = chrom.lod.table, 
-    "chrom.coef.list" = chrom.coef.list, "chrom.r2.results" = chrom.r2.results)
-
-  return(results)
-}
-```
-
-```{r perm_files}
-perm.lod.file <- file.path(results.dir, "Perm.LOD.RDS")
-perm.r2.file <- file.path(results.dir, "Perm.R2.RDS")
-
-if(file.exists(perm.lod.file)){
-  perm.lod <- readRDS(perm.lod.file)
-  perm.r2 <- readRDS(perm.r2.file)
-
-  #figure out where we left off.
-  not.na <- which(!is.na(perm.lod[,1]))  
-  left.off <- max(not.na)
-  start.at <- left.off + 1
-}else{
-  start.at <- 1
-  #if we are at the beginning, intialize all the objects for holding
-  #results. 
-  perm.lod <- perm.r2 <- matrix(NA, nrow = length(common.transcripts), ncol = nperm)
-  rownames(perm.lod) <- rownames(perm.r2) <- common.transcripts
-}
-
-```
 
 
 ## Permutations for chromarobs
@@ -651,6 +516,7 @@ if(file.exists(perm.lod.file)){
 ```{r select_nperm}
 nperm = 1000
 ```
+
 
 ```{r perm_fun}
 get_data_for_perm <- function(gene.id){

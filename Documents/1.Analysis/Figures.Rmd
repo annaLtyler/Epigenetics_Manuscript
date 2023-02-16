@@ -245,29 +245,27 @@ if(!embed.figures){
 
 ## Figure 2 - Chromatin state overview
 
-Overview of chromatin state composition, genomic distribution,
-and effect on expression. (A) Emission probabilites for each 
-histone modification in each chromatin state. 
-Blue indicates the absence of the histone modification, and red 
-indicates the presence of the modification. (B) The distribution 
-of each state around functional elements in the genome. Enrichment
-values in rows were scaled to run between -1 and 1 for visualization 
-purposes. Red indicates that the state is more likely to be found 
-near the annotated functional element than expected by chance. Blue 
-indicates that the state is less likely to be found near the 
-annotated functional element than expected by chance. 
-Abbreviations are as follows: TFBS = 
-transcription factor binding sites, cCRE = candidate cis-regulatory
-element [@pmid32728249], TSS = transcription start site, 
-TES = transcription end site. (C) The effect of variation in 
-the state on gene expression. Bars are colored based on the 
-size and direction the state's effect on expression. Darker bars 
-show the effects on expression of chromatin state variation across 
-strains. Tan bars show the effects on expression of chromatin 
-state variation across genes. (D) Plausible annotations for each 
-state based on combining the data in the previous three panels. 
-The numbers in parentheses indicate the percent 
-of the genome that was assigned to each state.
+Overview of chromatin state composition, genomic 
+distribution, and effect on expression. (A) Emission 
+probabilites for each histone modification in each 
+chromatin state. Blue indicates the absence of the histone
+modification, and red indicates the presence of the 
+modification. (B) The distribution of each state around 
+functional elements in the genome. Red indicates that the 
+state is enriched near the annotated functional element. 
+Blue indicates that the state is depleted near the annotated 
+functional element. Abbreviations are as follows: 
+Enh. = enhancer, Tsd = distal to the transcript start site, 
+Tsp = proximal to the transcription start site; Hetero. = 
+heterochromatin; FR = flanking region. (C) The effect of 
+variation in the state on gene expression. Bars are colored 
+based on the size and direction the state's effect on expression. 
+Red/blue bars show the effects on expression of chromatin state 
+variation across strains. Blue-gray bars show the effects on 
+expression of chromatin state variation across genes. (D) Plausible 
+annotations for each state based on genomic enrichments. The numbers 
+in parentheses indicate the percent of the genome that was assigned 
+to each state. Repress. = repressor.
 
 ```{r overview_read_data, echo = FALSE}
 #emissions
@@ -288,15 +286,18 @@ if(length(zero.locale) > 0){
 }
 
 #enrichments
+reg.annot <- read.csv(here("Data", "regulatory_annot", "regulatory_annotations.csv"), header = FALSE)
 enrichment.mat <- as.matrix(read.delim(here("Results", "Enrichments", 
     paste0(num.states, "_states_C_enrichments.txt")), row.names = 1))
-enrichment.col <- c("Intergenic" = "Genome..", "CpG Island" = "CpGIsland.mm10.bed.gz", 
-    "cCRE" = "Encode_cCRE.bed.gz", "TES" = "RefSeqTES.mm10.bed.gz", "TSS" = "RefSeqTSS.mm10.bed.gz", 
-    "TFBS" = "TFbs.bed.gz", "Enhancers" = "enhancers.bed.gz", "Promoters" = "promoters.bed.gz")
-col.idx <- match(enrichment.col, colnames(enrichment.mat))
+reg.idx <- c(1, 3, 5:9, 11, 13:17)
+enrichment.col <- reg.annot[reg.idx,1]
+names(enrichment.col) <- reg.annot[reg.idx,2]
+col.idx <- match(gsub("-", ".", enrichment.col), colnames(enrichment.mat))
+
 sub.enrichment <- enrichment.mat[state.idx,col.idx]
 rownames(sub.enrichment) <- 1:nrow(sub.enrichment)
-col.order <- hclust(dist(t(sub.enrichment)))$order
+#col.order <- hclust(dist(t(sub.enrichment)))$order
+col.order <- 1:ncol(sub.enrichment)
 #scale using ChromHMM scaling method
 sub.min <- t(apply(sub.enrichment[,col.order], 1, function(x) x-min(x)))
 scaled.enrichment <- t(apply(sub.min, 1, function(x) x/max(x)))
@@ -391,7 +392,7 @@ row.names = rep("", length(state.idx)), col.text.shift = -0.7, col.text.cex = 1.
 par(mar = c(8,0,2,0))
 imageWithText(scaled.enrichment, 
     use.pheatmap.colors = TRUE, show.text = FALSE, col.names = names(enrichment.col)[col.order],
-    row.names = rep("", length(state.idx)), col.text.shift = -0.7, col.text.cex = 1.5)
+    row.names = rep("", length(state.idx)), col.text.shift = -0.7, col.text.cex = 1)
 
 #10 effects
 par(xpd = FALSE)
@@ -431,7 +432,7 @@ for(state in 1:length(state.idx)){
     col = line.col, lty = across.lty) #lower bound
 
     #line.col <- mix_colors(state.col[use.states][state], "gray", mixing.parameter = 0.85)
-    line.col <- mix_colors("tan", "gray", mixing.parameter = 0.5)
+    line.col <- mix_colors("#c2a5cf", "#99d8c9", mixing.parameter = 0.5)
 
     points(y = state.y[state], x = within.mat[state,"slope.fit"],
     col = line.col, cex = symbol.cex, pch = 17)
@@ -691,25 +692,30 @@ if(!embed.figures){
 Effects of chromatin states on gene expression. Each column shows 
 the effect of each chromatin state on gene expression in a different 
 experimental context. The first column shows the effect across genes in 
-the inbred mice showing how chromatin states are used within a single 
-tissue to increase the expression of some genes and decrease the expression 
-of other genes. The second column shows the effect of chromatin state on 
-gene expression across strains, showing how variation in chromatin state 
-across strains leads to variation in expression of individual genes across 
-strains. The third column shows the effect of imputed chromatin state on 
-gene expression in a population of diversity outbred mice. These plots show 
-the effect on local gene expression of variation in chromatin state across 
-genetically diverse individuals. Each column of panels is plotted on a single 
-scale for the $y$-axis so the magnitude of the effects in a single column can be 
-compared directly to each other. Across a single row, the scale of the $y$-axis 
-varies to highlight the similarity of the shape of each curve in each different 
-setting. The final column shows the annotation of each state for comparison with
-its effects on gene expression. All $y$-axes show the $\beta$ coefficient from 
-the linear model shown in equation 1. All $x$-axes show the relative 
-position along the gene body running from just upstream of the TSS to just 
-downstream of the TES. Vertical gray dashed lines mark the TSS and TES in all 
-panels. Each colored region signifies the 95\% confidence interval around the
-mean estimate.
+the inbred mice showing how chromatin states are used within hepatocytes 
+to increase the expression of some genes and decrease the expression 
+of other genes. The second column shows the effect of chromatin state 
+on gene expression across strains. The third column shows the effect 
+of imputed chromatin state on gene expression in a population of diversity 
+outbred mice. These plots show the effect on local gene expression of 
+variation in chromatin state across genetically diverse individuals. 
+Each column of panels is plotted on a single scale for the $y$-axis so 
+the magnitude of the effects in a single column can be compared directly 
+to each other. All $y$-axes are centered around 0 (black horizontal line). 
+Across a single row, the scale of the $y$-axis varies to highlight the 
+similarity of the shape of each curve in each different setting. Values 
+above the zero line indicate a positive correlation between the state and 
+gene expression at that genomic position. Labels on the $y$-axis in the 
+first column are in arbitrary units and indicate where the 0 line is as 
+well as positive and negative effects. Values below the zero line indicate 
+a negative correlation between the state and gene expression at that genomic 
+positin. The colored areas indicate the 95\% confidence interval around the 
+mean estimate. The final column shows the annotation of each state for 
+comparison with its effects on gene expression. All $y$-axes show the 
+$\beta$ coefficient from the linear model shown in equation 1. All 
+$x$-axes show the relative position along the gene body running from 
+just upstream of the TSS to just downstream of the TES. Vertical gray 
+dashed lines mark the TSS and TES in all panels.
 
 ```{r read_effect_data, echo = FALSE}
 
@@ -742,6 +748,8 @@ for(i in 1:5){
 }
 
 layout.mat <- rbind(label.row, tss.row, Reduce("cbind", panel.col))
+#add row for x-axis
+layout.mat <- rbind(layout.mat, c(0, (max(layout.mat)+1):(max(layout.mat)+3), 0))
 ```
 
 ```{r state_effects_figure, fig.width = 6.5, fig.height = 9, echo = FALSE}
@@ -749,12 +757,13 @@ layout.mat <- rbind(label.row, tss.row, Reduce("cbind", panel.col))
 
 if(!embed.figures){
     png(here("Documents", "3.Manuscript", "Figures", "Fig4_Effects.png"), 
-    width = 6.5, height = 9, units = "in", res = 300)
+    width = 6.5, height = 9.5, units = "in", res = 300)
 }
 
 panel.height <- 1/(length(state.idx)+2)
-layout(layout.mat, heights = c(rep(panel.height/3, 2), rep(panel.height, length(state.idx))),
-widths = c(0.2, rep(1, 4)))
+layout(layout.mat, 
+    heights = c(rep(panel.height/3, 2), rep(panel.height, length(state.idx)), panel.height/3),
+    widths = c(0.2, rep(1, 4)))
 #layout.show(max(layout.mat))
 #plot column labels
 par(mar = c(0,1,0,1))
@@ -778,6 +787,10 @@ par(xpd = FALSE)
 par(mar = c(0,0,0,0))
 for(i in 1:length(state.idx)){
     plot.text(paste("State", i), srt = 90, col = title.color, font = 2, cex = 1.3)
+
+    par(xpd = NA)
+    text(x = 1.1, y = c(0.1, 0.5, 0.9), labels = c(-1, 0, 1), adj = 1, cex = 0.9)
+    par(xpd = FALSE)
 }
 
 #plot within-strain effects
@@ -811,7 +824,7 @@ for(state in 1:length(state.idx)){
     segments(xmin, 0, xmax, col = zero.line.color, lwd = 2)
     segments(x0 = c(0,1), y0 = ymin, y1 = ymax, lty = "dotted", col = tss.line.color, lwd = 2)
     draw.rectangle(xmin, xmax, ymin, ymax, border.col = border.box.color, lwd = 2)
-}
+    }
 
 #plot across-strain effects
 all.lower.y <- sapply(across.strain.window.results, function(x) x[,"slope.lwr"])
@@ -883,6 +896,11 @@ for(state in 1:length(state.idx)){
 if(label.fig){
     mtext("Fig 4", side = 3, outer = TRUE, line = -1.5, adj = 0)
 }
+
+#add x-axes
+plot.text("Relative Position", col = title.color, font = 2, cex = 1.3)
+plot.text("Relative Position", col = title.color, font = 2, cex = 1.3)
+plot.text("Relative Position", col = title.color, font = 2, cex = 1.3)
 
 if(!embed.figures){
     dev.off()
@@ -1135,7 +1153,10 @@ imputed genomic features: SNPs - red X's, Chromatin State - blue
 plus signs, and Percent Methylation - green circles. The horizontal 
 dashed line shows the variance explained by the haplotype. For 
 reference, the arrow below this panel runs from the TSS of 
-\textit{Pkd2} to the TES and shows the direction of transcription. 
+\textit{Pkd2} (vertical bar) to the TES (arrow head) and shows 
+the direction of transcription. The gray arrows at the top indicate
+two regions of interest where chromatin state explains hight 
+amounts of variance in gene expression.
 (B) The chromatin states assigned to each 200 bp window in this 
 gene for each inbred mouse strain. States are colored by their 
 effect on gene expression in the inbred mice. Red indicates a 
@@ -1269,8 +1290,10 @@ get_haplotype_coef <- function(gene.id){
     return(eqtl.stats[[gene.idx]]$coef)
 }
 
-plot_together <- function(gene.id){
+#mark.region.x is in a relative position with the TSS = 0 and the TES = 1
+plot_together <- function(gene.id, mark.region.x = NULL){
         
+    
     gene.info.idx <- which(gene.info[,1] == gene.id)[1]
     if(is.na(gene.info.idx)){
         return(NULL)
@@ -1357,15 +1380,26 @@ plot_together <- function(gene.id){
 
     #layout.mat <- matrix(c(1:5, 0, 0, 6, 6, 0), ncol = 2, byrow = FALSE)
     layout.mat <- matrix(c(1,0,2,0,3,6,4,7,5,7), ncol = 2, byrow = TRUE)
-    layout(layout.mat, heights = c(1,0.2, 1, 1, 1), widths = c(1,0.4))
-    #layout.show(7)
+    #add row for x axis
+    layout.mat <- rbind(layout.mat, c((max(layout.mat)+1), 0))
+
+    layout(layout.mat, heights = c(1,0.2, 1, 1, 1, 0.2), widths = c(1,0.4))
+        #layout.show(7)
 
     #panel 1 - R2 scores for all features
-    par(mar = c(0,4,4,4))
+    par(mar = c(0,4,4,5))
     ylim <- get_plot_bounds(min.val = 0, max.val = hap.r2, scale.factor = 10)
     plot(x = snp.pos, gene.snp.r2, pch = "X", col = "#e41a1c", cex = 1.5,
-        ylab = "", axes = FALSE,
-    xlim = c(global.min.pos, global.max.pos), ylim = ylim)
+        ylab = "", axes = FALSE, xlim = c(global.min.pos, global.max.pos), ylim = ylim)
+
+    par(xpd = TRUE)
+    if(!is.null(mark.region.x)){
+        scaled.pos <- (mark.region.x*(abs(tss.pos - tes.pos))) + tss.pos
+        arrows(x0 = scaled.pos, y0 = ylim[2]*1.14, y1 = ylim[2], col = title.color, lwd = 3,
+            length = 0.1)
+    }
+    par(xpd = FALSE)
+
     points(x = as.numeric(rownames(gene.chrom.r2)), gene.chrom.r2[,1], pch = "+", 
         col = "#377eb8", cex = 2)
     points(x = as.numeric(names(gene.methyl.r2)), gene.methyl.r2, pch = "O",
@@ -1374,7 +1408,7 @@ plot_together <- function(gene.id){
     mtext("Variance Explained", side = 2, line = 2.5, col = title.color, font = 2, cex = 0.8)
     axis(2)
     label_panel(par("usr"), bump.left = 0.1, bump.up = 0.35, label = "A")
-    
+
     #legend for panel 1
     par(xpd = NA)
     legend(x = global.max.pos, y = global.max.r2, pch = c("X", "+", "O"), 
@@ -1382,13 +1416,15 @@ plot_together <- function(gene.id){
     par(xpd = TRUE)
 
     #panel 2 - direction of transcription
-    par(mar = c(0,4,0,4))
+    par(mar = c(0,4,0,5))
     plot.new()
     plot.window(xlim = c(global.min.pos, global.max.pos), ylim = c(0,1))
     arrows(x0 = tss.pos, y0 = 0.5, x1 = tes.pos, col = zero.line.color, lwd = 2, length = 0.15)
+    #mark the TSS
+    segments(x0 = tss.pos, y0 = 0.3, y1 = 0.7, col = zero.line.color, lwd = 2)
 
     #panel 3 - chromatin state matrix
-    par(mar = c(0.2,4,0.2,4))
+    par(mar = c(0.2,4,0.2,5))
     renamed.chrom <- rename_states(t(gene.chrom.mat[,chrom.strain.order]), state.idx)
     #if we are using a subset of states, we need to color them appropriately
     plot.chrom.mat(renamed.chrom, num.states = num.states, 
@@ -1397,7 +1433,7 @@ plot_together <- function(gene.id){
     mtext("Chromatin State", side = 2, line = 1.5, col = title.color, font = 2)
     label_panel(par("usr"), bump.left = 0.11, bump.up = 0.03, label = "B")
 
-    par(mar = c(0,4,1,4))
+    par(mar = c(0,4,1,5))
 
     if(length(gene.snp.alleles) > 0 && ncol(gene.snp.alleles) > 1){
         snp.colors <- c("A" = "#5CC93B", "C" = "#0D00C4", "G" = "#F3B63F", "T" = "#BB261A")
@@ -1428,7 +1464,7 @@ plot_together <- function(gene.id){
     }
     label_panel(par("usr"), bump.left = 0.11, bump.up = 0.02, label = "D")
 
-    par(mar = c(0,1,0,1))
+    par(mar = c(0,2,0,1))
     hap.cols <- col.table[match(names(hap.coef), col.table[,5]),3]
     hap.order <- order(hap.coef[1:8])
     barplot(hap.coef[hap.order], col = hap.cols[hap.order], horiz = TRUE, las = 2,
@@ -1438,7 +1474,7 @@ plot_together <- function(gene.id){
     label_panel(par("usr"), bump.left = 0.15, bump.up = 0.05, label = "E")
 
     if(length(gene.expr) > 1){
-        par(mar = c(3,0,7,1))
+        par(mar = c(3,1,7,1))
         expr.order <- order.strains(names(ordered.hap), 
             names(gene.expr), strain.table)
         ordered.expr <- gene.expr[expr.order] #order based on haplotype coef
@@ -1469,6 +1505,10 @@ plot_together <- function(gene.id){
     label_panel(par("usr"), bump.left = 0.08, bump.up = 0.05, label = "F")
 
     mtext(gene.name, side = 3, outer = TRUE, line = -2.5, col = title.color, font = 2)
+
+    par(mar = c(0,0,0,0))
+    plot.text("Relative Position", col = title.color, cex = 1.3, font = 2)
+
 }
 ```
 
@@ -1481,9 +1521,9 @@ gene.name <- "Pkd2"
 gene.id <- gene.info[which(gene.info[,"external_gene_name"] == gene.name)[1],1]
 if(!embed.figures){
     png(here("Documents", "3.Manuscript", "Figures", "Fig7_Example.png"),
-    width = 6.5, height = 6, units = "in", res = 300)
+    width = 6.5, height = 7, units = "in", res = 300)
 }
-plot_together(gene.id)
+plot_together(gene.id, mark.region.x = c(0, 0.255))
 
 if(label.fig){
     mtext("Fig 7", side = 3, outer = TRUE, line = -1.5, adj = 1)

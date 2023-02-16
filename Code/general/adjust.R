@@ -16,8 +16,8 @@ adjust <- function(matX, adj.mat, retain.intercept = TRUE){
 		}
 		matX.locale <- match(u_ind, rownames(matX))
 		adj.locale <- match(u_ind, rownames(adj.mat))
-		matX <- matX[matX.locale,]
-		adj.mat <- adj.mat[adj.locale,]
+		matX <- matX[matX.locale,,drop=FALSE]
+		adj.mat <- adj.mat[adj.locale,,drop=FALSE]
 	}
 
 	adj.na <- which(is.na(adj.mat), arr.ind = TRUE)

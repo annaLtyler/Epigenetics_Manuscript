@@ -278,10 +278,18 @@ save_bed <- function(bed.table, filename){
 The following plot shows the positional enrichments of the 
 CpG sites common to the B6 individuals.
 
+```{r setup_enrichment}
+#these enrichment files are the same as used in Figures.Rmd
+reg.annot <- read.csv(here("Data", "regulatory_annot", "regulatory_annotations.csv"), header = FALSE)
+enrichment.mat <- as.matrix(read.delim(here("Results", "Enrichments", 
+    "14_states_C_enrichments.txt"), row.names = 1))
+reg.idx <- c(3, 5:9, 11, 13:17)
+background.files <- file.path(here("Data", "mm10", reg.annot[reg.idx,1]))
+names(background.files) <- reg.annot[reg.idx,2]
+```
+
+
 ```{r b6_cpg_enrichment}
-
-background.files <- list.files(here("Data", "mm10"), full.names = TRUE)
-
 b6.cpg.enrich.file <- here("Data", "RRBS", "CpG_Enrichment_B6.RDS")
 
 if(!file.exists(b6.cpg.enrich.file)){
@@ -299,7 +307,7 @@ if(!file.exists(b6.cpg.enrich.file)){
     b6_gz_file <- save_bed(common.bed, here("Data", "RRBS", "B6_CpG.bed"))
     
     B6_CpG_enrich <- rep(NA, length(background.files))
-    names(B6_CpG_enrich) <- gsub(".bed.gz", "", basename(background.files))
+    names(B6_CpG_enrich) <- names(background.files)
 
     for(i in 1:length(background.files)){
       if(is.interactive){cat(basename(background.files[i]), ":")}
@@ -323,7 +331,6 @@ The following plot shows the positional enrichments for
 CpG sites shared by all strains. 
 
 ```{r common_cpg_enrichment}
-background.files <- list.files(here("Data", "mm10"), full.names = TRUE)
 
 common.cpg.enrich.file <- here("Data", "RRBS", "CpG_Enrichment_common.RDS")
 
@@ -338,7 +345,7 @@ if(!file.exists(common.cpg.enrich.file)){
     common_gz_file <- save_bed(common.bed, here("Data", "RRBS", "common_CpG.bed"))
 
     common_CpG_enrich <- rep(NA, length(background.files))
-    names(common_CpG_enrich) <- gsub(".bed.gz", "", basename(background.files))
+    names(common_CpG_enrich) <- names(background.files)
 
     for(i in 1:length(background.files)){
       if(is.interactive){cat(basename(background.files[i]), ":")}
@@ -371,7 +378,7 @@ strain.spec.enrich.file <- here("Data", "RRBS", "strain-specific_site_enrichment
 
 if(!file.exists(strain.spec.enrich.file)){
   strain_spec_CpG_enrich <- rep(NA, length(background.files))
-  names(strain_spec_CpG_enrich) <- gsub(".bed.gz", "", basename(background.files))
+  names(strain_spec_CpG_enrich) <- names(background.files)
 
   for(i in 1:length(background.files)){
           if(is.interactive){cat(basename(background.files[i]), ": ")}

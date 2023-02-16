@@ -3,10 +3,10 @@
 \f3\fnil\fcharset0 Menlo-Regular;\f4\fnil\fcharset0 Menlo-Italic;\f5\froman\fcharset0 Times-Roman;
 }
 {\colortbl;\red255\green255\blue255;\red0\green0\blue255;\red183\green0\blue24;\red83\green104\blue112;
-\red252\green244\blue220;\red0\green0\blue0;\red109\green109\blue109;\red83\green104\blue112;\red252\green244\blue220;
+\red252\green244\blue220;\red0\green0\blue0;\red83\green104\blue112;\red252\green244\blue220;\red109\green109\blue109;
 }
 {\*\expandedcolortbl;;\cssrgb\c1680\c19835\c100000;\cssrgb\c77647\c0\c11765;\cssrgb\c39608\c48235\c51373;
-\cssrgb\c99216\c96471\c89020;\cssrgb\c0\c0\c0;\cssrgb\c50196\c50196\c50196;\cssrgb\c39608\c48235\c51373;\cssrgb\c99216\c96471\c89020;
+\cssrgb\c99216\c96471\c89020;\cssrgb\c0\c0\c0;\cssrgb\c39608\c48235\c51373;\cssrgb\c99216\c96471\c89020;\cssrgb\c50196\c50196\c50196;
 }
 \margl1440\margr1440\vieww22720\viewh13880\viewkind1
 \deftab720
@@ -170,11 +170,19 @@ Also, the authors state \'93The imputation of DNA methylation thus serves as a n
 \
 13. For the ChromHMM enhancer annotations obtained from UCSC, the authors could provide more details in terms of the specific cell type or file and the states of the model they considered to be enhancers.\
 \
-\cf2 I will do my best.\cf0 \
-\
+\cf2 Thank you for noticing this oversight. The acquisition of these data were not adequately documented even for us to recreate the description. Thus we identified new genome annotations to use to align our chromatin states to. We are now using data supplied by the Bing Ren lab for mouse liver on post-natal day 0. These predicted enhancers were much more richly annotated than the data we used initially, and this resulted in a substantial change to Figure 2. We replaced many of the generic annotations with the more specific annotations of predicted enhancers in mouse liver. This allowed us to better annotate our own states, as each one was clearly associated with one of the annotations from the Ren lab. We have more clearely documented our acquisition of the data in the methods section "Genome distribution of chromatin states." The added section reads as follows:\
+\pard\pardeftab720\partightenfactor0
+
+\f3\fs24 \cf4 \cb5 Predicted Liver Enhancers - We downloaded predicted liver enhancers through the UCSC genome browser on February 14, 2023 \
+(http://genome.ucsc.edu/cgi-bin/hgTables). We selected Expression and Regulation -> Chromatin State -> cHMM liver P0 (encode3RenChromHmmLiverP0) under the mouse mm10 assembly. These data include chromatin state annotations for mouse liver on post-natal day 0. The annotations were based on ChIP-Seq measurements of eight histone modifications: H3K27ac, H3K27me3, H3K4me3, H3K4me2, H3K4me1, H3K9me3, H3K9ac, and H3K36me3. ChromHMM was used to identify 15 chromatin states that were \
+each annotated with a predicted function.
+\f0\fs26 \cf0 \cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf2 \
+\cf0 \
 14. The terminology in some places was conflating causal with associative evidence (e.g. \'93Effects of chromatin state on gene expression\'94, \'93DNA methylation did not contribute at all\'85\'94, \'93whose presence upregulated genes within\'94, etc.)\
 \
-\cf2 I will check this.\cf0 \
+\cf2 Thank you for pointing this out, we have read through the manuscript carefully and changed all causal language to reflect association.\cf0 \
 \
 15. The methods could provide some more details on how ChromHMM was run, in particular how the data was binarized and if any non-default parameters were used.\
 \
@@ -193,11 +201,10 @@ We calculated chromatin states for all numbers of states between four and 16, wh
 \
 \pard\pardeftab720\partightenfactor0
 
-\f3\fs24 \cf4 \cb5 We used the enrichment function in ChromHMM described above to identify enrichment of CpG sites around functional elements (transcription start\cb1  \cb5 sites, transcription end sites, transcription factor binding sites,\cb1  \cb5 promoters, enhancers, candidate cis-regulatory elements, and CpG islands)\cb1 \
-\cb5 in the mouse genome.\cb1 \
+\f3\fs24 \cf7 \cb8 \outl0\strokewidth0 \strokec7 We used the enrichment function in ChromHMM described above to identify enrichment of CpG sites around functional elements (CpG islands, enhancers,\cb1  \cb8 and promoters in mouse liver) in the mouse genome.\cb1 \
 \pard\pardeftab720\partightenfactor0
 
-\f0\fs26 \cf0 \
+\f0\fs26 \cf0 \outl0\strokewidth0 \
 \
 17. The text makes reference to the lack of variance of DNA methylation across strains, but I did not see the actual variance reported, only a median value.\
 \
@@ -288,7 +295,7 @@ Thank you! We have fixed this.\cf0 \
 \cf2 Thank you! We have fixed this.\cf0 \
 \
 \pard\pardeftab720\partightenfactor0
-\cf0 \cb7 \
+\cf0 \cb9 \
 \pard\pardeftab720\partightenfactor0
 \cf0 \cb1 \
 \
@@ -357,8 +364,8 @@ To address the issue of a baseline correlation with any imputed value, we perfor
 \
 \pard\pardeftab720\partightenfactor0
 
-\f3\fs24 \cf8 \cb9 \outl0\strokewidth0 \strokec8 Because any feature imputed from haplotype will be somewhat correlated\cb1  \cb9 with gene expression, we performed permutations of the above statistics to assess whether each genomic feature was significantly correlated with gene expression beyond the effect of the imputation itself. To do the permutations, we shuffled the strain labels on each genomic feature vector (chromatin states, DNA methylation percent, or SNPs). This randomized the association between haplotype and the assigned genomic feature while preserving the association between haplotype and gene \cb1 \
-\cb9 expression. We then re-imputed the features into the DO and performed the association tests on the randomized imputed values. \cb1 \
+\f3\fs24 \cf7 \cb8 \outl0\strokewidth0 \strokec7 Because any feature imputed from haplotype will be somewhat correlated\cb1  \cb8 with gene expression, we performed permutations of the above statistics to assess whether each genomic feature was significantly correlated with gene expression beyond the effect of the imputation itself. To do the permutations, we shuffled the strain labels on each genomic feature vector (chromatin states, DNA methylation percent, or SNPs). This randomized the association between haplotype and the assigned genomic feature while preserving the association between haplotype and gene \cb1 \
+\cb8 expression. We then re-imputed the features into the DO and performed the association tests on the randomized imputed values. \cb1 \
 \pard\pardeftab720\partightenfactor0
 \cf4 \outl0\strokewidth0 \
 \cb5 We calculated an empirical p-value for each transcript using 1000 permutations. A uniform p-value distribution across the transcripts would suggest that the given genomic feature was not significantly associated with gene expression. An enrichment of small p values, on the other hand, would suggest that there is a significant association between the imputed genomic feature and gene expression beyond that conferred by the imputation itself. The p-value distributions for all three genomic features were highly enriched for small p-values (all Kruskal-Wallis p < 2\super -16\nosupersub ), suggesting that, although many individual imputed values were not significantly associated with gene expression, overall each genomic feature could be significantly associated with gene expression (Supplemental Figure XXX).\cb1 \
@@ -374,7 +381,7 @@ Page 15 first paragraph \'96 C to T mutations are fairly common and by their nat
 \cf2 This is an excellent point. We have re-written the discussion to include the new results relating to DNA methylation. The revisions are too extensive to display here, but a summary of the new points is as follows: Although, we did not see an effect of variation in DNA methylation in the inbred mice, we did see an association between increased methylation and decreased expression when we imputed DNA methylation into the DO mice. Strain-specific CpG sites near the TSS were the most likely to influence gene expression, but did not change gene expression consistently up or down. \
 \cf0 \
 \pard\pardeftab720\partightenfactor0
-\cf0 \cb7 \
+\cf0 \cb9 \
 \pard\pardeftab720\partightenfactor0
 \cf0 \cb1 \
 \
@@ -398,12 +405,10 @@ Several important conclusions can be extracted from their results about the conn
 \cf0 \
 -Figure 2: It is a bit unclear how annotations were performed. For instance, state 1 has been associated to active enhancers, though in panel B the state seems to be depleted near enhancers. Also in this figure, panel C, the color choice and description (darker/tan bars) are a bit confusing, as many shades of blue and red are used and, for instance, in state 7 both types of bars look alike -maybe using grey bars rather than tan bars might help?\
 \
-\cf2 Hmm... it's true that state 1 is not enriched near predicted enhancers (fold enrichment = 0.523). Is there another word we should use here? I don't really know all the words that we could use. It's a functional element that seems to increase expression. It is enriched around CpG sites, TFBS, and predicted cis regulatory elements. Could we just call it regulatory?\
+\cf2 This is an interesting obervation. We hadn't noticed that before. In light of this confusing annotation, we have changed the way we did this. We replaced the enrichments we had before with liver enhancers from P0 mice. This allowed us a more fine-grained set of annotations, and to annotate each state, we used the alignments with ChromHMM states in the mouse P0 liver. Where there was more than one obvious enrichment for the state, we used our own associations with gene expression to narrow down which regulatory label we gave each state.\
 \
-on the tan bars, yes, the two bars do look the same for state 7. I will experiment with other colors here.\
-\
-I'm not sure how to clarify the description. I have taken many stabs at it already. Any ideas?\cf0 \
-\
+We wanted the intra-strain bars to be muted compared to the inter-strain bars, but we aggree that in the middle of the distribution it is difficult to distinguish them. We have replace the tan bars with a blue-gray color that we think distinguishes them more from the red/blue bars while still keeping them muted.\
+\cf0 \
 -Page 7: the last paragraph reminds that all genes used in this analysis were expressed. If stated earlier, it may facilitate the interpretation of the results. \
 \cf2 \
 That is a good point. We will mention that earlier in the paper.\
@@ -411,22 +416,35 @@ That is a good point. We will mention that earlier in the paper.\
 \cf0 \
 -Figure 4: This is an excellent figure that summarizes the results of the chromatin states on gene expression analyses. However, it is the most difficult to interpret for the reader that is not familiar with this type of graphs, so it would benefit from further explanations about the y-axis and what the colored area represents.\
 \
-\cf2 Thank you! We will add more explanation about what the shaded areas are and how to interpret the figures.\
-\cf0 \
+\cf2 Thank you! We have added axis labels to this figure and some more explanation to the figure legend. We have also clarified how to read this figure in the main text of the manuscript:\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f3\fs24 \cf7 \cb8 \outl0\strokewidth0 \strokec7 In each panel the y-axis is centered\cb1  \cb8 around zero (black horizontal line). Effects above this line indicate\cb1  \cb8 the state had a positive association with gene expression, whereas\cb1  \cb8 effects below the center line show the state had a negative correlation\cb1 \
+\cb8 with gene expression at that particular position.\cb1 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs26 \cf0 \outl0\strokewidth0 \
 -Page 13, line 3: "These two regions were both strongly associated expression levels". As written, it is not clear what this sentence means.\
 \
+\cf2 We have added arrows to Figure 7 to indicate which regions we mean, and have added text to the figure legend and the main text to refer to these arrows:\
 \
-\cf2 We will add to this sentence to clarify where the reader should look in figure 7 to see this.\cf0 \
-\
+\pard\pardeftab720\partightenfactor0
+
+\f3\fs24 \cf7 \cb8 \outl0\strokewidth0 \strokec7 The detailed view of this gene identifies two particularly interesting\cb1  \cb8 regions (gray arrows Figure 7A). One is at the TSS and the immediately surrounding area, and the other is just downstream of the TSS. \cb1 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs26 \cf2 \outl0\strokewidth0 \
+\cf0 \
 -Figure 7: Panel E seems to be part of panel B. This could be avoided by separating panels E and F a bit more from the rest.\
 \
-\cf2 I will separate these more.\cf0 \
-\
+\cf2 We agree. We have separated these panels a bit more to better mark the borders between them. \
+\cf0 \
 -Materials and Methods: Inbred mice were females while DO mice were both males and females. Any reason for these choices? Could gene expression or chromatin state differences between males and females hepatocytes affect your results?\
 \
-\cf2 No reason. These were two separate experiments. \
-We could either explain this away, or do the analysis with only female DO mice, but that will reduce our n by quite a bit, since we are already only using control mice (I think).\cf0 \
+\cf2 The two populations were generated from independent experiments. We wanted to have as large a population as possible in the DO animals, so we used both sexes but adjusted for sex effects before running the statistical tests. \
 \
+\cf0 \
 -Page 23: this page, as well as the previous and following ones, describe the varied and enormous amount of data that were analyzed in this study. But in line 15 there is a minor typo: a question mark after Dreso et al., 2017. Another minor mistake is found on page 30, as the article by Ernst and Kellis 2012 was actually published in Nature Methods.\
 \
 \cf2 Thank you for catching these errors! We have fixed them.}
