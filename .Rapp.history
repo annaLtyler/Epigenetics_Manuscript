@@ -1,335 +1,479 @@
-plot(adipose.mod.qtl, map = map, lodcol = mod.locale)
-mod.idx <- which(names(mem) == gsub("ME", "", mod))
-mod.genes <- mem[[mod.idx]]
-length(mod.genes)
-gene.idx <- match(mod.genes, gene.info[,1])
-gene.table <- gene.info[gene.idx,]
-gene.table
-table(gene.table[,"chr"])
-barplot(table(gene.table[,"chr"]))
-gene.lod.idx <- which(lod.table[,1] %in% mod.genes)
-gene.lod.table <- lod.table[gene.lod.idx,]
-dim(gene.lod.table)
-plot(adipose.mod.qtl, map = map, lodcol = mod.locale)
-head(gene.lod.table)
-lod.chr <- strsplit(gene.lod.table[,"marker"], "_")
-lod.chr <- strsplit(gene.lod.table[,"marker.id"], "_")
-lod.chr
-lod.chr <- sapply(strsplit(gene.lod.table[,"marker.id"], "_"), function(x) x[1])
-lod.chr
-barplot(table(lod.chr))
-plot(adipose.mod.qtl, map = map, lodcol = mod.locale)
-barplot(table(lod.chr))
-head(gene.lod.table, 20)
-gene.id <- "ENSMUSG00000000948"
-gene.locale <- which(colnames(expr) == gene.id)
-gene.scan <- scan1(genoprobs, expr[,gene.locale], addcovar = dataset.DO.Cube.Adipose$covar.matrix, kinship = K)
-plot(gene.scan, map = map)
-chr = 7
-gene.coef <- scan1coef(genoprobs[,chr], expr[,gene.locale], addcovar = dataset.DO.Cube.Adipose$covar.matrix, kinship = K[[chr]])
-plot_coefCC(gene.coef, map = map)
-length(mod.genes)
-library(WGCNA)
-?blockwiseModules
-library(WGCNA)
-?blockwiseModules
-library(propagate)
-mat <- matrix(rnorm(100), 10, 10)
-test <- bigcor(mat)
-test
-pheatmap(test)
-library(pheatmap)
-pheatmap(test)
-class(test)
-pheatmap(test[[1]])
-test[[1]]
-test[[2]]
-pheatmap(as.matrix(test))
-as.matrix(test)
-dim(test)
-?propagate
-?blockwiseModules
-library(WGCNA)
-?blockwiseModules
-install.packages("tinytex")
-library(tinytex)
-q()
-library(WGCNA)
-citation(WGCNA)
-citation("WGCNA")
-library(qtl2)
-citation("qtl2")
-library(qtl2)
-?find_peaks
-test <- readRDS("~/Documents/Projects/Epigenetics/Epigenetics_Manuscript/Results/ChromHMM/9_states_C/Chromatin.State.Position.Far.Genes.RDS")
-str(test)
-length(test)
-length(test[[1]])
-str(test[[1]])
-if (!requireNamespace("BiocManager", quietly = TRUE))#
-    install.packages("BiocManager")#
+weight[m.locale,"weight_final"]
+hist_with_points(weight[m.locale,"weight_final"], breaks = 100)
+sex.order <- order(covar[,"Sex"])
+library(igraph)
+cols <- categorical_pal(8)
+sex.col <- rep(cols[2], nrow(covar))
+sex.col[m.locale] <- cols[3]
+hist_with_points(weight[sex.order,"weight_final"], breaks = 100, cols = sex.col[sex.order])
+hist_with_points(weight[sex.order,"weight_final"], breaks = 100, col = sex.col[sex.order])
+weight[sex.order,"weight_final"]
+sex.col[sex.order]
+plot(weight[sex.order,"weight_final"], breaks = 100, col = sex.col[sex.order])
+warnings()
+hist_with_points(weight[sex.order,"weight_final"], breaks = 100, col = sex.col[sex.order])
+hist_with_points(weight[sex.order,"weight_final"], breaks = 100, col = sex.col[sex.order], xlab = "Weight")
+dev.off()
+hist_with_points(weight[sex.order,"weight_final"], breaks = 100, col = sex.col[sex.order], xlab = "Weight")
+pdf("~/Desktop/weight.pdf", height = 6, width = 5)#
+hist_with_points(weight[sex.order,"weight_final"], breaks = 100, col = sex.col[sex.order], xlab = "Weight")#
+dev.off()
+pdf("~/Desktop/weight.pdf", height = 6, width = 5)#
+hist_with_points(weight[sex.order,"weight_final"], breaks = 100, col = sex.col[sex.order], xlab = "Weight",#
+	main = "")#
+dev.off()
+pdf("~/Desktop/weight.pdf", height = 6, width = 5)#
+hist_with_points(weight[sex.order,"weight_final"], breaks = 100, col = sex.col[sex.order], xlab = "Weight (g)",#
+	main = "")#
+dev.off()
+weight.col <- paste("weight", 5:24, sep = "_")
+weight <- clin.data$data[,weight.col]#
+#take out outliers that are obviously mistakes#
+weight[which(weight > 100)] <- NA #
+weight[which(weight < 10)] <- NA
+c(min(weight), max(weight))
+c(min(weight, na.rm = TRUE), max(weight, na.rm = TRUE))
+plot.new()#
+plot.window(xlim = c(0, ncol(weight)), ylim = c(min(weight, na.rm = TRUE), max(weight, na.rm = TRUE)))#
+for(i in 1:nrow(weight)){#
+	points(1:ncol(weight), weight[i,], col = sex.col[i])#
+}
+pdf("~/Desktop/weight_trajectory.pdf")#
+plot.new()#
+plot.window(xlim = c(0, ncol(weight)), ylim = c(min(weight, na.rm = TRUE), max(weight, na.rm = TRUE)))#
+for(i in 1:nrow(weight)){#
+	points(1:ncol(weight), weight[i,], col = sex.col[i], type = "l")#
+}#
+dev.off()
+pdf("~/Desktop/weight_trajectory.pdf")#
+plot.new()#
+plot.window(xlim = c(0, ncol(weight)), ylim = c(min(weight, na.rm = TRUE), max(weight, na.rm = TRUE)))#
+for(i in 1:nrow(weight)){#
+	points(1:ncol(weight), weight[i,], col = sex.col[i], type = "l")#
+}#
+axis(1);axis(2)#
+mtext("Weight (g)", side = 2, line = 2.5)#
+dev.off()
+plot.new()#
+plot.window(xlim = c(5, 25), ylim = c(min(weight, na.rm = TRUE), max(weight, na.rm = TRUE)))#
+for(i in 1:nrow(weight)){#
+	points(5:25, weight[i,], col = sex.col[i], type = "l")#
+}
+ncol(weight)
+length(5:25)
+pdf("~/Desktop/weight_trajectory.pdf")#
+plot.new()#
+plot.window(xlim = c(5, 24), ylim = c(min(weight, na.rm = TRUE), max(weight, na.rm = TRUE)))#
+for(i in 1:nrow(weight)){#
+	points(5:25, weight[i,], col = sex.col[i], type = "l")#
+}#
+axis(1);axis(2)#
+mtext("Weight (g)", side = 2, line = 2.5)#
+dev.off()
+pdf("~/Desktop/weight_trajectory.pdf")#
+plot.new()#
+plot.window(xlim = c(5, 24), ylim = c(min(weight, na.rm = TRUE), max(weight, na.rm = TRUE)))#
+for(i in 1:nrow(weight)){#
+	points(5:24, weight[i,], col = sex.col[i], type = "l")#
+}#
+axis(1);axis(2)#
+mtext("Weight (g)", side = 2, line = 2.5)#
+dev.off()
+max(weight, na.rm = TRUE)
+pdf("~/Desktop/weight_trajectory.pdf")#
+plot.new()#
+plot.window(xlim = c(5, 25), ylim = c(min(weight, na.rm = TRUE), max(weight, na.rm = TRUE)))#
+for(i in 1:nrow(weight)){#
+	points(5:24, weight[i,], col = sex.col[i], type = "l")#
+}#
+axis(1);axis(2)#
+mtext("Weight (g)", side = 2, line = 2.5)#
+dev.off()
+weight[,"weight_15"]
+prop.weight.change <- weight[,"weight_15"]/weight[,"weight_final"]
+colnames(weight)
+weight.col <- c(paste("weight", 5:24, sep = "_"), "weight_final")#
+weight <- clin.data$data[,weight.col]#
+#take out outliers that are obviously mistakes#
+weight[which(weight > 100)] <- NA #
+weight[which(weight < 10)] <- NA
+imp.weight <- bnstruct::knn.impute(weight)
+pdf("~/Desktop/weight_trajectory.pdf")#
+plot.new()#
+plot.window(xlim = c(5, 25), ylim = c(min(weight, na.rm = TRUE), max(weight, na.rm = TRUE)))#
+for(i in 1:nrow(weight)){#
+	points(5:24, weight[i,], col = sex.col[i], type = "l")#
+}#
+axis(1);axis(2)#
+mtext("Weight (g)", side = 2, line = 2.5)#
+dev.off()
+pdf("~/Desktop/weight_trajectory.pdf")#
+plot.new()#
+plot.window(xlim = c(5, 25), ylim = c(min(weight, na.rm = TRUE), max(weight, na.rm = TRUE)))#
+for(i in 1:nrow(weight)){#
+	points(5:25, weight[i,], col = sex.col[i], type = "l")#
+}#
+axis(1);axis(2)#
+mtext("Weight (g)", side = 2, line = 2.5)#
+dev.off()
+prop.weight.change <- weight[,"weight_15"]/weight[,"weight_final"]
+hist(prop.weight.change)
+prop.weight.change <- weight[,"weight_15"]/weight[,"weight_24"]
+hist(prop.weight.change)
+prop.weight.change <- weight[,"weight_24"]/weight[,"weight_15"]
+hist(prop.weight.change)
+prop.weight.change <- weight[,"weight_final"]/weight[,"weight_15"]
+hist(prop.weight.change)
+prop.weight.change <- weight[,"weight_final"]/weight[,"weight_20"]
+hist(prop.weight.change)
+pdf("~/Desktop/weight_trajectory.pdf")#
+plot.new()#
+plot.window(xlim = c(5, 25), ylim = c(min(weight, na.rm = TRUE), max(weight, na.rm = TRUE)))#
+for(i in 1:nrow(weight)){#
+	points(5:25, weight[i,], col = sex.col[i], type = "l")#
+}#
+axis(1);axis(2)#
+mtext("Weight (g)", side = 2, line = 2.5)#
+mtext("Weeks", side = 1, line = 2.5)#
+dev.off()
+pdf("~/Desktop/weight_trajectory.pdf")#
+plot.new()#
+plot.window(xlim = c(5, 24), ylim = c(min(weight, na.rm = TRUE), max(weight, na.rm = TRUE)))#
+for(i in 1:nrow(weight)){#
+	points(5:25, weight[i,], col = sex.col[i], type = "l")#
+}#
+axis(1);axis(2)#
+mtext("Weight (g)", side = 2, line = 2.5)#
+mtext("Weeks", side = 1, line = 2.5)#
+dev.off()
+pdf("~/Desktop/weight_trajectory.pdf")#
+plot.new()#
+plot.window(xlim = c(5, 25), ylim = c(min(weight, na.rm = TRUE), max(weight, na.rm = TRUE)))#
+for(i in 1:nrow(weight)){#
+	points(5:25, weight[i,], col = sex.col[i], type = "l")#
+}#
+axis(1);axis(2)#
+mtext("Weight (g)", side = 2, line = 2.5)#
+mtext("Weeks", side = 1, line = 2.5)#
+dev.off()
+pdf("~/Desktop/weight_trajectory_sep.pdf", width = 8, height = 4)#
+par(mfrow = c(1,2))#
+plot.new()#
+plot.window(xlim = c(5, 25), ylim = c(min(weight, na.rm = TRUE), max(weight, na.rm = TRUE)))#
+for(f in f.locale){#
+	points(5:25, weight[f,], col = cols[2], type = "l")#
+}#
+axis(1);axis(2)#
+mtext("Weight (g)", side = 2, line = 2.5)#
+mtext("Weeks", side = 1, line = 2.5)#
 #
-BiocManager::install("simplifyEnrichment")
-library(simplifyEnrichment)
-BiocManager::install("ComplexHeatmap")
-BiocManager::install("simplifyEnrichment")
-?GO_similarity
-library(simplifyEnrichment)
-GO_similarity
-?GO_similarity
-?simplifyGO
-library(simplifyEnrichment)
-?GO_similarity
-?compare_clustering_methods
-?simplifyGOFromMultipleLists
-page(simplifyGOFromMultipleLists)
-library(RColorBrewer)
-brewer_pal_all()
-?brewer_pal
-??brewer_pal
-??brewer
-??show_pal
-??brewer_pal
-??all
-display.brewer.all()
-library(qtl2)
-?fit1
-?scan1blup
-library(RColorBrewer)
-display.brewer.all()
-library(simplifyGo)
-library(simplifyEnrichment)
-?simplify_GO
-?simplifyGO
-page(simplifyGO)
-?binary_cut
-library(simplifyEnrichment)
-page(simplifyGO)
-library(kohonen)
-?som
-plot.som
-?som.plot
-??som.plot
-??plot.som
-?som
-mod.mem <- readRDS("~/Dropbox (JAX)/Jax Summer 2021/Projects/Module_Mapping/Data/Adipose/Module_Membership.RDS")
-str(mod.mem)
-test <- unlist(mod.mem)
-str(test)
-head(test)
-mod.names <- sapply(1:length(mod.mem), function(x) rep(names(mod.mem)[x], length(mod.mem[[x]])))
-head(mod.names)
-mod.names <- sapply(1:length(mod.mem), function(x) paste0("Mod", rep(names(mod.mem)[x], length(mod.mem[[x]])))
+plot.new()#
+plot.window(xlim = c(5, 25), ylim = c(min(weight, na.rm = TRUE), max(weight, na.rm = TRUE)))#
+for(f in m.locale){#
+	points(5:25, weight[f,], col = cols[3], type = "l")#
+}#
+axis(1);axis(2)#
+mtext("Weight (g)", side = 2, line = 2.5)#
+mtext("Weeks", side = 1, line = 2.5)#
+#
+dev.off()
+pdf("~/Desktop/weight_trajectory_sep.pdf", width = 8, height = 4)#
+par(mfrow = c(1,2))#
+plot.new()#
+plot.window(xlim = c(5, 25), ylim = c(min(weight, na.rm = TRUE), max(weight, na.rm = TRUE)))#
+for(f in f.locale){#
+	points(5:25, weight[f,], col = cols[2], type = "l")#
+}#
+axis(1);axis(2)#
+mtext("Weight (g)", side = 2, line = 2.5)#
+mtext("Weeks", side = 1, line = 2.5)#
+#
+plot.new()#
+plot.window(xlim = c(5, 25), ylim = c(min(weight, na.rm = TRUE), max(weight, na.rm = TRUE)))#
+for(f in m.locale){#
+	points(5:25, weight[m,], col = cols[3], type = "l")#
+}#
+axis(1);axis(2)#
+mtext("Weight (g)", side = 2, line = 2.5)#
+mtext("Weeks", side = 1, line = 2.5)#
+#
+dev.off()
+pdf("~/Desktop/weight_trajectory_sep.pdf", width = 8, height = 4)#
+par(mfrow = c(1,2))#
+plot.new()#
+plot.window(xlim = c(5, 25), ylim = c(min(weight, na.rm = TRUE), max(weight, na.rm = TRUE)))#
+for(f in f.locale){#
+	points(5:25, weight[f,], col = cols[2], type = "l")#
+}#
+axis(1);axis(2)#
+mtext("Weight (g)", side = 2, line = 2.5)#
+mtext("Weeks", side = 1, line = 2.5)#
+#
+plot.new()#
+plot.window(xlim = c(5, 25), ylim = c(min(weight, na.rm = TRUE), max(weight, na.rm = TRUE)))#
+for(m in m.locale){#
+	points(5:25, weight[m,], col = cols[3], type = "l")#
+}#
+axis(1);axis(2)#
+mtext("Weight (g)", side = 2, line = 2.5)#
+mtext("Weeks", side = 1, line = 2.5)#
+#
+dev.off()
+hist_with_points(weight[sex.order,"weight_final"], breaks = 100, col = sex.col[sex.order], xlab = "Weight (g)",
+legend("topright", legend = c("Female", "Male"), col = cols[2:3], pch = 16)
+dev.off()
+hist_with_points(weight[sex.order,"weight_final"], breaks = 100, col = sex.col[sex.order], xlab = "Weight (g)",
+main = "")
+legend("topright", legend = c("Female", "Male"), col = cols[2:3], pch = 16)
+pdf("~/Desktop/weight.pdf", height = 6, width = 5)#
+hist_with_points(weight[sex.order,"weight_final"], breaks = 100, col = sex.col[sex.order], xlab = "Weight (g)",main = "")#
+legend("topright", legend = c("Female", "Male"), col = cols[2:3], pch = 16)#
+dev.off()
+head(clin.data)
+head(clin.data$data)
+str(clin.data)
+str(clin.data$annot.phenotype)
+head(clin.data$annot.phenotype)
+clin.data$annot.phenotype
+head(clin.data$annot.phenotype)
+head(clin.data$annot.phenotype[,1:4])
+clin.data$annot.phenotype[,1:4]
+write.csv(clin.data$annot.phenotype[,1:4], "~/Desktop/clin_annot.csv", quote = FALSE)
+max(weight)
+max(weight, na.rm = TRUE)
+max(weight, na.rm = TRUE)/min(weight, na.rm = TRUE)
+c(log10(max(weight, na.rm = TRUE), min(weight, na.rm = TRUE))
 )
-str(mod.names)
-mod.transcripts <- matrix(unlist(mod.mem), ncol = 1)
-head(mod.transcripts)
-mod.transcript.info <- cbind(mod.names, mod.transcripts)
-mod.names <- sapply(1:length(mod.mem), function(x) paste0("Mod", rep(names(mod.mem)[x], length(mod.mem[[x]]))))
-mod.transcript.info <- cbind(mod.names, mod.transcripts)
-length(mod.transcripts)
-length(mod.names)
-mod.transcript.info <- cbind(unlist(mod.names), mod.transcripts)
-head(mod.transcript.info)
-qtl.transcripts <- sample(unlist(mod.mem), 100)
-qtl.transcripts
-eqtl.transcripts <- sample(unlist(mod.mem), 100)
-eqtl.mod <- match(eqtl.transcripts, mod.transcript.info[,2])
-eqtl.mod
-eqtl.mod <- mod.transcript.info[eqtl.mod.idx,1]
-eqtl.mod.idx <- match(eqtl.transcripts, mod.transcript.info[,2])
-eqtl.mod <- mod.transcript.info[eqtl.mod.idx,1]
-eqtl.mod
-rnd.transcript.table <- cbind(eqtl.mod, eqtl.transcripts)
-rnd.transcript.table
-library(simplifyEnrichment)
-?GO_similarity
-a <- matrix(rnorm(100), 10, 10)
-a
-b <- matrix(rnorm(100), 10, 10)
-b
-plot(a, b)
-plot(as.vector(a), as.vector(b))
-plot(a, b, xlab = "Distance Between Transcripts", ylab = "Allele Correlation")
-source('~/Documents/R/shiny/Chromatin_State_and_eQTL_Viewer/code/useful_r_code/sliding.window.el.R', chdir = TRUE)
-gene.windows <- sliding.window.el(seq.int(-1, 2, length.out = 100), 10, 5)
-gene.windows
-sapply(gene.windows, length)
-sapply(gene.windows, function(x) max(x) - min(x))
-length(gene.windows)
-q()
-library(kohonen)
-?som
-cent <- list()
-cent$overlap <- rnorm(100)
-cent$no-overlap <- rnorm(100)
-cent$nooverlap <- rnorm(100)
-cent
-boxplot(cent)
-test <- readRDS("~/Desktop/eQTL_stats.RDS")
-str(test)
-library(pheatmap)
-islet.trait.cor <- test[[1]]$invivo_me_cor
-str(islet.trait.cor)
-pheatmap(islet.trait.cor)
-pheatmap(t(islet.trait.cor))
-pdf("~/Desktop/trait.cor.pdf", width = 10, height = 7)
-pheatmap(t(islet.trait.cor))
-dev.off()
-pdf("~/Desktop/trait.cor.pdf", width = 12, height = 5.5)
-pheatmap(t(islet.trait.cor))
-dev.off()
-mod <- c(72, 45, 9, 43, 58, 65, 46, 59, 64, 66, 63, 62, 67)
-mod.locale <- match(rownames(trait.islet.cor))
-mod.locale <- match(rownames(islet.trait.cor))
-mod.locale <- match(mod, rownames(islet.trait.cor))
-mod.locale
-rownames(islet.trait.cor)
-mod.names <- paste0("ME", mod)
-mod.locale <- match(mod.rownames(islet.trait.cor))
-mod.locale <- match(rownames(islet.trait.cor))
-mod.locale <- match(mod, rownames(islet.trait.cor))
-mod.locale
-mod
-mod.locale <- match(mod.names, rownames(islet.trait.cor))
-mod.locale
-mod.cor <- islet.trait.cor[modl.locale,]
-mod.cor <- islet.trait.cor[mod.locale,]
-setdiff(mod.locale, 1:nrow(islet.trait.cor))
-setdiff(1:nrow(islet.trait.cor), mod.locale)
-other.locale <- setdiff(1:nrow(islet.trait.cor), mod.locale)
-boxplot(as.vector(islet.trait.cor[mod.locale,]), as.vector(islet.trait.cor[other.locale,]))
-boxplot(abs(as.vector(islet.trait.cor[mod.locale,])), abs(as.vector(islet.trait.cor[other.locale,])))
+log10(c(max(weight, na.rm = TRUE), min(weight, na.rm = TRUE))
+)
+library(RGCCA)
+citation(RGCCA)
+citation("RGCCA")
+??rgcca
+install vctrs install.packages("vctrs")
+install.packages("vctrs")
+install.packages("readr")
+install.packages("pins")
+vignette("pins")
 library(qtl2)
 ?scan1
-source('~/Documents/git_repositories/useful_r_code/plot.hexbin.R')
-x <- rnorm(100)
-y <- rnorm(100)
-plot.hexbin(x,y)
-library(oposSOM)
-?opossom.run
+library(qtl2)
+?scan1
+?chisq.test
+?runif
+?install.packages
+install.packages(""~/Downloads/vqtl_2.0.5.tar.gz")
+install.packages("~/Downloads/vqtl_2.0.5.tar.gz")
+library(qtl2)
+?scan1
+library(RColorBrewer)
+??brewer
+display.brewer.all()
+url <- "http://innovebioinfo.com/Annotation/Polytracts/trackHub/mm10/polytract_mm10.bb"
+destfile <- "~/Desktop/polytract_mm10.bb"
+download.file(url, destfile)
+library(umap)
+?umap
+??tsne
+??umap.config
+??config
+test <- umap.config
+test <- umap.config()
+test <- umap.defaults()
+umap.defaults
+library(Rdimtools)
+install.packages(Rdimtools)
+install.packages("Rdimtools")
+library(Rdmimtools)
+install.packages("gmp")
+install.packages("~/Downloads/gmp_0.6-9.tar.gz")
+library(umap)
+?config
+??config
+library(fastICA)
+?fastICA
+??isomap
+install.packages("vegan")
+op <- par(mar=c(4,4,1,1)+0.2, mfrow=c(2,2))#
+data(BCI)
+library(vegan)
+op <- par(mar=c(4,4,1,1)+0.2, mfrow=c(2,2))#
+data(BCI)
+dis <- vegdist(BCI)
+dis
+tr <- spantree(dis)
+pl <- ordiplot(cmdscale(dis), main="cmdscale")
+lines(tr, pl, col="red")
+op <- par(mar=c(4,4,1,1)+0.2, mfrow=c(2,2))#
+data(BCI)#
+dis <- vegdist(BCI)#
+tr <- spantree(dis)#
+pl <- ordiplot(cmdscale(dis), main="cmdscale")#
+lines(tr, pl, col="red")#
+ord <- isomap(dis, k=3)#
+ord#
+pl <- plot(ord, main="isomap k=3")#
+lines(tr, pl, col="red")#
+pl <- plot(isomap(dis, k=5), main="isomap k=5")#
+lines(tr, pl, col="red")#
+pl <- plot(isomap(dis, epsilon=0.45), main="isomap epsilon=0.45")#
+lines(tr, pl, col="red")#
+par(op)#
+## colour points and web by the dominant species#
+dom <- apply(BCI, 1, which.max)#
+## need nine colours, but default palette  has only eight#
+op <- palette(c(palette("default"), "sienna"))#
+plot(ord, pch = 16, col = dom, n.col = dom) #
+palette(op)
+op <- par(mar=c(4,4,1,1)+0.2, mfrow=c(2,2))#
+data(BCI)#
+dis <- vegdist(BCI)#
+tr <- spantree(dis)#
+pl <- ordiplot(cmdscale(dis), main="cmdscale")#
+lines(tr, pl, col="red")#
+ord <- isomap(dis, k=3)#
+ord#
+pl <- plot(ord, main="isomap k=3")#
+lines(tr, pl, col="red")#
+pl <- plot(isomap(dis, k=5), main="isomap k=5")#
+lines(tr, pl, col="red")#
+pl <- plot(isomap(dis, epsilon=0.45), main="isomap epsilon=0.45")#
+lines(tr, pl, col="red")#
+par(op)#
+## colour points and web by the dominant species#
+dom <- apply(BCI, 1, which.max)#
+## need nine colours, but default palette  has only ei
+install.packages("Rdimtools")
+library(Rdimtools)
+install.packages("Rcdsp")
+install.packages("Rcsdp")
+library(Rdimtools)
+install.packages("ANN2")
+test <- function(n,y=gtools::permutations(n,n))y[!colSums(t(y)==1:n),]
+test(8)
+library(parallel)
+library(doParallel)
+?foreach
+?makeCluster
+times(3) %do% rnorm(1)
+d <- data.frame(x=1:10, y=rnorm(10))
+s <- foreach(d=iter(d, by='row'), .combine=rbind) %dopar% d#
+identical(s, d)
+d <- data.frame(x=1:10, y=rnorm(10))
+s <- foreach(d=iter(d, by='row'), .combine=rbind) %dopar% d#
+identical(s, d)
+s
+stopCluster(cl)
+?mcapply
+??mcapply
+?parLapply
+?next
+??saveWidget
+library(htmlwidgets)
+?saveWidget
+library(plotly)
+?plot_ly
+library(qtl2)
+?scan1
+?lm
+library(devtools)#
+install_github("mjcstats", "drmjc")
+library(qtl2)
+?find_peaks
+library(pheatmap)
+?pheatmap
+?dendrogram
 ?barplot
-??pam
-library(cluster)
-?cluster
-??cluster
-?pam
-test <- readRDS("~/Documents/Projects/Epigenetics/Epigenetics_Manuscript/Results/SNPs/Sanger.SNP.Tables.RDS")
-min(which(length(sapply(test, length) == 0)))
-min(which(length(sapply(test, length)) == 0))
-results <- sapply(test, length)
-head(results)
-which(results == 0)
-min(which(results == 0))
-i = 3301
-names(results)
-names(test)
+library(qtl2)
+page(scan1)
+page(get_common_ids)
+test <- readRDS("~/Documents/Projects/Epigenetics/Epigenetics_Manuscript/Results/ChromHMM/14_states_C/Chromatin_State_DO_Coef.RDS")
 str(test)
-setwd("~/Documents/Projects/Epigenetics/Epigenetics_Manuscript/")
-num.states = 9#
-gene.buffer = 1000 #base pair buffer around gene when looking for SNPs#
-snp.alleles <- c("A", "C", "G", "T") #alleles of SNPs#
-save.every = 100
+length(library(lme4))
+length(test)
+str(test[[1]])
+head(test[[1]])
+test2 <- readRDS("~/Documents/Projects/Epigenetics/Epigenetics_Manuscript/Results/ChromHMM/14_states_C/chQTL.state.coef.RDS")
+str(test2)
+?t.test
+?kruskal.test
+?chisq.test
+?runif
+?ks.test
+?lm
+?t.test
+test <- readRDS("~/Documents/Projects/Epigenetics/Epigenetics_Manuscript/Results/ChromHMM/14_states_C/Chromatin.Matrices.Scaled.RDS")
+str(test[[1]])
+test <- readRDS("~/Documents/Projects/Epigenetics/Epigenetics_Manuscript/Results/ChromHMM/14_states_C/Chromatin.States.Gene.Coords.RDS")
+str(test[[1]])
+test <- readRDS("~/Documents/Projects/Epigenetics/Epigenetics_Manuscript/Results/RRBS/RRBS.presence.Expr.Cor.Across.Strains.RDS")
+str(test)
+library(pheatmap)
+?pheatmap
+?order
+library(data.table)
+?foverlaps
+install.packages(data.table)
+remove.packages("data.table")
+install.packages("data.table", type = "source",#
+    repos = "https://Rdatatable.gitlab.io/data.table")
+library(data.table)
+x = data.table(start=c(5,31,22,16), end=c(8,50,25,18), val2 = 7:10)#
+y = data.table(start=c(10, 20, 30), end=c(15, 35, 45), val1 = 1:3)
+setkey(y, start, end)
+y
+x
+foverlaps(x, y, type="any", which=TRUE) ## return overlap indices
+foverlaps(x, y, type="any") ## return overlap joi
+foverlaps(x, y, type="any", mult="first")
+?grid
+?t.test
+?integrate
+setwd("~/Documents/Projects/Epigenetics/Epigenetics_Manuscript")
 library(here)
-all.code.dir <- list.files(here("Code"), full.names = TRUE)#
-for(i in 1:length(all.code.dir)){#
-	all.fun <- list.files(all.code.dir[i], full.names = TRUE)#
-	for(j in 1:length(all.fun)){source(all.fun[j])}#
+reg.dir <- here("Data", "regulatory_annot")#
+reg.bed <- read.table(file.path(oreganno.dir, "liver_chrom.bed"), header = FALSE,#
+stringsAsFactors = FALSE)
+reg.bed <- read.table(file.path(reg.dir, "liver_chrom.bed"), header = FALSE,#
+stringsAsFactors = FALSE)
+head(reg.bed)
+u_chrom <- unique(reg.bed[,4])
+length(u_chrom)
+chrom.bed <- lapply(u_chrom, function(reg.bed[which(reg.bed[,4] == x)]))
+chrom.bed <- lapply(u_chrom, function(reg.bed[which(reg.bed[,4] == x),]))
+chrom.bed <- lapply(u_chrom, function(x) reg.bed[which(reg.bed[,4] == x),])
+str(chrom.bed)
+i = 1
+filename <- file.path(reg.dir, paste0("Liver", u_chrom[i], ".bed"))
+filename
+filename <- file.path(reg.dir, paste0("Liver_", u_chrom[i], ".bed"))
+filename
+for(i in 1:length(chrom.bed)){#
+    filename <- file.path(reg.dir, paste0("Liver_", u_chrom[i], ".bed"))#
+    write.table(chrom.bed[[i]], filename, quote = FALSE, sep = "\t",#
+    row.names = FALSE, col.names = FALSE)#
 }
-gene.info <- readRDS(here("Data", "RNASeq", "RNASeq_gene_info.RData"))#
-strain.table <- as.matrix(read.delim(here("Data", "support_files", "strain.color.table.txt"),#
-comment.char = "!", header = FALSE))
-chrom.mats <- readRDS(here("Results", "ChromHMM", paste0(num.states, "_states_C"), #
-paste0("Chromatin_States_", num.states, "_full_gene_1000.RData")))
-expr <- readRDS("~/Documents/Projects/Epigenetics/Epigenetics_Manuscript/Data/DOQTL/DO_Expression.RDS")
-common.transcripts <- intersect(colnames(expr), names(chrom.mats))
-transcript.info.table <- gene.info[match(common.transcripts, gene.info[,"ensembl_gene_id"]),]
-str(common.transcripts)
-str(expr)
-expr.data <- readRDS(here("Data", "DOQTL", "DO_Expression.RDS"))#
-expr <- expr.data$expr#
-covar <- expr.data$covar
-common.transcripts <- intersect(colnames(expr), names(chrom.mats)) #
-transcript.info.table <- gene.info[match(common.transcripts, gene.info[,"ensembl_gene_id"]),]
-str(common.transcripts)
-i
-table_to_snp_mat <- function(snp.table, snp.alleles, strain.key, strain.locale){#
-    #The SNP matrix holds genotypes for each strain at #
-    #each position in the gene. Each position is in a row#
-    #A 1 indicates that the strain at that position has #
-    #the particular allele#
-    if(length(snp.table) == 0){return(NA)}#
-    snp.mat <- array(0, dim = c(nrow(snp.table), 8, 4), #
-        dimnames = list(snp.table[,"Position"], LETTERS[1:8], snp.alleles))#
-    strain.names <- gsub("/", "_", str_trim(strain.key[,2]))#
-    for(i in 1:nrow(snp.table)){#
-        ref.allele <- which(snp.alleles == snp.table[i,"Ref"])#
-        snp.mat[i,,ref.allele] <- 1 #start with everyone having the reference allele#
-        alt.allele <- trim_alt_allele(snp.table[i,strain.locale])#
-        alt.strain <- strain.table[match(names(alt.allele), strain.names),5]#
-        #take out DBA, because this isn't in the DO#
-        alt.strain <- alt.strain[which(!is.na(alt.strain))]#
-        #set the strains with SNPs to 0 for the referece allele #
-        snp.mat[i,alt.strain,ref.allele] <- 0#
-        #and set the alternate allele to 1 for these strains#
-        snp.mat[i,alt.strain, alt.allele] <- 1#
-    }#
-    return(snp.mat)#
-}
-get_nearest_marker <- function(chr, start.pos){#
-    if(is.na(chr)){return(NA)}#
-    if(chr == "MT"){return(NA)}#
-    chr.locale <- which(names(map) == chr)#
-    nearest.marker <- get.nearest.pt(map[[chr.locale]], start.pos)#
-    marker.geno <- genoprobs[[chr.locale]][,,nearest.marker]#
-    return(marker.geno)#
-}#
+paste("gzip", file.path(reg.dir, "TFbs.bed"))
+filename
+compress.line <- paste("gzip", filename)
+system(compress.line)
+move.line <- paste("mv", paste0(filename, ".gz"), here("Data", "mm10"))
+move.line
+system(move.line)
+for(i in 1:length(chrom.bed)){#
+    filename <- file.path(reg.dir, paste0("Liver_", u_chrom[i], ".bed"))#
+    write.table(chrom.bed[[i]], filename, quote = FALSE, sep = "\t",#
+    row.names = FALSE, col.names = FALSE)#
 #
-trim_alt_allele <- function(alt_allele, allowable_alleles = snp.alleles){#
-    allele.names <- names(alt_allele)#
-    caps_allele <- str_to_upper(alt_allele)#
-    names(caps_allele) <- allele.names#
-    allowable_locale <- which(caps_allele %in% allowable_alleles)#
-    trimmed_allele <- caps_allele[allowable_locale]#
-    return(trimmed_allele)#
-}
-snp_geno <- function(gene.snp.array, haplotype.matrix, gene.chr){#
-    if(length(gene.snp.array) == 1){return(NA)}#
-    all.snp <- lapply(1:nrow(gene.snp.array), #
-        function(x) haplotype.matrix %*% gene.snp.array[x,,])#
-    all.snp.mat <- abind(all.snp, along = 3)#
-    dimnames(all.snp.mat)[[3]] <- paste(gene.chr, rownames(gene.snp.array), sep = "_")#
-    one.geno <- list(all.snp.mat)#
+    compress.line <- paste("gzip", filename)#
+    system(compress.line)#
 #
-    #add attributes#
-    names(one.geno) <- gene.chr#
-    if(gene.chr == "X"){#
-      attr(one.geno, "is_x_chr") <- TRUE#
-    }else{#
-      attr(one.geno, "is_x_chr") <- FALSE#
-    }#
-    attr(one.geno, "crosstype") <- "do"#
-    attr(one.geno, "alleles") <- dimnames(gene.snp.array)[[3]]#
-    attr(one.geno, "alleleprobs") <- TRUE#
-    attr(one.geno, "class") <- c("calc_genoprob", "list")#
-    return(one.geno)#
+    move.line <- paste("mv", paste0(filename, ".gz"), here("Data", "mm10"))#
+    system(move.line)#
+#
 }
-one.gene.snps <- function(i){#
-    if(is.na(transcript.info.table[i,"chromosome_name"])){return(NA)}#
-    if(transcript.info.table[i,"chromosome_name"] == "MT"){return(NA)}#
-    gene.snps <- get.sanger.snps(transcript.info.table[i,"chromosome_name"], #
-        start.pos = transcript.info.table[i,"start_position"] - gene.buffer, #
-        end.pos = transcript.info.table[i,"end_position"] + gene.buffer)#
-    return(gene.snps)#
-}
-i
-i = 3301
-transcript.info.table[i,"chromosome_name"]
-gene.snps <- get.sanger.snps(transcript.info.table[i,"chromosome_name"], #
-        start.pos = transcript.info.table[i,"start_position"] - gene.buffer, #
-        end.pos = transcript.info.table[i,"end_position"] + gene.buffer)
-library(curl)
-gene.snps <- get.sanger.snps(transcript.info.table[i,"chromosome_name"], #
-        start.pos = transcript.info.table[i,"start_position"] - gene.buffer, #
-        end.pos = transcript.info.table[i,"end_position"] + gene.buffer)
-str(gene.snps)
+orig.file <- file.path(reg.dir, "liver_chrom.bed")
+compress.line <- paste("gzip", orig.file)
+system(compress.line)
+move.line <- paste("mv", paste0(orig.file, ".gz"), here("Data", "mm10"))
+system(move.line)

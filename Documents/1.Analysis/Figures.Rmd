@@ -929,6 +929,9 @@ methyl.do <- readRDS(here("Results", "RRBS", "Imputed_RRBS_effect.RDS")) #genera
 upstream.limit <- -0.5
 downstream.limit <- 1.5
 
+axis.label.nudge.y = 0.95 #vertical scalar for y axis labels so they don't look as if they're going off the end of the plot
+axis.label.nudge.x = 1.05 #horizonal scalar for y axis labels so they are a good distance from the bounding box
+
 rel.pos <- methyl.within[,1]
 idx <- intersect(which(rel.pos >= upstream.limit), which(rel.pos <= downstream.limit))
 
@@ -951,7 +954,7 @@ plot.text("TES", x = 1, y = 0, col = title.color, font = 2, cex = 1.5, add = TRU
 par(xpd = TRUE)
 
 ylim <- get_plot_bounds(min(methyl.within[,"lwr"]), max(methyl.within[,"upr"]), 
-    scale.factor = 100, return.even = TRUE)
+    scale.factor = 100, return.even = TRUE)/2
 ymin <- ylim[1]
 ymax <- ylim[2]
 
@@ -965,7 +968,10 @@ segments(x0 = c(0,1), y0 = ymin, y1 = ymax, lwd = 4, col = tss.line.color, lty =
 segments(x0 = upstream.limit, x1 = downstream.limit, y0 = 0, col = zero.line.color, lty = 1, lwd = 2)
 #mtext(side = 2, "Effect", cex = 2, line = 0.5)
 draw.rectangle(upstream.limit, downstream.limit, ymin, ymax, border.col = border.box.color, lwd = 2)
-mtext("Effect", side = 2, col = title.color, font = 2)
+text(x = upstream.limit*axis.label.nudge.x, 
+    y = c(ymin*axis.label.nudge.y, 0, ymax*axis.label.nudge.y), 
+    labels = c(ymin, 0, ymax), adj = 1)
+mtext("Effect", side = 2, col = title.color, font = 2, line = 0.5)
 label_panel(par("usr"), bump.left = 0, bump.up = 0.1, label = "A")
 
 #titles for across-strain effects
@@ -980,7 +986,7 @@ plot.text("TES", x = 1, y = 0, col = title.color, font = 2, cex = 1.5, add = TRU
 par(xpd = TRUE)
 
 ylim <- get_plot_bounds(min(methyl.across[idx,"lwr"]), max(methyl.across[idx,"upr"]), 
-    scale.factor = 1000, return.even = TRUE, center = FALSE)
+    scale.factor = 1000, return.even = TRUE, center = FALSE)/2
 ymin <- ylim[1]
 ymax <- ylim[2]
 
@@ -996,7 +1002,10 @@ segments(x0 = c(0,1), y0 = ymin, y1 = ymax, lwd = 4, col = tss.line.color, lty =
 segments(x0 = upstream.limit, x1 = downstream.limit, y0 = 0, col = zero.line.color, lty = 1, lwd = 2)
 #mtext(side = 2, "Effect", cex = 2, line = 0.5)
 draw.rectangle(upstream.limit, downstream.limit, ymin, ymax, border.col = border.box.color, lwd = 2)
-mtext("Effect", side = 2, font = 2, col = title.color)
+text(x = upstream.limit*axis.label.nudge.x, 
+    y = c(ymin*axis.label.nudge.y, 0, ymax*axis.label.nudge.y), 
+    labels = c(ymin, 0, ymax), adj = 1)
+mtext("Effect", side = 2, font = 2, col = title.color, line = 0.5)
 label_panel(par("usr"), bump.left = 0, bump.up = 0.1, label = "B")
 
 
@@ -1019,7 +1028,7 @@ coef.mean <- methyl.do["coef.mean",]
 coef.conf <- methyl.do[2:3,]
 plot.coord <- as.numeric(colnames(methyl.do))
 ylim <- get_plot_bounds(min(coef.conf), max(coef.conf), 
-    scale.factor = 1000, return.even = TRUE, center = FALSE)
+    scale.factor = 1000, return.even = TRUE, center = FALSE)/2
 ymin <- ylim[1]
 ymax <- ylim[2]
 
@@ -1034,6 +1043,9 @@ segments(x0 = c(0,1), y0 = ymin, y1 = ymax, lwd = 4, col = tss.line.color, lty =
 segments(x0 = upstream.limit, x1 = downstream.limit, y0 = 0, col = zero.line.color, lty = 1, lwd = 2)
 #mtext(side = 2, "Effect", cex = 2, line = 0.5)
 draw.rectangle(upstream.limit, downstream.limit, ymin, ymax, border.col = border.box.color, lwd = 2)
+text(x = upstream.limit*axis.label.nudge.x, 
+    y = c(ymin*axis.label.nudge.y, 0, ymax*axis.label.nudge.y), 
+    labels = c(ymin, 0, ymax), adj = 1)
 mtext("Effect", side = 2, col = title.color, font = 2)
 label_panel(par("usr"), bump.left = 0, bump.up = 0.1, label = "C")
 
@@ -1047,7 +1059,7 @@ if(!embed.figures){
 ```
 \pagebreak
 
-## Figure 6 - Expression Variance Explained in the DO
+## Figure 6 - Expression variance explained in the DO
 
 Gene expression variance in a DO population explained 
 by chromatin state compared to three other genomic features: 
@@ -1058,13 +1070,31 @@ variance explained by local haplotype, and each of the other
 genomic features. Blue lines show $y = x$. Each point is a 
 single transcript.
 
-```{r imputed_read_data, echo = FALSE}
-#matched variance explained from each genomic feature
-all.var.exp <- readRDS(here("Results", "SNPs", "All.Variance.Explained.RDS")) #generated in 4.1_Overlay_Imputed_R2.Rmd
-colnames(all.var.exp) <- c("Haplotype", "Chromatin\nState", "SNP", "DNA\nMethylation")
+```{r read_r2_results}
+chrom.r2 <- readRDS(file.path(results.dir, "chQTL.state.R2.RDS"))
+methyl.r2 <- readRDS(here("Results", "RRBS", "RRBS.R2.RDS"))
+snp.r2 <- readRDS(here("Results", "SNPs", "SNP.R2.RDS"))
+eqtl.r2 <- readRDS(file.path(results.dir, "eQTL.hap.R2.RDS"))
+
+max.chrom.r2 <- sapply(chrom.r2, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
+max.methyl.r2 <- sapply(methyl.r2, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
+max.snp.r2 <- sapply(snp.r2, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
+max.eqtl.r2 <- apply(eqtl.r2, 1, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
+
+all.var.list <- list("Haplotype" = max.eqtl.r2, "Chromatin\nState" = max.chrom.r2,
+    "DNA\nMethylation" = max.methyl.r2, "SNPs" = max.snp.r2)
+
+common.transcripts <- Reduce("intersect", lapply(all.var.list, names))
+all.var.table <- Reduce("cbind", lapply(all.var.list, function(x) x[match(common.transcripts, names(x))]))
+colnames(all.var.table) <- names(all.var.list)
 ```
 
-```{r plot_imputed, echo = FALSE, fig.width = 10, fig.height = 2.5}
+```{r stat_table, eval = FALSE}
+round(apply(all.var.table, 2, summary), 2)
+```
+
+```{r r2_fig}
+
 if(!embed.figures){
     png(here("Documents", "3.Manuscript", "Figures", "Fig6_Imputation.png"),
     width = 10, height = 2.5, units = "in", res = 300)
@@ -1076,19 +1106,19 @@ layout.mat <- matrix(c(1:4, 0, 5, 5, 5), nrow = 2, byrow = TRUE)
 layout(layout.mat, heights = c(1, 0.15))
 par(mar = c(2,4,2,1))
 
-boxplot(all.var.exp, names = NA, cex.axis = 1.5)
-#all.t.test <- apply(all.var.exp, 2, function(x) t.test(x, conf.level = 0.99))
+boxplot(all.var.table, names = NA, cex.axis = 1.5)
+#all.t.test <- apply(all.var.table, 2, function(x) t.test(x, conf.level = 0.99))
 mtext("Variance Explained", side = 2, col = title.color, font = 2, line = 2.5)
 label_panel(par("usr"), bump.left = 0.2, bump.up = 0.09, label = "A")
 
 par(xpd = NA)
-for(i in 1:ncol(all.var.exp)){
+for(i in 1:ncol(all.var.table)){
     if(i %% 2 == 0){
         text.adj <- c(0.5, 0);text.y = -0.2
     }else{
         text.adj <- c(0.5, 0.5);text.y = -0.22
     }
-    text(x = i, y = text.y, labels = colnames(all.var.exp)[i], adj = text.adj,
+    text(x = i, y = text.y, labels = colnames(all.var.table)[i], adj = text.adj,
     col = title.color, font = 2, cex = 1)
     if(i %% 2 == 1){
         segments(x0 = i, y0 = text.y+0.05, y1 = -0.05)
@@ -1099,21 +1129,21 @@ par(xpd = TRUE)
 axis.min <- 0
 axis.max <- 1
 
-comp.pairs <- cbind(rep(1, (ncol(all.var.exp)-1)), 2:ncol(all.var.exp))
+comp.pairs <- cbind(rep(1, (ncol(all.var.table)-1)), 2:ncol(all.var.table))
 
 for(i in 1:nrow(comp.pairs)){
     if(i > 1){par(mar = c(2,2,1,1))}
     idx1 <- comp.pairs[i,1]
     idx2 <- comp.pairs[i,2]
-    pair.cor <- cor(all.var.exp[,idx1], all.var.exp[,idx2], use = "pairwise.complete.obs")
-    ci <- CIr(pair.cor, n  = length(which(!is.na(rowMeans(all.var.exp[,c(idx1, idx2)])))), level = 0.99)
+    pair.cor <- cor(all.var.table[,idx1], all.var.table[,idx2], use = "pairwise.complete.obs")
+    ci <- CIr(pair.cor, n  = length(which(!is.na(rowMeans(all.var.table[,c(idx1, idx2)])))), level = 0.99)
     plot.new()
     plot.window(xlim = c(axis.min, axis.max), ylim = c(axis.min, axis.max))
     segments(x0 = 0, x1 = 1, y0 = 0, y1 = 1, col = "lightblue", lwd = 3)
-    points(all.var.exp[,idx1], all.var.exp[,idx2], pch = 16,col = "darkgray", cex = 0.7)
+    points(all.var.table[,idx1], all.var.table[,idx2], pch = 16,col = "darkgray", cex = 0.7)
     axis(1, at = c(0, 0.5, 1), cex.axis = 1.5)
     axis(2, at = c(0, 0.5, 1), cex.axis = 1.5)
-    text(x = 0.5, y = 1, labels = colnames(all.var.exp)[idx2], col = title.color, 
+    text(x = 0.5, y = 1, labels = colnames(all.var.table)[idx2], col = title.color, 
     font = 2, adj = c(0.5, 1), cex = 1.5)
     if(i == 1){
         par(xpd = NA)
@@ -1185,10 +1215,11 @@ covar <- expr.data$covar
 chrom.mats <- readRDS(file.path(results.dir, 
     paste0("Chromatin_States_", num.states, "_full_gene_1000.RData")))
 
-chrom.r2 <- readRDS(file.path(results.dir, "chQTL.R2.RDS"))
+results.dir <- "~/Desktop/both_sexes"
+chrom.r2 <- readRDS(file.path(results.dir, "chQTL.state.R2.RDS"))
 methyl.r2 <- readRDS(here("Results", "RRBS", "RRBS.R2.RDS"))
 snp.r2 <- readRDS(here("Results", "SNPs", "SNP.R2.RDS"))
-eqtl.r2 <- readRDS(file.path(results.dir, "eQTL.R2.RDS"))
+eqtl.r2 <- readRDS(file.path(results.dir, "eQTL.hap.R2.RDS"))
 
 #inbred.expr <- readRDS(here("Data", "RNASeq", "Strain_Scaled_C_Expression.RData")) #origin lost - need to find or redo
 inbred.expr <- readRDS(here("Data", "RNASeq", "StrainsEffCts9_vst.RDS"))
@@ -1197,7 +1228,8 @@ inbred.strain <- substr(colnames(inbred.expr), 1, 2)
 snp.alleles <- readRDS(here("Results", "SNPs", "SNP.by.Position.RDS")) #generated in 4.0_Impute_SNPs.Rmd
 methyl.mats <- readRDS(here("Results", "RRBS", "Aligned.Methyl.Mats.RDS")) #generated in 3.1.1_RRBS_Analysis.Rmd
 
-eqtl.stats <- readRDS(here("Data", "DOQTL", "eQTL_statistics.RDS")) #generated in 1.1_DO_eQTL.Rmd
+eqtl.stats <- readRDS(file.path(results.dir, "eQTL.hap.coef.RDS")) #2.1_chromaprobs_by_state.Rmd
+results.dir <- here("Results", "ChromHMM", paste0(num.states, "_states_C"))
 ```
 
 ```{r example_fun, echo = FALSE}
@@ -1282,12 +1314,12 @@ get_snp_alleles <- function(gene.id){
 
 get_haplotype_r2 <- function(gene.id){
     gene.idx <- which(rownames(eqtl.r2) == gene.id)
-    return(eqtl.r2[gene.idx,1])
+    return(max(eqtl.r2[gene.idx,]))
 }
 
 get_haplotype_coef <- function(gene.id){
     gene.idx <- which(names(eqtl.stats) == gene.id)
-    return(eqtl.stats[[gene.idx]]$coef)
+    return(eqtl.stats[[gene.idx]])
 }
 
 #mark.region.x is in a relative position with the TSS = 0 and the TES = 1
@@ -1342,7 +1374,8 @@ plot_together <- function(gene.id, mark.region.x = NULL){
         }
     
     gene.expr <- get_ordered_expr(gene.id)
-    ordered.hap <- hap.coef[order(hap.coef[1:8])]
+    ordered.hap <- hap.coef[order(hap.coef[1:8]),1]
+    names(ordered.hap) <- gsub(".y", "", names(ordered.hap))
 
     if(length(gene.expr) > 1){
         chrom.strain.order <- rev(order.strains(names(ordered.hap), 
@@ -1363,16 +1396,18 @@ plot_together <- function(gene.id, mark.region.x = NULL){
     if(length(gene.snp.r2) > 0 && !is.na(gene.snp.r2)){
         snp.pos <- as.numeric(sapply(strsplit(names(gene.snp.r2), "_"), function(x) x[2]))
     }
-    chrom.pos <- as.numeric(rownames(gene.chrom.r2))
-    methyl.pos <- as.numeric(rownames(gene.methyl.r2))
+    chrom.pos <- as.numeric(rownames(chrom.mats[[which(names(chrom.mats) == gene.id)]]))
+    methyl.pos <- as.numeric(colnames(methyl.mats[[which(names(methyl.mats) == gene.name)]]))
 
     all.pos <- list(snp.pos, chrom.pos, methyl.pos)
     #limit to chromatin position
     global.max.pos <- max(chrom.pos)
     global.min.pos <- min(chrom.pos)
 
-    global.max.r2 <- max(c(gene.chrom.r2[,1], gene.snp.r2, gene.methyl.r2, 
-        hap.r2), na.rm = TRUE)
+    global.max.r2 <- max(c(max(gene.chrom.r2, na.rm = TRUE), 
+        max(gene.snp.r2, na.rm = TRUE), 
+        max(gene.methyl.r2, na.rm = TRUE), 
+        max(hap.r2, na.rm = TRUE)))
 
     if(!is.finite(global.max.r2)){
         return(NULL)
@@ -1388,19 +1423,24 @@ plot_together <- function(gene.id, mark.region.x = NULL){
 
     #panel 1 - R2 scores for all features
     par(mar = c(0,4,4,5))
-    ylim <- get_plot_bounds(min.val = 0, max.val = hap.r2, scale.factor = 10)
+    ylim <- get_plot_bounds(min.val = 0, max.val = global.max.r2, scale.factor = 10)
     plot(x = snp.pos, gene.snp.r2, pch = "X", col = "#e41a1c", cex = 1.5,
         ylab = "", axes = FALSE, xlim = c(global.min.pos, global.max.pos), ylim = ylim)
 
     par(xpd = TRUE)
     if(!is.null(mark.region.x)){
-        scaled.pos <- (mark.region.x*(abs(tss.pos - tes.pos))) + tss.pos
+        if(gene.strand == 1){
+            scaled.pos <- (mark.region.x*(abs(tss.pos - tes.pos))) + tss.pos
+        }else{
+            scaled.pos <- tss.pos - ((mark.region.x)*(abs(tss.pos - tes.pos)))
+        }
         arrows(x0 = scaled.pos, y0 = ylim[2]*1.14, y1 = ylim[2], col = title.color, lwd = 3,
             length = 0.1)
     }
     par(xpd = FALSE)
 
-    points(x = as.numeric(rownames(gene.chrom.r2)), gene.chrom.r2[,1], pch = "+", 
+    max.chrom.r2 <- apply(gene.chrom.r2, 2, max)
+    points(x = as.numeric(chrom.pos), max.chrom.r2, pch = "+", 
         col = "#377eb8", cex = 2)
     points(x = as.numeric(names(gene.methyl.r2)), gene.methyl.r2, pch = "O",
         col = "#4daf4a", cex = 1)
@@ -1465,7 +1505,7 @@ plot_together <- function(gene.id, mark.region.x = NULL){
     label_panel(par("usr"), bump.left = 0.11, bump.up = 0.02, label = "D")
 
     par(mar = c(0,2,0,1))
-    hap.cols <- col.table[match(names(hap.coef), col.table[,5]),3]
+    hap.cols <- col.table[match(gsub(".y", "", rownames(hap.coef)), col.table[,5]),3]
     hap.order <- order(hap.coef[1:8])
     barplot(hap.coef[hap.order], col = hap.cols[hap.order], horiz = TRUE, las = 2,
     names = rev(rownames(renamed.chrom)))
@@ -1518,6 +1558,7 @@ gene.name <- "Pkd2"
 ```
 
 ```{r plot_example, echo = FALSE, fig.height = 6, fig.width = 6.5}
+
 gene.id <- gene.info[which(gene.info[,"external_gene_name"] == gene.name)[1],1]
 if(!embed.figures){
     png(here("Documents", "3.Manuscript", "Figures", "Fig7_Example.png"),
@@ -1823,7 +1864,7 @@ for(state in 1:length(percent.methyl.by.state)){
 }
 
 par(mar = c(0,1,0,1))
-plot.text("Methylation Effect", font = 2, col = title.color, cex = 1.5)
+plot.text("Methylation Effect", font = 2, col = title.color, cex = 1.4)
 
 # add TSS/TES labels
 par(mar = c(0.5,3,0.5,2))
@@ -1872,6 +1913,103 @@ for(state in 1:length(methyl.effect.by.state)){
     segments(x0 = c(0, 1), y0 = ylim[1], y1 = ylim[2], col = tss.line.color, lty = "dotted", lwd = 3)
     #mtext(side = 2, paste("State", state), cex = 0.8, line = 1.5, col = title.color, font = 2)
 
+}
+
+if(!embed.figures){
+    dev.off()
+}
+```
+
+\pagebreak
+
+## Original Figure 6 - Expression Variance Explained in the DO
+
+Gene expression variance in a DO population explained 
+by chromatin state compared to three other genomic features: 
+local haplotype, local SNP genotype, and local imputed DNA 
+methylation status. A. Distributions of gene expression variance 
+explained by each feature. B. Direct comparisons of 
+variance explained by local haplotype, and each of the other 
+genomic features. Blue lines show $y = x$. Each point is a 
+single transcript.
+
+```{r imputed_read_data, echo = FALSE}
+#matched variance explained from each genomic feature
+all.var.exp <- readRDS(here("Results", "SNPs", "All.Variance.Explained.RDS")) #generated in 4.1_Overlay_Imputed_R2.Rmd
+colnames(all.var.exp) <- c("Haplotype", "Chromatin\nState", "SNP", "DNA\nMethylation")
+```
+
+```{r plot_imputed, echo = FALSE, fig.width = 10, fig.height = 2.5}
+if(!embed.figures){
+    png(here("Documents", "3.Manuscript", "Figures", "Fig6_Imputation.png"),
+    width = 10, height = 2.5, units = "in", res = 300)
+}
+#quartz(width = 10, height = 2.5)
+layout.mat <- matrix(c(1:4, 0, 5, 5, 5), nrow = 2, byrow = TRUE)
+
+#quartz(width = 10, height = 2.5)
+layout(layout.mat, heights = c(1, 0.15))
+par(mar = c(2,4,2,1))
+
+boxplot(all.var.exp, names = NA, cex.axis = 1.5)
+#all.t.test <- apply(all.var.exp, 2, function(x) t.test(x, conf.level = 0.99))
+mtext("Variance Explained", side = 2, col = title.color, font = 2, line = 2.5)
+label_panel(par("usr"), bump.left = 0.2, bump.up = 0.09, label = "A")
+
+par(xpd = NA)
+for(i in 1:ncol(all.var.exp)){
+    if(i %% 2 == 0){
+        text.adj <- c(0.5, 0);text.y = -0.2
+    }else{
+        text.adj <- c(0.5, 0.5);text.y = -0.22
+    }
+    text(x = i, y = text.y, labels = colnames(all.var.exp)[i], adj = text.adj,
+    col = title.color, font = 2, cex = 1)
+    if(i %% 2 == 1){
+        segments(x0 = i, y0 = text.y+0.05, y1 = -0.05)
+    }
+}
+par(xpd = TRUE)
+
+axis.min <- 0
+axis.max <- 1
+
+comp.pairs <- cbind(rep(1, (ncol(all.var.exp)-1)), 2:ncol(all.var.exp))
+
+for(i in 1:nrow(comp.pairs)){
+    if(i > 1){par(mar = c(2,2,1,1))}
+    idx1 <- comp.pairs[i,1]
+    idx2 <- comp.pairs[i,2]
+    pair.cor <- cor(all.var.exp[,idx1], all.var.exp[,idx2], use = "pairwise.complete.obs")
+    ci <- CIr(pair.cor, n  = length(which(!is.na(rowMeans(all.var.exp[,c(idx1, idx2)])))), level = 0.99)
+    plot.new()
+    plot.window(xlim = c(axis.min, axis.max), ylim = c(axis.min, axis.max))
+    segments(x0 = 0, x1 = 1, y0 = 0, y1 = 1, col = "lightblue", lwd = 3)
+    points(all.var.exp[,idx1], all.var.exp[,idx2], pch = 16,col = "darkgray", cex = 0.7)
+    axis(1, at = c(0, 0.5, 1), cex.axis = 1.5)
+    axis(2, at = c(0, 0.5, 1), cex.axis = 1.5)
+    text(x = 0.5, y = 1, labels = colnames(all.var.exp)[idx2], col = title.color, 
+    font = 2, adj = c(0.5, 1), cex = 1.5)
+    if(i == 1){
+        par(xpd = NA)
+        text(x = -0.3, y = 0.5, labels = "Variance Explained", 
+        adj = c(0.5, 1), srt = 90)
+        label_panel(par("usr"), bump.left = 0.21, bump.up = 0.08, label = "B")
+        par(xpd = TRUE)
+    }
+}
+
+
+#add axis label for all three dot plots
+par(mar = c(0,4,0,1))
+plot.new()
+plot.window(xlim = c(0,1), ylim = c(0,1))
+segments(x0 = 0, x1 = 1, y0 = 1, lwd = 2, col = zero.line.color)
+text(x = 0.5, y = 0.5, labels = "Variance Explained by Founder Haplotype", 
+    col = title.color, font = 2, cex = 1.5)
+
+if(label.fig){
+    mtext("Fig 6", side = 3, outer = TRUE, line = -1.5, adj = 1)
 }
 
 if(!embed.figures){

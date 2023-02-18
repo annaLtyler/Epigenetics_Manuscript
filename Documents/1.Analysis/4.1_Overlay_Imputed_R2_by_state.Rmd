@@ -86,7 +86,7 @@ for each transcript.
 ```{r find_max_r2}
 max.snp <- sapply(snp.r2, function(x) if(length(x) > 1){max(x, na.rm = TRUE)}else{NA})
 max.methyl <- sapply(methyl.r2, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
-max.chrom <- sapply(chrom.r2, function(x) max(x))
+max.chrom <- sapply(chrom.r2, function(x) if(length(x) > 1){max(x)}else{NA})
 max.eqtl <- apply(eqtl.r2, 1, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
 
 #make sure everything is matched up on transcript ID

@@ -1,12 +1,12 @@
 # Fdb version 3
-["bibtex Epigenetics_Manuscript"] 1676567336 "Epigenetics_Manuscript.aux" "Epigenetics_Manuscript.bbl" "Epigenetics_Manuscript" 1676570160
+["bibtex Epigenetics_Manuscript"] 1676567336 "Epigenetics_Manuscript.aux" "Epigenetics_Manuscript.bbl" "Epigenetics_Manuscript" 1676680496
   "./genome_research.bst" 1665152772 28297 b379a2d606286a566a1c98c69aa18204 ""
-  "Epigenetics_Manuscript.aux" 1676570160 36683 59b77c5e011fd7fd7e48c0ee11561e44 "pdflatex"
+  "Epigenetics_Manuscript.aux" 1676680495 36683 59b77c5e011fd7fd7e48c0ee11561e44 "pdflatex"
   "epigenetics.bib" 1676556167 75006 78a312ae083470855d01b2d805b5ff49 ""
   (generated)
   "Epigenetics_Manuscript.bbl"
   "Epigenetics_Manuscript.blg"
-["pdflatex"] 1676570154 "/Users/atyler/Documents/Projects/Epigenetics/Epigenetics_Manuscript/Documents/3.Manuscript/Epigenetics_Manuscript.tex" "Epigenetics_Manuscript.pdf" "Epigenetics_Manuscript" 1676570160
+["pdflatex"] 1676680491 "/Users/atyler/Documents/Projects/Epigenetics/Epigenetics_Manuscript/Documents/3.Manuscript/Epigenetics_Manuscript.tex" "Epigenetics_Manuscript.pdf" "Epigenetics_Manuscript" 1676680496
   "/Users/atyler/Documents/Projects/Epigenetics/Epigenetics_Manuscript/Documents/3.Manuscript/Epigenetics_Manuscript.tex" 1675108159 69021 4b4067bc584f5c4c3e2f6a4e37ebdeaa ""
   "/Users/atyler/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc" 1254269338 2375 baa924870cfb487815765f9094cf3728 ""
   "/Users/atyler/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc" 1202520719 2405 5dcf2c1b967ee25cc46c58cd52244aed ""
@@ -134,17 +134,17 @@
   "/Users/atyler/Library/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1665136414 435762 1540b7576d395f468a24f2698c2efad7 ""
   "/Users/atyler/Library/TinyTeX/texmf-var/web2c/pdftex/pdflatex.fmt" 1665069496 1636438 99a3ebbb1335de4b12cd383bc02fbd71 ""
   "/Users/atyler/Library/TinyTeX/texmf.cnf" 1665069394 708 85fd07691b6294ba94c59dbc62380410 ""
-  "Epigenetics_Manuscript.aux" 1676570160 36683 59b77c5e011fd7fd7e48c0ee11561e44 "pdflatex"
+  "Epigenetics_Manuscript.aux" 1676680495 36683 59b77c5e011fd7fd7e48c0ee11561e44 "pdflatex"
   "Epigenetics_Manuscript.bbl" 1676567336 22133 2051e98a2061107b7b736acc56cc464a "bibtex Epigenetics_Manuscript"
-  "Epigenetics_Manuscript.out" 1676570160 7096 8d7fb66c6171ecfc76a894a16018c764 "pdflatex"
+  "Epigenetics_Manuscript.out" 1676680495 7096 8d7fb66c6171ecfc76a894a16018c764 "pdflatex"
   "Epigenetics_Manuscript.tex" 1675108159 69021 4b4067bc584f5c4c3e2f6a4e37ebdeaa ""
-  "Figures/Fig1_Decomposition.png" 1676565147 252723 34ba6b184cbcff5ae68a7fd6177ca431 ""
-  "Figures/Fig2_Overview.png" 1676565798 320191 655bc1392e8e646c9f1d0e2a43dabfec ""
-  "Figures/Fig3_Abundance.png" 1676474073 588789 3e36c903f0cecfe1579a626184b35998 ""
-  "Figures/Fig4_Effects.png" 1676567331 873312 46563126a7903474bc176a8fc3f0a064 ""
-  "Figures/Fig5_methylation_effect.png" 1676474074 166248 88378bf41bc843d7308fa4cd4321ec4b ""
-  "Figures/Fig6_Imputation.png" 1676474075 269237 307f5386a5586981b9a5d5dabbd49f21 ""
-  "Figures/Fig7_Example.png" 1676570153 351269 dcfad475ae97e10b23c9a46b63622489 ""
+  "Figures/Fig1_Decomposition.png" 1676679191 252723 34ba6b184cbcff5ae68a7fd6177ca431 ""
+  "Figures/Fig2_Overview.png" 1676679192 320191 655bc1392e8e646c9f1d0e2a43dabfec ""
+  "Figures/Fig3_Abundance.png" 1676679193 588789 3e36c903f0cecfe1579a626184b35998 ""
+  "Figures/Fig4_Effects.png" 1676679194 873312 46563126a7903474bc176a8fc3f0a064 ""
+  "Figures/Fig5_methylation_effect.png" 1676679195 182490 0900916a259e83d1b365bf25d750286c ""
+  "Figures/Fig6_Imputation.png" 1676680491 274488 9bf3c8793e63bd6389e4b04f903f00d3 ""
+  "Figures/Fig7_Example.png" 1676667338 347835 5ca8b5d756594ecefdca339dd907da89 ""
   (generated)
   "Epigenetics_Manuscript.aux"
   "Epigenetics_Manuscript.log"
