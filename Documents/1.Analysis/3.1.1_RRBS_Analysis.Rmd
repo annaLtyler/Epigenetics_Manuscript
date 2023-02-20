@@ -209,6 +209,7 @@ prop_spec <- num_strain_spec/num_all
 names(prop_spec) <- 1:19 #one element per chromosome
 barplot_with_num(round(prop_spec, 2)*100, ylab = "Percent Strain-Specific", 
   text.gap = 0.5, text.shift = 0.15, las = 1, srt = 0, adj = 0.5)
+saveRDS(prop_spec, here("Results", "RRBS", "Proportion_CpG_Strain_Specific.RDS"))
 ```
 
 The following plot shows how the strain-specific sites are distributed
@@ -362,7 +363,7 @@ if(!file.exists(common.cpg.enrich.file)){
 
 par(mar = c(4, 12, 4, 4))
 barplot(sort(log10(common_CpG_enrich)), las = 2, xlab = "lo10(Fold Enrichment)", 
-horiz = TRUE, main = "log10 Fold Enrichment for B6 CpG Sites")
+horiz = TRUE, main = "log10 Fold Enrichment for common CpG Sites")
 ```
 
 

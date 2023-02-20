@@ -255,9 +255,9 @@ mouse strains but varied across the strains suggesting strong
 genetic regulation of both modalities. This is seen as a 
 clustering of individuals from the same strain in principal 
 component plots of transcriptomic and epigenetic features 
-(Figure \ref{fig:pc_plots}). Patterns of gene 
-expression (Figure \ref{fig:pc_plots}A), DNA methylation (Figure 
-\ref{fig:pc_plots}B) and individual histone modifications (Figure 
+(Fig. \ref{fig:pc_plots}). Patterns of gene 
+expression (Fig. \ref{fig:pc_plots}A), DNA methylation (Fig. 
+\ref{fig:pc_plots}B) and individual histone modifications (Fig. 
 \ref{fig:pc_plots}C-F) clustered in similar patterns although a 
 relatively small percent of the variation in the methylome was
 related to strain. The three subspecies \textit{musculus} (in red), 
@@ -268,8 +268,8 @@ The \text{domesticus} strains largely clustered together. These data
 provide evidence that epigenetic features relate to gene expression 
 in a manner that is consistent with the subspecific origin of the 
 mouse strains \citep{yang2007subspecific}. For a more detailed 
-visualization of the correlations between strains, see Supplemental 
-Figure XXX.
+visualization of the correlations between strains (Supplemental 
+Fig. \ref{supp_fig:feature_correlation}).
 
 \begin{figure}[ht!]
 \includegraphics[width=3in]{Figures/Fig1_Decomposition.png} 
@@ -290,11 +290,11 @@ modification for sites shared across all individuals.}
 
 We used ChromHMM to identify `r num.states` chromatin states 
 composed of unique combinations of the four histone modifications
-(Figure \ref{fig:state_overview}A). We calculated the enrichment 
+(Fig. \ref{fig:state_overview}A). We calculated the enrichment 
 of each state near predicted functional elements in the mouse
-liver (Figure \ref{fig:state_overview}B), and correlated the
+liver (Fig. \ref{fig:state_overview}B), and correlated the
 presence of each state with gene expression both across genes
-and across the inbred mouse strains (Figure \ref{fig:state_overview}C).
+and across the inbred mouse strains (Fig. \ref{fig:state_overview}C).
 
 
 \begin{figure}[ht!]
@@ -337,7 +337,7 @@ variation in gene expression to strain variation in chromatin state.
 By merging the histone modification combinations, with functional
 element enrichments, and associations with gene expression, we could 
 assign putative annotatations to each of the `r num.states` chromatin 
-states (Figure \ref{fig:state_overview}D).
+states (Fig. \ref{fig:state_overview}D).
 
 In Figure \ref{fig:state_overview}, the states are ordered by their
 association with gene expression across strains, which helps illustrate 
@@ -354,10 +354,10 @@ these activating states.
 
 Except for State `r nomark.state`, all states were enriched around 
 at least one of the predicted predicted functional elements in 
-mouse liver (Figure \ref{fig:state_overview}B). Interestingly, 
+mouse liver (Fig. \ref{fig:state_overview}B). Interestingly, 
 the annotations of these states largely matched the associations 
 we saw between each state and gene expression 
-(Figure \ref{fig:state_overview}C). For example, State
+(Fig. \ref{fig:state_overview}C). For example, State
 `r active.enhancer.state`, which was enriched 
 around strong enhancers, was the state that was most strongly corrlated 
 with increased expression both across genes, and across strains. 
@@ -387,26 +387,28 @@ strain-specific CpG site as one that was present in all
 individuals in at least one strain and absent in all 
 individuals in at least one other strain (Methods).
 
-Across all chromosomes between 16% and 19% of CpG sites were
-strain-specific (Supplemental Figure XXX). Strain-specific
-CpG sites were more commonly present in CAST, PWK, and B6
-compared to the other strains (Spplemental Figure XXX).
+Across all chromosomes between 16\% and 19\% of CpG sites were
+strain-specific (Supplemental Fig. \ref{supp_fig:cpg_overview}A). 
+Strain-specific CpG sites were more commonly present in CAST, PWK, 
+and B6 compared to the other strains (Supplemental Fig. 
+\ref{supp_fig:cpg_overview}B), suggesting that these strains 
+have more DNA methylation overall compared with the other strains.
 
-CpG sites that were present in all strains were enriched
+CpG sites that were shared across all strain were enriched
 around genomic features such as CpG islands and promoters 
-(Methods) (Supplemental Figure XXX). Strain-specific CpG
-sites were also enriched around CpG sites and promoters.
-However, relative to the CpG sites found across all strains,
+(Methods) (Supplemental Fig. \ref{supp_fig:cpg_overview}C). 
+Strain-specific CpG sites were also enriched around CpG sites 
+and promoters (Supplemental Fig. \ref{supp_fig:cpg_overview}D). 
+However, relative to the CpG sites found across all strains, 
 the strain-specific CpG sites were more strongly enriched 
-specifically in enhancers, especially TSS-distal poised 
-enhancers and weak enhancers (Supplemental Figure XXX).
-Relative to the CpG sites common across all strains, 
-strain-specific sites were depleted in promoter regions 
-and CpG islands (Supplemental Figure XXX) suggesting that
-variation in DNA methylation across strains primarily 
-occurs in enhancers that fine-tune gene expression levels
-rather than in promoters which might result in genes 
-being turned on or off.
+specifically in enhancers, especially TSS-distal poised enhancers 
+and weak enhancers (Supplemental Fig. \ref{supp_fig:cpg_overview}E). 
+Relative to the CpG sites common across all strains, strain-specific 
+sites were depleted in promoter regions and CpG islands (Supplemental 
+Fig. \ref{supp_fig:cpg_overview}E) suggesting that variation in DNA 
+methylation across strains primarily occurs in enhancers that fine-tune 
+gene expression levels rather than in promoters which might result in 
+genes being turned on or off.
 
 ## Spatial distribution of epigenetic modifications around gene bodies
 
@@ -414,7 +416,7 @@ In addition to looking for enrichment of chromatin states and
 CpG sites near annotated functional elements, we characterized 
 the fine-grained spatial distribution of these features around 
 gene bodies by normalizing gene position to run from 0 at the 
-TSS to 1 at the TES (See Methods) (Figure \ref{fig:state_abundance})
+TSS to 1 at the TES (See Methods) (Fig. \ref{fig:state_abundance})
 
 \begin{figure}[ht!]
 \includegraphics[width=0.67\textwidth]{Figures/Fig3_Abundance.png} 
@@ -438,8 +440,8 @@ small that it is not visible in the figure.}
 \end{figure}
 
 The spatial patterns of the individual chromatin states are shown 
-in (Figure \ref{fig:state_abundance}A), and an overlay of all 
-states together (Figure \ref{fig:state_abundance}B) emphasizes the
+in (Fig. \ref{fig:state_abundance}A), and an overlay of all 
+states together (Fig. \ref{fig:state_abundance}B) emphasizes the
 difference in abundance between the most abundant states (States 
 `r active.enhancer.state`, `r active.promoter.state`, and 
 `r nomark.state`), and the remaining states, which were 
@@ -451,13 +453,13 @@ which was characterized by the absence of all measured histone
 modifications, was strongly depleted near the TSS, indicating 
 that this region is commonly subject to the histone modifications 
 we measured here. It should be noted this this pattern is independent
-of the global enrichment patterns shown in Figure (XXX). Although
-state `r nomark.state` is generally depleted in gene bodies relative
+of the global enrichment patterns shown in Figure \ref{fig:state_overview}. 
+Although state `r nomark.state` is generally depleted in gene bodies relative
 to intergenic regions, it is especially depleted at the TSS.
 In contrast, States `r active.enhancer.state` and `r active.promoter.state` 
 were both relatively abundant at the TSS. State `r active.promoter.state` 
 was very narrowly concentrated right at the TSS, consistent with
-its annotation as an active promoter (Figure \ref{fig:state_overview}). 
+its annotation as an active promoter (Fig. \ref{fig:state_overview}). 
 State `r active.enhancer.state` on the other hand, was especially 
 enriched just upstream of the TSS, consistent with its annotation 
 of a TSS-proximal strong enhancer. State `r strong.intragenic.enhancer`, 
@@ -465,22 +467,22 @@ was depleted nere the TSS, but enriched within the gene body, consistent
 with its annotation of a TSS-distal enhancer.
 
 States with weaker associations to expression (indicated by grayer
-shades in Figure \ref{fig:state_abundance}) were of lower abundance, 
+shades in Fig. \ref{fig:state_abundance}) were of lower abundance, 
 but had distinct distribution patterns around the gene body suggesting 
 the possibility of distinct functional roles in the regulation of gene 
 expression. The abundance patterns were identical across all strains 
-(Supplemental Figure XXX)
+(Supplemental Fig. \ref{supp_fig:state_abundance_by_strain})
 
 DNA methylation showed similarly characteristic variation in abundance
-(Figure \ref{fig:state_abundance}C-D). The TSS had densely packed 
-CpG sites relative to the gene body (Figure 
+(Fig. \ref{fig:state_abundance}C-D). The TSS had densely packed 
+CpG sites relative to the gene body (Fig. 
 \ref{fig:state_abundance}C). As expected, the median CpG site near 
 the TSS was consistently hypomethylated relative to the median CpG 
-site in intra- and intergenic regions (Figure \ref{fig:state_abundance}D).
+site in intra- and intergenic regions (Fig. \ref{fig:state_abundance}D).
 All genes used in this analysis were expressed and thus had some 
 degree of hypomethylation. There were also no large-scale difference
 in CpG distribution or percent methylation across strains 
-(Supplemental Figure XXX).
+(Supplemental Fig. \ref{supp_fig:percent_methyl_by_strain}).
 
 ## Spatially resolved effects on gene expression
 
@@ -491,9 +493,9 @@ could also be spatially resolved. To investigate this possibility
 we tested the association between gene expression and both 
 chromatin state and DNA methylation using spatially resolved models
 (Methods). We tested the effect of each chromatin state on 
-expression across genes within hepatocytes (Figure 
+expression across genes within hepatocytes (Fig. 
 \ref{fig:state_effects}A) and the effect of each chromatin state 
-on the variation in gene expression across strains (Figure 
+on the variation in gene expression across strains (Fig. 
 \ref{fig:state_effects}B).
 
 \begin{figure}[ht!]
@@ -541,18 +543,18 @@ with gene expression at that particular position.
 For many of the states, the effects on expression were concentrated 
 at or near the TSS, while in the other states effects were seen across 
 the whole gene. The direction of the effects matched the overall effects 
-of each state seen previously (Figure \ref{fig:state_overview}), but here
+of each state seen previously (Fig. \ref{fig:state_overview}), but here
 we see finer resolution on the effect. For example, State 
 `r active.promoter.state` was positively correlated overall with gene 
-expression (Figure \ref{fig:state_overview}C), but in Figure 
+expression (Fig. \ref{fig:state_overview}C), but in Figure 
 \ref{fig:state_effects} we see that this positive correlation is 
 primarily limited to the region near the TSS, consistent with its
 annotation as a promoter state.
 
 Further, the spatial effects observed across genes 
-(Figure \ref{fig:state_effects} first column) were largely recapitulated 
-in the measurements across strains ((Figure \ref{fig:state_effects} middle 
-column)). That is, chromatin states that either enhanced or suppressed gene 
+(Fig. \ref{fig:state_effects} first column) were largely recapitulated 
+in the measurements across strains (Fig. \ref{fig:state_effects} middle 
+column). That is, chromatin states that either enhanced or suppressed gene 
 expression across hepatocyte genes were similarly related to variation in 
 expression across strains. This suggests that the genetic differences 
 between strains modify chromatin activity in a manner similar to that 
@@ -561,17 +563,17 @@ used across genes. One notable exception was State
 hepatocytes, but did not contribute to expression variation across strains.
 
 We also examined the effect of percent DNA methylation across genes 
-within hepatocytes and across strains (Figure 
+within hepatocytes and across strains (Fig. 
 \ref{fig:DNA_methylation_effect}). As expected, methylation at 
 the TSS was associated with lower expressed genes in hepatocytes
-(Figure \ref{fig:DNA_methylation_effect}A). 
+(Fig. \ref{fig:DNA_methylation_effect}A). 
 We did not detect an association between DNA methylation percent
 and gene expression across inbred strains, perhaps because there
 were too few strains to reliabley estimate the effects 
-((Figure \ref{fig:DNA_methylation_effect}B)). However,
+(Fig. \ref{fig:DNA_methylation_effect}B). However,
 we did see a significant negative association between DNA 
 methylation and gene expression when we imputed DNA methylation 
-in the DO (Figure \ref{fig:DNA_methylation_effect}C). 
+in the DO (Fig. \ref{fig:DNA_methylation_effect}C). 
 These results suggest that heritably DNA methylation contributes
 significantly to eQTL in genetically diverse individuals.
 
@@ -621,15 +623,15 @@ and is not expected to be transcriptionally active, which is consistent
 with high levels of DNA methylation.
 
 DNA methylation in a subset of the chromatin states was significantly
-correlated with gene expression (Supplemental Figure XXX). DNA 
-methylation in State `r active.promoter.state`, the active promoter 
-state, was associated with decreased gene expression, suggesting that 
-DNA methylation in this state deactivated the active promoter state.
-Overall, State `r bivalent.promoter.state`, a
-state annotated as a bivalent promoter, was negatively associated
-with gene expression. However, DNA methylation in this state was 
-positively associated with gene expression, suggesting that 
-this repressive state can be inactivated by DNA methylation.
+correlated with gene expression (Supplemental Fig. 
+\ref{supp_fig:methyl_effect_by_state}). DNA methylation in State 
+`r active.promoter.state`, the active promoter state, was associated 
+with decreased gene expression, suggesting that DNA methylation in 
+this state deactivated the active promoter state. Overall, State 
+`r bivalent.promoter.state`, a state annotated as a bivalent promoter, 
+was negatively associated with gene expression. However, DNA methylation 
+in this state was positively associated with gene expression, suggesting 
+that this repressive state can be inactivated by DNA methylation.
 
 ## Imputed chromatin state explained expression variation in diversity outbred mice
 
@@ -679,21 +681,22 @@ explained by individual haplotypes with that explained by
 any individual chromatin state, CpG site, or SNP. All imputed
 features--individual chromatin states (14\%), DNA methylation 
 (14\%), and SNPs (13\%)--explained more variance than individual 
-haplotypes (11\%) (Figure \ref{fig:effect_distrubutions}A). This
+haplotypes (11\%) (Fig. \ref{fig:effect_distrubutions}A). This
 suggests that any given chromatin state, CpG site, or SNP carries
 more functional inforation than an individual haplotype, which is
 primarily a measurement of ancestry.
-CpG sites explained the least amount of variance overall, but was
-comparable to haplotype. Figure \ref{fig:effect_distrubutions}B 
-shows the maximum variance explained by each genomic feature 
-for each transcript in the transcriptome. Dots above the line 
-indicate transcripts for which the imputed genomic feature explained 
-more variance than haplotype. Dots below the line indicate transcripts
-for which the imputed genomic feature explained less variance
-than haplotype. There are many dots above the line for all features,
-particularly chromatin state and SNPs, supporting the hypothesis
-that all these features cary heritable information that potentially
-regulates gene expression in this genetically diverse population. 
+
+Figure \ref{fig:effect_distrubutions}B shows the maximum 
+variance explained by each genomic feature for each transcript 
+in the transcriptome. Dots above the line indicate transcripts 
+for which the imputed genomic feature explained more variance 
+than haplotype. Dots below the line indicate transcripts for 
+which the imputed genomic feature explained less variance than 
+haplotype. Individual haplotype explained less variance than 
+any other genomic feature for the majority of transcripts. 
+supporting the hypothesis that all these features cary 
+heritable information that potentially regulates gene expression 
+in this genetically diverse population. 
 
 \begin{figure}[ht!]
 \includegraphics[width=\textwidth]{Figures/Fig6_Imputation.png} 
@@ -708,18 +711,17 @@ single transcript.}
 \label{fig:effect_distrubutions}
 \end{figure}
 
-For many genes, individual chromatin states, SNPs, or CpG sites 
-was more highly associated with gene expression than individual 
-haplotypes. For these genes, it is likely that multiple haplotypes
-carry a common functional element that is associated with gene 
-expression. This occurence provides an opportunity to annotate 
+For any gene whose variance was explained at least as well
+by an imputed feature as by haplotype, there is the 
+possibility that the imputed feature marks a cis-regulatory 
+element. This occurence provides an opportunity to annotate 
 novel functional elements in the mouse genome, or provide supportive
 evidence of previously predicted functional elements. As an example, 
-we investigated the gene \textit{Pkd2} (Figure \ref{fig:example_gene}). 
+we investigated the gene \textit{Pkd2} (Fig. \ref{fig:example_gene}). 
 
-For \textit{Pkd2}, WSB and PWK are low-expressing strains, and the 
-remaining strains have higher expression 
-(Figure \ref{fig:example_gene}E). The haplotype effects
+For \textit{Pkd2}, WSB and PWK were low-expressing strains, and the 
+remaining strains had higher expression 
+(Fig. \ref{fig:example_gene}E). The haplotype effects
 in the DO mirror this pattern with the CAST allele showing an
 especially high association with increased gene expression. 
 
@@ -727,15 +729,15 @@ To investigate whether natural variation in chromatin state can be used
 to identify putative \textit{cis} regulatory regions the mouse genome, 
 we looked at the relationship between chromatin state and gene expression 
 in individual genes. An example gene, \textit{Pkd2}, is shown in Figure 
-\ref{fig:example_gene}. This figure shows chromatin state (Figure 
-\ref{fig:example_gene}B), SNP genotype (Figure \ref{fig:example_gene}C), 
-and DNA methylation (Figure \ref{fig:example_gene}D) status along the 
+\ref{fig:example_gene}. This figure shows chromatin state (Fig. 
+\ref{fig:example_gene}B), SNP genotype (Fig. \ref{fig:example_gene}C), 
+and DNA methylation (Fig. \ref{fig:example_gene}D) status along the 
 gene body of \textit{Pkd2}. It also shows the association of each of 
 these features with gene expression calculated across the whole gene 
-body (Figure \ref{fig:example_gene}A).
+body (Fig. \ref{fig:example_gene}A).
 
 The detailed view of this gene identifies two particularly interesting
-regions (gray arrows Figure \ref{fig:example_gene}A). One is at the 
+regions (gray arrows Fig. \ref{fig:example_gene}A). One is at the 
 TSS and the immediately surrounding area, and the other is just downstream 
 of the TSS. 
 
@@ -746,8 +748,9 @@ gene, \textit{Pkd2}. The legend for each panel is displayed to its right.
 (A) The variance in DO gene expression explained at 
 each position along the gene body by each of the imputed genomic 
 features: SNPs - red X's, Chromatin State - blue plus signs, and 
-Percent Methylation - green circles. The horizontal dashed line shows 
-the variance explained by the haplotype. For reference, the arrow below 
+Percent Methylation - green circles. The horizontal 
+dashed line shows the maximum variance explained by any individual 
+haplotype (in this case CAST). For reference, the arrow below 
 this panel runs from the TSS of \textit{Pkd2} (vertical bar) to the 
 TES (arrow head) and shows the direction of transcription. The 
 gray arrows at the top indicate two regions of interest where 
@@ -770,14 +773,14 @@ all panels B through F are shown in the same order as the haplotype effects.}
 \end{figure}
 
 These two regions were both strongly associated expression levels 
-(Figure \ref{fig:example_gene}A). Those strains with activating
+(Fig. \ref{fig:example_gene}A). Those strains with activating
 histone states in these regions had much higher expression
 of \textit{Pkd2} than the two strains that did not have activating
 states in this region. We hypothesize that these two regions are
 enhancers.
 
 The spatial patterns in the SNPs only partially mirror those in chromatin 
-state (Figure \ref{fig:example_gene}C). SNPs underlying the putative 
+state (Fig. \ref{fig:example_gene}C). SNPs underlying the putative 
 enhancer region at the TSS could potentially influence gene expression by 
 altering local chromatin state. However, the more downstream enhancer has 
 no underlying SNPs, suggesting that there is an alternative mechanism for 
@@ -786,7 +789,7 @@ regulate both enhancers.
 
 Percent DNA methylation does not vary across the strains in either of these 
 putative enhancer regions, and does not contribute to variation in expression 
-across genetically distinct individuals (Figure \ref{fig:example_gene}D). 
+across genetically distinct individuals (Fig. \ref{fig:example_gene}D). 
 
 
 # Discussion
@@ -839,7 +842,7 @@ have been shown in human brain tissue to be more heritable than
 unimodal, or bimodal sites ($h^2 = 0.8 \pm 0.18$), and roughly half 
 were associated with local eQTL \citep{pmid20485568}. Here, we did not 
 see an association between trimodal CpG sites and gene expression 
-across strains (Supplemental Figure \ref{supp_fig:trimodal}).
+across strains (Supplemental Fig. \ref{supp_fig:trimodal}).
 
 The diversity in the effects observed in the `r num.states` chromatin 
 states highlights the importance of analyzing combinatorial states as 
@@ -926,7 +929,7 @@ there is a \textit{cis}-eQTL at this locus, and that imputed
 chromatin state explains a large amount of variance in DO gene 
 expression, we looked more closely at chromatin state within 
 the inbred founders to identify putative cis-regulatory regions 
-(Figure 7A arrows). The variation in chromatin state across the 
+(Fig. 7A arrows). The variation in chromatin state across the 
 inbred strains in these regions is highly correlated with gene 
 expression in the outbred animals, pointing to possible molecular 
 mechanisms for the observed eQTL. The PWK and WSB haplotypes lack 
@@ -1181,14 +1184,16 @@ emissions probability of 0.3 as the threshold for presence/absence of the
 histone mark. This threshold was used for comparison purposes only, and 
 produced the most stable state estimates between models. We then 
 investigated the stability of three features across all states: the 
-emissions probabilities (Supp Fig1), the abundance of each 
-state across transcribed genes (Supp Fig2), and the effect of each state 
-on transcription (Supp Fig3). Methods for each of these analyses are 
-described separately below. All measures were remarkably consistent across
-all models, but the `r num.states`-state model was characterized by a wide
-range of relatively abundant states with relatively strong effects on 
-expression. We used this model for all subsequent analyses. For more 
-details on how the different models were compared, see Supplemental Methods.
+emissions probabilities (Supplemental Fig. \ref{supp_fig:model_emissions_comparison}), 
+the abundance of each state across transcribed genes (Supplemental Figure 
+\ref{supp_fig:model_abundance_comparison}), and the effect of each state 
+on transcription (Supplemental Fig. \ref{supp_fig:model_effect_comparison}). 
+Methods for each of these analyses are described separately below. All 
+measures were remarkably consistent across all models, but the 
+`r num.states`-state model was characterized by a wide range of 
+relatively abundant states with relatively strong effects on expression. 
+We used this model for all subsequent analyses. For more details on how 
+the different models were compared, see Supplemental Methods.
 
 ### Genome distribution of chromatin states
 
@@ -1232,7 +1237,7 @@ set of 14,048 genes.
 ### Chromatin state and gene expression
 
 We calculated the effect of each chromatin state on gene expression 
-(Figure \ref{fig:state_overview}C). We did this both across genes
+(Fig. \ref{fig:state_overview}C). We did this both across genes
 and across strains. The across-gene analysis identified states that 
 are associated with high expression and low expression within the 
 hepatocytes. The across-strain analysis investigated whether 
@@ -1272,7 +1277,7 @@ interval for each state.
 
 In addition to calculating the effect of state proportion across the full 
 gene body, we also performed the same calculations in a position-based 
-manner (Figure \ref{fig:state_effects}). To do this, we first normalized
+manner (Fig. \ref{fig:state_effects}). To do this, we first normalized
 the genomic positions of all chromatin states to run between 0 at the
 transcription start site (TSS) and 1 at the transcription end site (TES)
 of the local gene regardless of the DNA strand on which the gene was
@@ -1343,8 +1348,8 @@ shows that CpG sites tend to be unmethylated near the TSS as expected.
 ### Association of DNA methylation with gene expression
 As with chromatin state, we assessed the effect of DNA methylation 
 on gene expression both across genes 
-(Figure \ref{fig:DNA_methylation_effect}A) and across strains 
-(Figure \ref{fig:DNA_methylation_effect}B). As with chromatin state,
+(Fig. \ref{fig:DNA_methylation_effect}A) and across strains 
+(Fig. \ref{fig:DNA_methylation_effect}B). As with chromatin state,
 we binned the normalized CpG positions into 42 bins running from just
 upstream of the TSS to just downstream of the TES. We treated missing
 CpG sites in individual strains as unmethylated, as it is uncommon
@@ -1377,7 +1382,7 @@ All imputations followed the same basic procedure: For each transcript,
 we identified the haplotype probabilities in the DO mice at the genetic 
 marker nearest the gene transcription start site. This matrix held DO 
 individuals in rows and DO founder haplotypes in columns 
-(Supp. Fig. \ref{supp_fig:imputation}).
+(Supplemental Fig. \ref{supp_fig:imputation}).
 
 For each transcript, we also generated a three-dimensional array 
 representing the genomic features (chromatin state, DNA methylation 
@@ -1391,7 +1396,7 @@ We then multiplied the haplotype probabilities by each genomic feature
 array to obtain the imputed genomic feature for each DO mouse. This final 
 array held DO individuals in rows, the genomic feature in the second 
 dimension, and genomic position in the third dimension 
-(Supp. Fig. \ref{supp_fig:imputation}). This array is analagous to the 
+(Supplemental Fig. \ref{supp_fig:imputation}). This array is analagous to the 
 genoprobs object in R/qtl2 \citep{pmid30591514}. The genomic 
 position dimension included all positions from 1 kb upstream of the 
 TSS to 1 kb downstream of the TES for the given transcript. SNP data 
@@ -1418,12 +1423,12 @@ although in practice typically have between two and four df, and
 both SNPs and DNA methylation have only one df. Thus, to compare 
 the features, we tested only a single state at a time. From these 
 linear models, we calculated the variance explained ($R^2$) by 
-each genomic feature at each position (Figure \ref{fig:effect_distrubutions}), 
+each genomic feature at each position (Fig. \ref{fig:effect_distrubutions}), 
 thereby relating gene expression in the DO to each position of 
 the imputed feature in and around the gene body. We also kept 
 the $\beta$ coefficients to identify overall trends in positive 
 or negative effects on gene expression for each genomic feature 
-at each position (Figure \ref{fig:state_effects}C).
+at each position (Fig. \ref{fig:state_effects}C).
 
 ### Permutations
 
@@ -1454,7 +1459,8 @@ itself. The $p$-value distributions for all three genomic features were
 highly enriched for small $p$-values (all Kruskal-Wallis $p < 2^{-16}$), 
 suggesting that, although many individual imputed values were not significantly 
 associated with gene expression, overall each genomic feature could 
-be significantly associated with gene expression (Supplemental Figure XXX).
+be significantly associated with gene expression (Supplemental Fig. 
+\ref{supp_fig:empirical_p}).
 
 # Data Access
 All raw and processed sequencing data generated in this study have 
@@ -1486,6 +1492,90 @@ Technologies at The Jackson Laboratory.
 \beginsupplement
 
 \begin{figure}[ht!]
+\caption{Correlations of multiple genomic features across inbred
+mice. Each panel shows one genomic feature A. Transcriptome;
+B. Methylome; C. H3K27ac; D. H3K27me3; E. H3K4me1; F. H3K4me3.
+These figures complement Figure 1 in the manuscript and show
+a more finely detailed structure of the correlations between
+individuals and strains.
+}
+\label{supp_fig:feature_correlation}
+\end{figure}
+
+
+\begin{figure}[ht!]
+\caption{Overview of strain-specific CpG sites. (A) Height of bars
+shows the percent of CpG sites on each chromosome that are
+strain-specific - defined as a CpG site that is present in
+all individuals of at least one strain and absent in all 
+individuals of another strain. (B) Boxes show proportion
+of strain-specific CpG sites that are present in each 
+strain. Boxes are colored by official strain colors
+for ease of visualization. Short names for strains are
+indicated below each box. (C) The $log_{10}$(Fold Enrichment)
+of CpG sites present in all strains. (D) The $log_{10}$(Fold 
+Enrichment) of all strain-specific CpG sites. (E) A comparison
+of enrichments between CpG sites that are shared across all 
+strains and those that are strain-specific. Bars above 1
+where strain-specific CpGs were more enriched than shared CpGs.
+Bars below 1 indicate where strain-specific CpGs were less
+enriched than shared CpGs. The vertical line marks where 
+shared and strain-specific CpGs were equally enriched. 
+Abbreviations are as follows: FR - flanking region; 
+Tsp - transcription start site proximal; Tsd - transcription
+start site distal, Hetero. - heterochromatin; Enh. - enhancer.
+}
+\label{supp_fig:cpg_overview}
+\end{figure}
+
+
+\begin{figure}[ht!]
+\caption{These figures are companions to those shown in Figure 3. 
+Each panel shows the abundance of a single state for each 
+strain. The color of each line indicates the strain. The
+abundance pattern of each state is largely identical across
+the strains. Deviations are seen only outside the gene body
+for very rare states are are thus artefacts due to low numbers
+of example genes.
+}
+\label{supp_fig:state_abundance_by_strain}
+\end{figure}
+
+
+\begin{figure}[ht!]
+\caption{This figure is a companion to the DNA methylation 
+percent panel in Figure 3. It shows DNA methylation percent 
+for each strain along the gene body. Strain is indicated
+by color.
+}
+\label{supp_fig:percent_methyl_by_strain}
+\end{figure}
+
+\begin{figure}[ht!]
+\caption{The following figures show DNA methylation percent by chromatin
+state (left column) and the average effect of DNA methylation on 
+gene expression by chromatin state (right column). These figures
+can be compared with Figure 4 to see that when DNA methylation in
+a given state is associated with gene expression, that effect is
+tends to be the opposite of that seen for the state itself indicating 
+that DNA methylation inactivates the function of the state.
+}
+\label{supp_fig:methyl_effect_by_state}
+\end{figure}
+
+\begin{figure}[ht!]
+\caption{Effects of percent DNA methylation for all (A) CpG sites,
+(B) bimodal CpG sites, and (C) trimodal CpG sites. The $y$-axis
+in each panel shows the effect of variation in DNA methylation on 
+gene expression across hepatocyte genes. The gray polygon shows the
+95\% confidence interval of the effect. Although there is a weak
+negative effect on transcription of DNA methylation across all 
+sites, there was no effect when looking at trimodal sites alone.}
+\label{supp_fig:trimodal}
+\end{figure}
+
+
+\begin{figure}[ht!]
 \caption{Comparison of emissions probabilities across all ChromHMM models.
 Each row contains data for a single ChromHMM model fit to the number of
 states indicated on either side of the row. Each set of four columns shows
@@ -1503,6 +1593,7 @@ stability in the emissions across models, seen as vertical bars of consistent
 color.}
 \label{supp_fig:model_emissions_comparison}
 \end{figure}
+
 
 \begin{figure}[ht!]
 \caption{Comparison of state abundance across all ChromHMM models. The left-most column
@@ -1539,16 +1630,18 @@ individual by position by chromatin state probability.}
 \label{supp_fig:imputation}
 \end{figure}
 
+
 \begin{figure}[ht!]
-\caption{Effects of percent DNA methylation for all (A) CpG sites,
-(B) bimodal CpG sites, and (C) trimodal CpG sites. The $y$-axis
-in each panel shows the effect of variation in DNA methylation on 
-gene expression across hepatocyte genes. The gray polygon shows the
-95\% confidence interval of the effect. Although there is a weak
-negative effect on transcription of DNA methylation across all 
-sites, there was no effect when looking at trimodal sites alone.}
-\label{supp_fig:trimodal}
+\caption{This figure shows empirical $p$-value distributions obtained
+by permuting imputed genomic features and associating them
+with gene expression in the DO mice. All distributions are
+enriched with small values suggesting that overall each 
+genomic feature   is associated with gene expression in the DO
+beyond the simple correlation with haplotype.
+}
+\label{supp_fig:empirical_p}
 \end{figure}
+
 
 \pagebreak
 
