@@ -194,3 +194,116 @@ variation in gene expression across genetically distinct individuals. That most
 states have the same effects across genes within a cell type and across strains 
 suggests that the mechanisms that are used to regulate cell type specificity 
 also contribure to variation in genetically distinct individuals.
+
+## Introduction
+
+This body of work demonstrates the important links 
+between genetic variation, epigenetic variation, and 
+higher level phenotypes. Thus, mapping variation of 
+the epigenetic landscape in models of human disease 
+is critical to understanding mechanisms of gene 
+regulation in these models. Laboratory mice are one 
+of the most widely used models of human disease, and 
+yet there is little known about the landscape of 
+epigenetic modifications in these animals. 
+
+
+
+This variation in epigenetic landscapes across cell types 
+has been extensively documented \citep{pmid21441907, pmid25693563}
+and has been used to richly annotate functional elements in 
+both mouse \citep{stamatoyannopoulos2012encyclopedia, baker2019tissue, yue2014comparative} 
+and human genomes \citep{pmid25693563, pmid23595227, pmid20657582}. 
+Such functional annotations provide insight into mechanisms 
+of gene regulation. 
+
+
+For example, genetic variants in the promoters of CAPN1 and 
+LINC00959 which were associated with variation in H3K4me3 
+and H3K27ac modifications, were also associated with 
+variation in expression of the locally encoded genes 
+and with patient outcomes following surgery for lung 
+adenocarcenoma \citep{kang2021genetic}.
+
+## Discussion
+
+ in In contrast to chromatin state, percent DNA methylation was not 
+associated with variation in gene expression across inbred 
+strains or in the outbred population. At the TSS, this was 
+largely due to a lack of variation in methylation across strains. 
+An example of this observation is shown in panel D of Figure 
+\ref{fig:example_gene}. Despite strain variation in both genotype 
+and chromatin state at the TSS of \textit{Pkd2}, DNA methylation 
+was invariant -- the CpG island at the TSS is unmethylated in all 
+strains. Thus, although chromatin state appears to be highly 
+influenced by local haplotype, percent DNA methylation is not.
+CpG islands are highly conserved across vertebrates \citep{papin2021cpg}
+and may thus be regions of low genetic variation within this study 
+relative to the surrounding regions in which SNPs and variations
+in histone modifications are abundant.
+
+Variation in DNA methylation has shown a similar lack of association
+with gene expression in humans \citep{pmid33931130}. Multiple twin studies 
+have estimated the average heritability of individual CpG sites to be 
+roughly 0.19 \citep{pmid27051996, pmid24183450, pmid22532803}, with only 
+about 10\% of CpG sites having a heritability greater than 0.5 
+\citep{pmid24183450, pmid22532803, pmid24887635}. Trimodal CpG sites, 
+i.e. those with methylation percent varying among 0, 50, and 100\%, 
+have been shown in human brain tissue to be more heritable than 
+unimodal, or bimodal sites ($h^2 = 0.8 \pm 0.18$), and roughly half 
+were associated with local eQTL \citep{pmid20485568}. Here, we did not 
+see an association between trimodal CpG sites and gene expression 
+across strains (Supplemental Fig. \ref{supp_fig:trimodal}).
+
+
+Poised enhancers are also observed during differentiation 
+and in differentiated cells \citep{pmid32432110}. In concordance with these 
+previous observations, the genes marked by States `r bivalent.promoter.state` 
+and `r poised.enhancer.state` were enriched for vascular development 
+and morphogenesis. 
+
+Interestingly, although we did see an association between 
+imputed DNA methylation and gene expression in the DO population,
+this relationship was absent when we looked across inbred strains.
+mouse strains, we did see an association between imputed DNA 
+methylation and gene expression in DO mice, suggesting
+that DNA methylation is also a heritable mechanism of expression
+regulation. 
+
+
+Cosistent with previous studies, it appeared that methylation of DNA in 
+a regulatory region tended to inactivate the function of that region. 
+That is, increased methylation in enhancer states was associated with 
+reduced gene expression, and increase DNA methylation in the suppressor 
+states was associated with increased gene expression.
+
+ It is unclear why this 
+discrepancy between inbred and outbred mice arose, but may be the result 
+of a difference in power between the large DO population and the small 
+number of inbred mice.
+
+Understanding the role that genetic variation plays in modifying the 
+epigenetic landscape will be critical in making these links. Through 
+this survey we are providing a rigorous resource that explores the 
+connection between genetic variation and epigenetic variation in the
+DO/CC founders.
+
+ Researchers 
+in the wider community can query the epigenetic landscape of the nine DO/CC
+inbred founders to identify candidate regulatory regions in genes
+of interest and generate mechanistic hypotheses linking genetic 
+variation to gene expression.
+
+
+## Figures
+
+\begin{figure}[ht!]
+\caption{Association of percent DNA methylation with gene expression 
+for all (A) CpG sites, (B) bimodal CpG sites, and (C) trimodal CpG sites. 
+The $y$-axis in each panel shows the effect of variation in DNA methylation on 
+gene expression across hepatocyte genes. The gray polygon shows the
+95\% confidence interval of the effect. Although there is a weak
+negative effect on transcription of DNA methylation across all 
+sites, there was no effect when looking at trimodal sites alone.}
+\label{supp_fig:trimodal}
+\end{figure}

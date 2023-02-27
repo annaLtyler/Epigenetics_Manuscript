@@ -1055,6 +1055,11 @@ mtext(text = "Relative Gene Position", side = 1, line = 2.5)
 mtext(text = "Effect Size", side = 2, line = 2.5)
 abline(v = c(0,1), lwd = 2, col = "gray60", lty = 2)
 abline(h = 0, col = "gray40", lty = 2)
+
+bimodal_effects <- cbind(rel.pos, all.lwr, all.fit, all.upr)
+colnames(bimodal_effects) <- c("position", "lwr", "fit", "upr")
+saveRDS(bimodal_effects, here("Results", "RRBS", "bimodal_effects.RDS"))
+
 #pheatmap(sapply(bimodal.expr.effect, function(x) x[3,]), cluster_cols = FALSE, cluster_rows = FALSE)
 ```
 
@@ -1112,6 +1117,12 @@ mtext(text = "Effect Size", side = 2, line = 2.5)
 abline(v = c(0,1), lwd = 2, col = "gray60", lty = 2)
 abline(h = 0, col = "gray40", lty = 2)
 #pheatmap(sapply(trimodal.expr.effect, function(x) x[3,]), cluster_cols = FALSE, cluster_rows = FALSE)
+
+
+trimodal_effects <- cbind(rel.pos, all.lwr, all.fit, all.upr)
+colnames(trimodal_effects) <- c("position", "lwr", "fit", "upr")
+saveRDS(trimodal_effects, here("Results", "RRBS", "trimodal_effects.RDS"))
+
 ```
 
 ## Across-strain variation in DNA methylation
