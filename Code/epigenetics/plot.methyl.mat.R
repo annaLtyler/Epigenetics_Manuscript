@@ -2,7 +2,10 @@
 #marks in their genomic position
 
 plot.methyl.mat <- function(methyl.mat, plot.label = "", line.color = "black", 
-xlim = NULL, ylab = "Methylation", bins = NULL){
+xlim = NULL, ylab = "Methylation", bins = NULL, key.label.pos = c("center", "left", "right"),
+key.label.nudge = 0, key.label.cex = 1){
+
+    key.label.pos = key.label.pos[1]
 
     if(all(is.na(methyl.mat))){
         plot.text(paste("No methylation for", plot.label))
@@ -59,7 +62,20 @@ xlim = NULL, ylab = "Methylation", bins = NULL){
         for(i in 1:(length(yseg)-1)){
             draw.rectangle(xmin, xmax, yseg[i], yseg[i+1], fill = state.cols[i], 
             border.col = line.color)
-            text(x = xmid, y = mean(c(yseg[i], yseg[i+1])), labels = state.labels[i])
+
+            if(key.label.pos == "center"){
+                text(x = xmid+key.label.nudge, y = mean(c(yseg[i], yseg[i+1])), 
+                    labels = state.labels[i], cex = key.label.cex)
+            }
+            if(key.label.pos == "left"){
+                text(x = xmin+key.label.nudge, y = mean(c(yseg[i], yseg[i+1])), 
+                    labels = state.labels[i], adj = 1, cex = key.label.cex)
+            }
+            if(key.label.pos == "right"){
+                text(x = xmax+key.label.nudge, y = mean(c(yseg[i], yseg[i+1])), 
+                    labels = state.labels[i], adj = 0, cex = key.label.cex)
+            }
+
         }
 
         par(xpd = FALSE)

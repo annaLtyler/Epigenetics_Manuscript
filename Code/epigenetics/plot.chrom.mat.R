@@ -5,7 +5,11 @@
 
 plot.chrom.mat <- function(state.mat, num.states = 8, xlim = NULL, 
 state.labels = 1:num.states, ylab = "Chromatin State", island.bins = NULL, 
-line.color = "gray", state.cols = NULL, empty.cell.color = "lightgray"){
+line.color = "gray", state.cols = NULL, empty.cell.color = "lightgray",
+key.label.pos = c("center", "left", "right"), key.label.nudge = 0,
+key.label.cex = 1){
+
+    key.label.pos = key.label.pos[1]
 
     #pheatmap(state.mat, cluster_rows = FALSE, cluster_cols = FALSE)
     if(is.null(state.cols)){
@@ -81,7 +85,21 @@ line.color = "gray", state.cols = NULL, empty.cell.color = "lightgray"){
     for(i in 1:(length(yseg)-1)){
         draw.rectangle(xmin, xmax, yseg[i], yseg[i+1], fill = state.cols[i], 
         border.col = line.color)
-        text(x = xmid, y = mean(c(yseg[i], yseg[i+1])), labels = state.labels[i])
+        
+        if(key.label.pos == "center"){
+                text(x = xmid+key.label.nudge, y = mean(c(yseg[i], yseg[i+1])), 
+                    labels = state.labels[i], cex = key.label.cex)
+            }
+            if(key.label.pos == "left"){
+                text(x = xmin+key.label.nudge, y = mean(c(yseg[i], yseg[i+1])), 
+                    labels = state.labels[i], adj = 1, cex = key.label.cex)
+            }
+            if(key.label.pos == "right"){
+                text(x = xmax+key.label.nudge, y = mean(c(yseg[i], yseg[i+1])), 
+                    labels = state.labels[i], adj = 0, cex = key.label.cex)
+            }
+
+
     }
 
     par(xpd = FALSE)

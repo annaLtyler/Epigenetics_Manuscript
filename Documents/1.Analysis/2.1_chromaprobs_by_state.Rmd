@@ -25,7 +25,7 @@ The basic pipeline for mapping chromatin to genotype is as follows:
 3. Calculate chromatin effects on transcript abundance using qtl2.
 
 ```{r set_param}
-females_only = FALSE
+females_only = TRUE
 chow_only = FALSE
 ```
 
@@ -121,6 +121,22 @@ chrom.r2.file <- file.path(results.dir, "chQTL.state.R2.RDS")
 geno.coef.file <- file.path(results.dir, "eQTL.hap.coef.RDS")
 geno.r2.file <- file.path(results.dir, "eQTL.hap.R2.RDS")
 
+if(females_only){
+  chrom.coef.file <- gsub(".RDS", "_female.RDS" chrom.coef.file)
+  chrom.r2.file <- gsub(".RDS", "_female.RDS" chrom.r2.file)
+
+  geno.coef.file <- gsub(".RDS", "_female.RDS" geno.coef.file)
+  geno.r2.file <- gsub(".RDS", "_female.RDS" geno.r2.file)
+}
+
+if(chow_only){
+  chrom.coef.file <- gsub(".RDS", "_chow.RDS" chrom.coef.file)
+  chrom.r2.file <- gsub(".RDS", "_chow.RDS" chrom.r2.file)
+
+  geno.coef.file <- gsub(".RDS", "_chow.RDS" geno.coef.file)
+  geno.r2.file <- gsub(".RDS", "_chow.RDS" geno.r2.file)
+}
+
 if(delete.previous){
   unlink(chrom.coef.file)
   unlink(chrom.r2.file)
@@ -156,7 +172,6 @@ if(file.exists(chrom.coef.file)){
     geno.r2 <- matrix(NA, ncol = 8, nrow = length(common.transcripts))
     rownames(geno.r2) <- common.transcripts 
     colnames(geno.r2) <- LETTERS[1:8]
-
 }
 
 ```

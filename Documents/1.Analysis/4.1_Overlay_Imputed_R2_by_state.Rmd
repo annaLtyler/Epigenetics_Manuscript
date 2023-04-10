@@ -403,7 +403,7 @@ plot_together <- function(gene.id){
 The following plots show examples of genes for which there
 is high variance explained by at least one of the modalities
 
-```{r max_r2, results = "asis", fig.width = 10, fig.height = 8}
+```{r max_r2, results = "asis", fig.width = 10, fig.height = 8, eval = FALSE}
 n.sample = 3
 high.r2 <- apply(r2.mat, 2, function(x) which(x > 0.6))
 sample.idx <- lapply(high.r2, function(x) sample(x, n.sample))

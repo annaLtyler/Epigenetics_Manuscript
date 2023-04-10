@@ -1,7 +1,7 @@
 #This function tests different dimension-reduction
 #methods on a given data matrix
 #The data matrix should have observations 
-#(e.g. gene dataession) in rows and independent 
+#(e.g. genes) in rows and independent 
 #samples (e.g. mice) in columns.
 
 test_dim_red <- function(data.mat, col = "black", pdf.filename = "~/Desktop/test.pdf"){
@@ -20,7 +20,7 @@ test_dim_red <- function(data.mat, col = "black", pdf.filename = "~/Desktop/test
     data.cor <- cor(data.mat)
     plot.decomp(data.cor, cols = col, main = "SVD of correlation matrix")
 
-    umap.defaults$n_neighbors = 2
+    umap.defaults$n_neighbors = 10
     umap.defaults$min_dist = 0.01
     umap.defaults$spread = 2
     data.umap <- umap(data.cor)

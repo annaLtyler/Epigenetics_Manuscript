@@ -1,0 +1,46 @@
+This is BibTeX, Version 0.99d (TeX Live 2022)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: Epigenetics_Manuscript.aux
+The style file: genome_research.bst
+Database file #1: epigenetics.bib
+You've used 72 entries,
+            2730 wiz_defined-function locations,
+            1023 strings with 23481 characters,
+and the built_in function-call counts, 138433 in all, are:
+= -- 15477
+> -- 3577
+< -- 14
++ -- 3738
+- -- 1023
+* -- 9879
+:= -- 13692
+add.period$ -- 144
+call.type$ -- 72
+change.case$ -- 870
+chr.to.int$ -- 73
+cite$ -- 72
+duplicate$ -- 14673
+empty$ -- 9702
+format.name$ -- 1183
+if$ -- 28502
+int.to.chr$ -- 1
+int.to.str$ -- 1
+missing$ -- 1016
+newline$ -- 223
+num.names$ -- 216
+pop$ -- 7486
+preamble$ -- 1
+purify$ -- 799
+quote$ -- 0
+skip$ -- 2670
+stack$ -- 0
+substring$ -- 18849
+swap$ -- 2393
+text.length$ -- 1
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 430
+warning$ -- 0
+while$ -- 856
+width$ -- 0
+write$ -- 800

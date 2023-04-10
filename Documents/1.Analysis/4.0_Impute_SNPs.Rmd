@@ -27,6 +27,9 @@ snp.alleles <- c("A", "C", "G", "T") #alleles of SNPs
 save.every = 100
 is.interactive = FALSE
 #is.interactive = TRUE
+
+females_only = TRUE
+chow_only = FALSE
 ```
 
 ```{r load_libraries}
@@ -225,11 +228,19 @@ genome by the haplotype matrix for the gene.
 #The arrays are too big to store, so we
 #scan them right away and only keep the 
 #LOD scores.
+
 snp.coef.file <- here("Results", "SNPs", "SNP.coef.scores.RDS")
 snp.r2.file <- here("Results", "SNPs", "SNP.R2.RDS")
-common.ind <- intersect(rownames(genoprobs[[1]]), rownames(expr))
-common.genoprob.locale <- match(common.ind, rownames(genoprobs[[1]]))
-common.expr.locale <- match(common.ind, rownames(expr))
+
+if(females_only){
+  snp.coef.file <- gsub(".RDS", "_females.RDS", snp.coef.file)
+  snp.r2.file <- gsub(".RDS", "_females.RDS", snp.r2.file)
+}
+if(chow_only){
+  snp.coef.file <- gsub(".RDS", "_chow.RDS", snp.coef.file)
+  snp.r2.file <- gsub(".RDS", "_chow.RDS", snp.r2.file)
+}
+
 if(!file.exists(snp.r2.file)){
     all.snp.coef <- all.snp.r2 <- vector(mode = "list", length = length(snp.mats))
     names(all.snp.coef) <- names(all.snp.r2) <- common.transcripts
@@ -248,7 +259,24 @@ if(!file.exists(snp.r2.file)){
 
         if(length(gene.expr) == 0){cat(" No expression\n");next()}
 
-        adj.expr <- adjust(gene.expr, covar)
+        sub.covar <- covar #duplicate covar in case we want to subset by both sex and diet
+        if(females_only){
+          sex.idx <- which(covar[,"sexM"] == 0)
+        }else{
+          sex.idx <- 1:nrow(covar)
+        }
+        if(chow_only){
+          diet.idx <- which(covar[,"diethf"] == 0)
+        }else{
+          diet.idx <- 1:nrow(covar)
+        }
+        sub.idx <- intersect(sex.idx, diet.idx)
+
+        adj.expr <- adjust(gene.expr[sub.idx,,drop=FALSE], covar[sub.idx,])
+        
+        common.ind <- intersect(rownames(adj.expr), rownames(snp.array[[1]]))
+        common.expr.locale <- match(common.ind, rownames(adj.expr))
+        common.genoprob.locale <- match(common.ind, rownames(snp.array[[1]]))
 
         regression.models  <- apply(snp.array[[1]], 3, function(x) lm(adj.expr[common.expr.locale,]~x[common.genoprob.locale,]))
         snp.r2.test <- sapply(regression.models, function(x) if(length(x) > 1){summary(x)$adj.r.squared}else{NA})
@@ -359,6 +387,10 @@ scan_one_snp <- function(perm.data, p){
     if(is.na(snp.array)){return(NA)}
 
     one.lod <- scan1(snp.array, perm.data$expr)
+
+    common.ind <- intersect(rownames(perm.data$gene.expr), rownames(snp.array[[1]]))
+    common.expr.locale <- match(common.ind, rownames(perm.data$gene.expr))
+    common.genoprob.locale <- match(common.ind, rownames(snp.array[[1]]))
     regression.models  <- apply(snp.array[[1]], 3, function(x) lm(perm.data$expr[common.expr.locale,]~x[common.genoprob.locale,]))
     one.r2 <- sapply(regression.models, function(x) if(length(x) > 1){summary(x)$adj.r.squared}else{NA})
               
@@ -391,6 +423,16 @@ order.mat <- perm.mat[perm.rows,]
 
 perm.lod.snp.file <- here("Results", "SNPs", "Perm.SNP.LOD.RDS")
 perm.r2.snp.file <- here("Results", "SNPs", "Perm.SNP.R2.RDS")
+
+
+if(females_only){
+  perm.lod.snp.file <- gsub(".RDS", "_females.RDS", perm.lod.snp.file)
+  perm.r2.snp.file <- gsub(".RDS", "_females.RDS", perm.r2.snp.file)
+}
+if(chow_only){
+  perm.lod.snp.file <- gsub(".RDS", "_chow.RDS", perm.lod.snp.file)
+  perm.r2.snp.file <- gsub(".RDS", "_chow.RDS", perm.r2.snp.file)
+}
 
 if(file.exists(perm.lod.snp.file)){
   perm.snp.lod <- readRDS(perm.lod.snp.file)
@@ -456,11 +498,24 @@ if(start.at < length(all.snp.r2)){
 
     if(nrow(snp.mats[[tr]]) < 2){cat(" Not enough SNPs to test\n");next()}
 
-    perm.data <- list("snp.mat" = snp.mats[[tr]],
-        "haps" = gene.marker[[tr]], 
-        "chr" = transcript.info.table[tr,"chromosome_name"],
-        "expr" = adj.expr)
+    sub.covar <- covar #duplicate covar in case we want to subset by both sex and diet
 
+    if(females_only){
+      sex.idx <- which(covar[,"sexM"] == 0)
+    }else{
+      sex.idx <- 1:nrow(covar)
+    }
+    if(chow_only){
+      diet.idx <- which(covar[,"diethf"] == 0)
+    }else{
+      diet.idx <- 1:nrow(covar)
+    }
+    sub.idx <- intersect(sex.idx, diet.idx)
+
+    perm.data <- list("snp.mat" = snp.mats[[tr]],
+      "haps" = gene.marker[[tr]], 
+      "chr" = transcript.info.table[tr,"chromosome_name"],
+      "expr" = adj.expr[sub.idx,,drop=FALSE])
 
     #send the new gene ID to the clusters
     clusterExport(cl, "perm.data")

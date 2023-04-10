@@ -3,6 +3,10 @@ We performed GSEA on this ordered set of genes. We downloaded the mouse
 prebuilt gene sets from (GO2Msig)[http://www.bioinformatics.org/go2msig/releases/old_prebuilt_sets/prebuilt_sets_september_2013/]
 
 ```{r gsea}
+library(stringr)
+library(fgsea)
+
+
 #look at all GO lists simultaneously
 db.file <- here("Data", "GSEA", 
 "Mus_musculus_GSEA_GO_sets_all_symbols_highquality_September_2013.gmt")

@@ -1,0 +1,113 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2639
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 ArialMT;\f1\fnil\fcharset0 Verdana;\f2\fnil\fcharset0 Verdana-Italic;
+\f3\fnil\fcharset0 Menlo-Regular;\f4\fnil\fcharset0 Georgia;}
+{\colortbl;\red255\green255\blue255;\red183\green0\blue24;\red5\green61\blue204;\red83\green104\blue112;
+\red252\green244\blue220;\red109\green109\blue109;}
+{\*\expandedcolortbl;;\cssrgb\c77647\c0\c11765;\cssrgb\c0\c33896\c83855;\cssrgb\c39608\c48235\c51373;
+\cssrgb\c99216\c96471\c89020;\cssrgb\c50196\c50196\c50196;}
+\margl1440\margr1440\vieww15480\viewh11340\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs26 \cf2 \expnd0\expndtw0\kerning0
+Reviewer 1 Comments for the Author...
+\f1 \cf0 \
+In the revised version of \'93Variation in histone configurations correlates with gene expression across nine inbred strains of mice\'94 made a substantial set of revisions in response to reviewer comments including some effecting the main conclusions of the previous submission. While the author addressed many of my previous comments, some were still not adequately addressed as discussed in my specific comments below.\
+\
+Specific comments\
+1. The authors are still not adequately placing their work in the context of existing work. The authors do now cite papers on epigenetic variation across individuals for other species, but do not mention prior work on mouse. The statement \'93To address the lack of documented epigenetic variation in the DO/CC founders,\'85\'94 could give the reader the impression that their paper is the first to map epigenetic variation in these strains. However, previous work has mapped epigenetic variation mapped for at least several of the strains the authors consider in this paper. As an example see this paper from Christopher Glass lab \'93Analysis of Genetically Diverse Macrophages Reveals Local and Domain-wide Mechanisms that Control Transcription Factor Binding and Function\'94 (Link et al, Cell 2018) \
+\
+\pard\pardeftab720\partightenfactor0
+\cf3 Our apologies for missing this work in mice. We have added the citation mentioned and some additional ones to better cover work that has been done in mice. We rearranged the introduction slightly to improve the flow. \cf0 \
+\
+2. The authors are still claiming the discovery of cis-eQTL at Pkd2 (\'91Given that there is a cis-eQTL at this locus,\'92; p.22). However, I am still unclear as what FDR or p-value threshold is being used to declare it a cis-eQTL and if a p-value threshold is being used if it is being controlled for multiple testing.\
+\
+\cf3 We appologize for the lack of statistical evidence for a cis-eQTL here. We have added the LOD score for the genetic marker nearest to 
+\f2\i Pkd2
+\f1\i0  (LOD = 144.8) and two citations for other papers investigating eQTL in this population. The eQTL was not really our focus in the current study, since the eQTLs in this data set have been described in multiple places before. We were looking for epigenetic factors that might help give mechanistic insight into a known eQTL.\cf0 \
+\
+3. The last sentence of the introduction states \'93We then mapped gene expression to the imputed epigenetic states to assess the extent to which expression quantitative trait loci (eQTLs) in the DO were related to variation in epigenetic modifications.\'94 \'96 Is that really being done in the manuscript? The previous review pointed out issues in making conclusions on the relationship between eQTLs and epigenetic variation based on imputed epigenetic states.\
+\
+\cf3 We have changed this sentence to the following: 
+\f3\fs24 \cf4 \cb5 We then mapped gene expression to the imputed epigenetic states to assess the extent to which gene expression in the DO mice corresponded with imputed epigenetic variation.\cb1 \
+
+\f1\fs26 \cf3 \
+\pard\pardeftab720\partightenfactor0
+\cf0 \
+4. For Fig 2b, I did not see the description of the normalization in the caption. I think the actual enrichment values should still be reported at least in the supplement. Also to note, to me doing a column normalization would make more sense than a row normalization, since a row normalization is sensitive to the set of external annotations that are combined in the figure which is somewhat arbitrary.\
+\
+\pard\pardeftab720\partightenfactor0
+\cf3 We have added the following sentence to section B of the caption for Figure 2 that reads: 
+\f3\fs24 \cf4 \cb5 Rows were scaled to run between 0 and 1 for ease of visualization.\cb1 \
+
+\f1\fs26 \cf3 \
+We have also added a supplemental figure (Now Supp. Fig. 2) that shows the raw enrichment values.\
+We realize that matrix that results from a normalization of rows depends on the features selected. However, we wanted a visualization that indicated for each state, which feature it was most highly enriched around. Normalizing by columns asks which state is most enriched around each feature, which is a similar but different question. After looking at both types of normalization as well as the raw enrichment values, we feel that the row normalization is the best way to convey the information that we want to convey in this figure. \cf0 \
+\
+5. Fig. 4a and 5 units are still not defined on the y-axis. \
+\
+\cf3 We have added explicit labels to the y-axes of figures 4 and 5. To save space, we switched from reporting proportions to reporting percent. \
+\pard\pardeftab720\partightenfactor0
+\cf0 \
+\
+6. The authors make a statement \'93Neither subsetting of the DO animals affected the results, so all results presented here use all animals.\'94 \'96 I think that type of claim should be backed up by actually showing some type of result to support it.\
+\
+\pard\pardeftab720\partightenfactor0
+\cf3 Not sure what to do about this. A statistical test? Recreate all the figures?\
+number of eQTLs same in subset? sex by allele interactions?\
+Go back to Chick paper to see if they say anything about sex effects? Also a Munger, Gatti, Svenson paper Mammalian Genome that will have the bulk of the expression? original eQTL paper?\
+make highest level statement possible?\cf0 \
+\
+7. The authors state: \'93Strain-specific CpG sites were more commonly present in CAST, PWK, and B6 compared to the other strains (Fig. 3A), suggesting that these strains have more DNA methylation overall compared with the other strains.\'94 \'96 I don\'92t see why having more strain-specific CpG sites implies more methylation. Do they also have more CpGs in total?\
+\
+\cf3 This statement was not important to our conclusions, so we have removed it.\
+\pard\pardeftab720\partightenfactor0
+\cf0 \
+8. \'93This is not the standard method for testing associations between markers and gene expression in this type of population\'94 \'96 Would be clearer if stated what the standard is here.\
+\
+\pard\pardeftab720\partightenfactor0
+\cf3 We have edited this paragraph to the following:\
+\
+
+\f3\fs24 \cf4 \cb5 We then tested the association between each imputed chromatin state, SNP, or CpG site with gene expression in the DO. We tested each state independently. The standard method for testing associations is to include\
+all alleles (or chromatin states) in a single linear model. However, because there are varying numbers of alleles across modalities (eight haplotypes, 14 chromatin states, three DNA methylation values, \cb1 \
+\cb5 and two SNPs), we needed to constrain the degrees of freedom for all features. Thus, for all features, we tested only a single haplotype, chromatin state, etc. in each model.\cb1 \
+\pard\pardeftab720\partightenfactor0
+
+\f1\fs26 \cf0 \
+\
+9. Discussion states \'93Bivalent states are characterized by a combination of activating and repressing histone modifications (Voigt et al., 2013; Vastenhouw and Schier, 2012). Consistent with this definition, all five states included the repressive mark, H3K27me3, and at least one of the activating marks.\'94  - Usually bivalent states are associated in the literature with H3K27me3 and methylation at H3K4 so this might not be that consistent with state 5.\
+\
+\pard\pardeftab720\partightenfactor0
+\cf3 We are not sure how this description is inconsistent with State 5. State 5 has H3K27me3 and methylation at H3K4.\
+\pard\pardeftab720\partightenfactor0
+\cf0 \
+10. typos: Missing period on pg. 9, \'91chraomtin\'92, \'91seprately\'92\
+ \
+\pard\pardeftab720\partightenfactor0
+\cf3 Thank you, we have fixed these typos.\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf0 \cb6 \
+\pard\pardeftab720\partightenfactor0
+\cf0 \cb1 \
+\
+
+\f0 \cf2 Reviewer 2 Comments for the Author...
+\f1 \cf0 \
+The authors have revised the manuscript to address my concerns.
+\f4\fs32 \
+
+\f1\fs26 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf0 \cb6 \
+\pard\pardeftab720\partightenfactor0
+\cf0 \cb1 \
+\
+
+\f0 \cf2 Reviewer 3 Comments for the Author...
+\f1 \cf0 \
+The authors have satisfactorily responded to all my comments and suggestions. 
+\f4\fs32 \
+}

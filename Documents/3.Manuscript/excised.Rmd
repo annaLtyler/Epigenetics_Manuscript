@@ -307,3 +307,19 @@ negative effect on transcription of DNA methylation across all
 sites, there was no effect when looking at trimodal sites alone.}
 \label{supp_fig:trimodal}
 \end{figure}
+
+
+## Introduction 2
+
+This link between genetic variation and epigenetic 
+variation may be a critical piece of understanding 
+genetic susceptibility to disease. Because the majority 
+of disease-associated genetic variants discovered in 
+humans are in gene regulatory regions, it has been 
+suggested that it is the regulation of gene expression, 
+rather than alteration of protein function, that is the 
+primary mechanism through which genetic variants confer 
+disease risk \citep{maurano2012systematic, farh2015genetic, 
+pmid21617055, pmid19474294}. Detailed epigenomic landscapes, 
+therefore, may provide important mechanistic insight connecting 
+genotype to disease risk.

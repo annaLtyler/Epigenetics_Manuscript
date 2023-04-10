@@ -22,6 +22,12 @@ delete_previous = FALSE
 #delete_previous = TRUE
 ```
 
+```{r set_param}
+females_only = TRUE
+chow_only = FALSE
+```
+
+
 ```{r source_code}
 all.code.dir <- list.files(here("Code"), full.names = TRUE)
 for(i in 1:length(all.code.dir)){
@@ -164,13 +170,20 @@ the genome by the haplotype matrix for the gene.
 #The arrays are too big to store, so we
 #scan them right away and only keep the 
 #LOD scores.
-
 strain.order <- order.strains(dimnames(genoprobs[[1]])[[2]], rownames(methyl.mats[[1]]), col.table)
-common.ind <- intersect(rownames(expr), rownames(genoprobs[[1]]))
-common.expr.locale <- match(common.ind, rownames(expr))
-common.genoprob.locale <- match(common.ind, rownames(genoprobs[[1]]))
 rrbs.r2.file <- here("Results", "RRBS", "RRBS.R2.RDS")
 rrbs.coef.file <- here("Results", "RRBS", "RRBS.coef.RDS")
+
+if(females_only){
+  rrbs.r2.file <- gsub(".RDS", "_females.RDS", rrbs.r2.file)
+  rrbs.coef.file <- gsub(".RDS", "_females.RDS", rrbs.coef.file)
+
+}
+if(chow_only){
+  rrbs.r2.file <- gsub(".RDS", "_chow.RDS", rrbs.r2.file)
+  rrbs.coef.file <- gsub(".RDS", "_chow.RDS", rrbs.coef.file)
+}
+
 if(!file.exists(rrbs.r2.file) || delete_previous){
     sink(here("Results", "RRBS", "progress.txt"))
     all.rrbs.r2 <- all.rrbs.coef <- vector(mode = "list", length = length(methyl.id))
@@ -196,9 +209,26 @@ if(!file.exists(rrbs.r2.file) || delete_previous){
         gene.expr <- expr[,which(colnames(expr) == methyl.id[i]),drop=FALSE]
         
         if(length(gene.expr) == 0){cat(" No gene expression\n");next()}
+
+        sub.covar <- covar #duplicate covar in case we want to subset by both sex and diet
+        if(females_only){
+          sex.idx <- which(covar[,"sexM"] == 0)
+        }else{
+          sex.idx <- 1:nrow(covar)
+        }
+        if(chow_only){
+          diet.idx <- which(covar[,"diethf"] == 0)
+        }else{
+          diet.idx <- 1:nrow(covar)
+        }
+        sub.idx <- intersect(sex.idx, diet.idx)
+
+        adj.expr <- adjust(gene.expr[sub.idx,,drop=FALSE], covar[sub.idx,])
         
-        adj.expr <- adjust(gene.expr, covar)
-        
+        common.ind <- intersect(rownames(adj.expr), rownames(genoprobs[[1]]))
+        common.expr.locale <- match(common.ind, rownames(adj.expr))
+        common.genoprob.locale <- match(common.ind, rownames(genoprobs[[1]]))
+
         regression.models <- apply(rrbs.array[[1]][common.genoprob.locale,1,], 2, function(x) if(var(x) > 0){lm(adj.expr[common.expr.locale,]~x)}else{NA})
         rrbs.r2 <- sapply(regression.models, function(x) if(length(x) > 1){summary(x)$adj.r.squared}else{NA})
         all.rrbs.r2[[i]] <- rrbs.r2  
@@ -255,7 +285,15 @@ coef.conf <- sapply(binned.coef, function(x) t.test(x, conf.int = 99)$conf.int)
 
 imp.rrbs.effect <- rbind(coef.mean, coef.conf)
 colnames(imp.rrbs.effect) <- plot.coord
-saveRDS(imp.rrbs.effect, here("Results", "RRBS", "Imputed_RRBS_effect.RDS"))
+
+imputed.effect.file <- here("Results", "RRBS", "Imputed_RRBS_effect.RDS")
+if(females_only){
+  imputed.effect.file <- gsub(".RDS", "_females.RDS", imputed.effect.file)
+}
+if(chow_only){
+  imputed.effect.file <- gsub(".RDS", "_chow.RDS", imputed.effect.file)
+}
+saveRDS(imp.rrbs.effect, imputed.effect.file)
 
 plot.new()
 plot.window(xlim = c(-0.5, 1.5), ylim = c(min(coef.mean-coef.se), max(coef.mean+coef.se)))
@@ -322,7 +360,12 @@ scan_one_rrbs <- function(perm.data, p){
   if(is.na(imp.geno)){return(NA)}
 
   one.lod <- scan1(imp.geno, perm.data$gene.expr)
-  #quartz();plot(as.numeric(rownames(all.rrbs.lod[[i]])), all.rrbs.lod[[i]][,1], type  = "h",xlab = "Genomic Position", ylab = "DNA Methylation LOD score")
+  #plot(as.numeric(rownames(all.rrbs.lod[[i]])), all.rrbs.lod[[i]][,1], type  = "h",xlab = "Genomic Position", ylab = "DNA Methylation LOD score")
+
+  common.ind <- intersect(rownames(perm.data$gene.expr), rownames(imp.geno[[1]]))
+  common.expr.locale <- match(common.ind, rownames(perm.data$gene.expr))
+  common.genoprob.locale <- match(common.ind, rownames(imp.geno[[1]]))
+
   regression.models <- apply(imp.geno[[1]][common.genoprob.locale,1,], 2, 
       function(x) if(var(x) > 0){lm(perm.data$gene.expr[common.expr.locale,]~x)}else{NA})
   one.rrbs.r2 <- sapply(regression.models, function(x) if(length(x) > 1){summary(x)$adj.r.squared}else{NA})
@@ -356,6 +399,15 @@ order.mat <- perm.mat[perm.rows,]
 
 perm.lod.rrbs.file <- here("Results", "RRBS", "Perm.RRBS.LOD.RDS")
 perm.r2.rrbs.file <- here("Results", "RRBS", "Perm.RRBS.R2.RDS")
+
+if(females_only){
+  perm.lod.rrbs.file <- gsub(".RDS", "_females.RDS", perm.lod.rrbs.file)
+  perm.r2.rrbs.file <- gsub(".RDS", "_females.RDS", perm.r2.rrbs.file)
+}
+if(chow_only){
+  perm.lod.rrbs.file <- gsub(".RDS", "_chow.RDS", perm.lod.rrbs.file)
+  perm.r2.rrbs.file <- gsub(".RDS", "_chow.RDS", perm.r2.rrbs.file)
+}
 
 if(file.exists(perm.lod.rrbs.file)){
   perm.rrbs.lod <- readRDS(perm.lod.rrbs.file)
@@ -432,8 +484,22 @@ if(start.at < length(methyl.id)){
       if(length(expr.locale) == 0){cat(" Cannot find expression\n");next()}
       gene.expr <- expr[,expr.locale,drop=FALSE]
       adj.expr <- adjust(gene.expr, covar)
-      
-      perm.data <- list("gene.expr" = gene.expr, 
+
+      sub.covar <- covar #duplicate covar in case we want to subset by both sex and diet
+
+        if(females_only){
+          sex.idx <- which(covar[,"sexM"] == 0)
+        }else{
+          sex.idx <- 1:nrow(covar)
+        }
+        if(chow_only){
+          diet.idx <- which(covar[,"diethf"] == 0)
+        }else{
+          diet.idx <- 1:nrow(covar)
+        }
+        sub.idx <- intersect(sex.idx, diet.idx)
+
+      perm.data <- list("gene.expr" = gene.expr[sub.idx,,drop=FALSE], 
         "rrbs.mat" = rrbs.mat, "hap.mat" = hap.mat,
         "chr" = ordered.transcript.info[tr,"chromosome_name"])
 

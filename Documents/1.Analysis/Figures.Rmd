@@ -100,7 +100,7 @@ rownames(state.effects) <- 1:nrow(state.effects) #rename states in order of effe
 
 \pagebreak
 
-## Figure 1 - Decompositions of transcriptome and epigenetic features
+## Figure `r fig.counter` - Decompositions of transcriptome and epigenetic features
 
 The first two principal components of each genomic feature across
 nine inbred strains of mouse. In all panels each point represents
@@ -243,7 +243,7 @@ if(!embed.figures){
 
 \pagebreak
 
-## Figure 2 - Chromatin state overview
+## Figure `r fig.counter` - Chromatin state overview
 
 Overview of chromatin state composition, genomic 
 distribution, and effect on expression. (A) Emission 
@@ -474,7 +474,7 @@ if(!embed.figures){
 ```
 \pagebreak
 
-### Figure 3 - Strain-specific CpG sites
+### Figure `r fig.counter` - Strain-specific CpG sites
 
 Overview of strain-specific CpG sites. (A) Boxes 
 show proportion of strain-specific CpG sites that are present 
@@ -525,7 +525,8 @@ mtext("Proportion of CpGs present by strain", side = 3, col = title.color,
     font = 2, line = 0.5, cex = 0.9)
 par(xpd = NA)
 text(y = min(prop.cpg)-(min(prop.cpg)*0.02), x = 1:ncol(prop.cpg), 
-    strain.names[mean.order], col = title.color, font = 2, cex = 0.8)
+    strain.names[mean.order], col = title.color, font = 2, cex = 1.2,
+    srt = 45, adj = 1)
 par(xpd = TRUE)
 mtext("Proportion", side = 2, line = 2.5, col = title.color, font = 2)
 label_panel(par("usr"), bump.left = 0.1, bump.up = 0.13, label = "A")
@@ -537,8 +538,8 @@ par(mar = c(4, 10, 4, 4))
 a <- barplot(t(log10(both.enrich[all.enrich.order, ])), horiz = TRUE, las = 2, 
     col = c("#beaed4", "#7fc97f"), beside = TRUE)
 mtext("CpG Enrichment", side = 3, col = title.color, font = 2)
-mtext("log10(Fold Enrichment)", side = 1, col = title.color, font = 2, line = 2.5,
-    cex = 0.7)
+mtext(expression(log[10]("Fold Enrichment")), side = 1, 
+    col = title.color, font = 2, line = 3, cex = 1)
 segments(x0 = 0, y0 = 0, y1 = max(a), lwd = 2, col = zero.line.color)
 segments(x0 = -1.5, x1 = max(log10(both.enrich)), y0 = a[2,]+1, 
     lty = 1, col = "lightgray")
@@ -552,7 +553,7 @@ enrich.order <- order(enrich.prop)
 par(mar = c(4, 10, 4, 4))
 barplot(enrich.prop[enrich.order], horiz = TRUE, las = 2)
 mtext("Strain-Specific/Shared", side = 3, col = title.color, font = 2)
-mtext("Proportion", side = 1, col = title.color, font = 2, cex = 0.7, line = 2.5)
+mtext("Proportion", side = 1, col = title.color, font = 2, cex = 1, line = 2.5)
 segments(x0 = 1, y0 = 0-0.5, y1 = par("usr")[4]-0.5)
 label_panel(par("usr"), bump.left = 0.65, bump.up = 0.16, label = "C")
 
@@ -568,11 +569,11 @@ if(!embed.figures){
 
 \pagebreak
 
-## Figure 4 - Epigenetic state abundance
+## Figure `r fig.counter` - Epigenetic state abundance
 
 Relative abundance of chromatin states and methylated DNA. A. Each panel shows
 the abundance of a single chromatin state relative to gene TSS and TES. The 
-$y$-axis in each panel is the proportion of genes containing the state. Each
+$y$-axis in each panel is the percent of genes containing the state. Each
 panel has an independent $y$-axis to better show the shape of each curve.
 The $x$-axis is the relative gene position. The TSS and TES are marked as vertical
 gray dashed lines. B. The same data shown in panel A, but with all states overlayed
@@ -614,7 +615,8 @@ fig.counter <- fig.counter + 1
 ```
 
 ```{r abundance_plot, fig.height = 9.5, fig.width = 6.5, echo = FALSE}
-chrom.layout <- 1:(length(state.idx)+1)
+
+chrom.layout <- 1:(length(state.idx)+1) #add one for TSS/TES labels on top
 big.panel.len <- floor((length(state.idx)+1)/3)
 big.panel.idx <- (length(state.idx)+2):(length(state.idx)+4)
 other.layout <- rep(length(state.idx)+2, (length(state.idx)+1))
@@ -628,8 +630,12 @@ for(i in 1:3){
     other.layout[which(panel.layout == 2)] <- rev(big.panel.idx)[i]
     start.y <- end.y + 1
 }
+
+#combine panels for small and large panels
 layout.mat <- cbind(chrom.layout, other.layout)
-layout.mat <- rbind(layout.mat, c(max(layout.mat)+1, max(layout.mat)+2)) #add panels for x axis label
+
+#add panels for x axis label
+layout.mat <- rbind(layout.mat, c(max(layout.mat)+1, max(layout.mat)+2)) 
 
 xmin = -0.2; xmax = 1.2
 
@@ -655,7 +661,7 @@ label_panel(par("usr"), bump.left = 0.07, bump.up = -1, label = "A")
 
 #chromatin state abundance
 for(s in 1:length(state.abundance)){
-    state.avg <- state.abundance[[s]]$state.avg
+    state.avg <- state.abundance[[s]]$state.avg*100 #testing percent, rather than proportion
     state.pos <- state.abundance[[s]]$position
     
     #trim
@@ -667,7 +673,8 @@ for(s in 1:length(state.abundance)){
     min.abundance <- min(state.avg, na.rm = TRUE)
     abundance.range <- max.abundance - min.abundance
 
-    ymin <- (min.abundance-(abundance.range*0.08))
+    #ymin <- (min.abundance-(abundance.range*0.08))
+    ymin <- 0
     ymax <- (max.abundance + (abundance.range*0.08))
 
     plot(state.pos, state.avg, type = "l", ylim = c(ymin, ymax), 
@@ -680,6 +687,7 @@ for(s in 1:length(state.abundance)){
     #axis(2)
     segments(x0 = c(0,1), y0 = ymin, y1 = ymax, col = tss.line.color, lty = "dotted", lwd = 3)
     mtext(side = 2, paste("State", s), cex = 0.8, line = 2.5, col = title.color, font = 2)
+    mtext(side = 2, paste("%"), cex = 1, line = 1, col = title.color, font = 2, las = 2)
 
     axis.min.label <- signif(ceiling(ymin*10000)/10000, 2)
     axis.max.label <- signif(floor(ymax*10000)/10000, 2)
@@ -691,8 +699,8 @@ for(s in 1:length(state.abundance)){
 }
 
 #chromatin state abundance all together
-all.abund <- t(sapply(state.abundance, function(x) x$state.avg))[,idx]
-ymax <- ceiling(max(all.abund, na.rm = TRUE)*10)/10
+all.abund <- t(sapply(state.abundance, function(x) x$state.avg))[,idx]*100
+ymax <- ceiling(max(all.abund, na.rm = TRUE)*0.2)/0.2
 pos <- state.abundance[[1]]$position
 use.idx <- intersect(which(pos >= xmin), which(pos <= xmax))
 
@@ -702,20 +710,20 @@ plot.window(xlim = c(xmin, xmax), ylim = c(0,ymax))
 segments(x0 = c(0,1), x1 = c(0,1), y0 = c(0,0), y1 = c(ymax*0.95, ymax*0.95), 
     lty = "dotted", col = tss.line.color, lwd = 4)
 for(s in 1:length(state.idx)){ #ordered for ease of visualization
-    points(state.abundance[[s]]$position[use.idx], y = state.abundance[[s]]$state.avg[use.idx], 
+    points(state.abundance[[s]]$position[use.idx], y = state.abundance[[s]]$state.avg[use.idx]*100, 
     col = state.col[s], type = "l", lwd = 4)
 }
 axis(2, cex.axis = 1.5)
-mtext("Proportion", side = 2, line = 3, cex = 1.5, col = title.color)
+mtext("Percent", side = 2, line = 3, cex = 1.5, col = title.color)
 text(x = 0, y = ymax, labels = "TSS", font = 2, col = title.color, cex = 2)
 text(x = 1, y = ymax, labels = "TES", font = 2, col = title.color, cex = 2)
 label_panel(par("usr"), bump.left = 0.15, bump.up = 0, label = "B")
 
 #add labels for a few states
-text(0.15, 0.54, labels = "State 14", adj = 0, col = state.col[14], font = 2)
-text(-0.22, 0.41, labels = "State 1", adj = 0, col = state.col[1], font = 2)
-text(0.15, 0.26, labels = "State 3", adj = 0, col = state.col[3], font = 2)
-arrows(x0 = 0.2, y0 = 0.24, x1 = 0.05, y1 = 0.15, lwd = 2, col = title.color, length = 0.1)
+text(0.15, 54, labels = "State 14", adj = 0, col = state.col[14], font = 2, cex = 1.2)
+text(-0.22, 41, labels = "State 1", adj = 0, col = state.col[1], font = 2, cex = 1.2)
+text(0.15, 26, labels = "State 3", adj = 0, col = state.col[3], font = 2, cex = 1.2)
+arrows(x0 = 0.2, y0 = 24, x1 = 0.05, y1 = 15, lwd = 2, col = title.color, length = 0.1)
 
 #DNA methylation density
 par(mar = c(2,4,1,2))
@@ -737,7 +745,7 @@ text(x = 0, y = max(ytop)*1.05, labels = "TSS", font = 2, col = title.color, cex
 text(x = 1, y = max(ytop)*1.05, labels = "TES", font = 2, col = title.color, cex = 2)
 axis(2, cex.axis = 1.5)
 segments(x0 = xmin, x1 = xmax, y0 = 0)
-mtext("CpG Density", side = 2, line = 3, cex = 1.5, col = title.color)
+mtext("CpG/bp", side = 2, line = 3, cex = 1.5, col = title.color)
 label_panel(par("usr"), bump.left = 0.15, bump.up = 0.05, label = "C")
 
 #DNA methylation percent
@@ -785,7 +793,7 @@ if(!embed.figures){
 
 \pagebreak
 
-## Figure 5 - Epigenetic Effects
+## Figure `r fig.counter` - Epigenetic Effects
 
 Effects of chromatin states on gene expression. Each column shows 
 the effect of each chromatin state on gene expression in a different 
@@ -856,7 +864,7 @@ if(!embed.figures){
 panel.height <- 1/(length(state.idx)+2)
 layout(layout.mat, 
     heights = c(rep(panel.height/3, 2), rep(panel.height, length(state.idx)), panel.height/3),
-    widths = c(0.2, rep(1, 4)))
+    widths = c(0.25, rep(1, 4)))
 #layout.show(max(layout.mat))
 #plot column labels
 par(mar = c(0,1,0,1))
@@ -879,8 +887,8 @@ par(xpd = FALSE)
 #plot state labels
 par(mar = c(0,0,0,0))
 for(i in 1:length(state.idx)){
-    plot.text(paste("State", i), srt = 90, col = title.color, font = 2, cex = 1.3)
-
+    plot.text(x = 0.25, y = 0.5, paste("State", i), srt = 90, col = title.color, font = 2, cex = 1.3)
+    plot.text(x = 0.75, y = 0.5, paste("Eff. (AU)"), srt = 90, col = title.color, font = 2, cex = 1, add = TRUE)
     par(xpd = NA)
     text(x = 1.1, y = c(0.1, 0.5, 0.9), labels = c(-1, 0, 1), adj = 1, cex = 0.9)
     par(xpd = FALSE)
@@ -1003,7 +1011,7 @@ if(!embed.figures){
 
 \pagebreak
 
-## Figure 6 - DNA Methylation Effects
+## Figure `r fig.counter` - DNA Methylation Effects
 
 Effect of DNA methylation on gene expression (A) across gene expression
 in hepatocytes (B) across inbred strains and (C) when imputed into the
@@ -1162,16 +1170,15 @@ if(!embed.figures){
 ```
 \pagebreak
 
-## Figure 7 - Expression variance explained in the DO
+## Figure `r fig.counter` - Expression variance explained in the DO
 
-Gene expression variance in a DO population explained 
-by chromatin state compared to three other genomic features: 
-local haplotype, local SNP genotype, and local imputed DNA 
-methylation status. A. Distributions of gene expression variance 
-explained by each feature. B. Direct comparisons of 
-variance explained by local haplotype, and each of the other 
-genomic features. Blue lines show $y = x$. Each point is a 
-single transcript.
+Comparison of the variance explained in DO gene expression
+by four genomic features: haplotype (Hap.) chromatin state (Chrom.), 
+local SNP genotype (SNP), and local imputed DNA methylation status 
+(DM). A. Distributions of gene expression variance explained by each 
+feature. B. Direct comparisons of variance explained by local 
+haplotype, and each of the other genomic features. Blue lines 
+show $y = x$. Each point is a single transcript.
 
 ```{r read_r2_results}
 chrom.r2 <- readRDS(file.path(results.dir, "chQTL.state.R2.RDS"))
@@ -1185,7 +1192,8 @@ max.snp.r2 <- sapply(snp.r2, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)
 max.eqtl.r2 <- apply(eqtl.r2, 1, function(x) if(!all(is.na(x))){max(x, na.rm = TRUE)}else{NA})
 
 all.var.list <- list("Haplotype" = max.eqtl.r2, "Chromatin\nState" = max.chrom.r2,
-    "DNA\nMethylation" = max.methyl.r2, "SNPs" = max.snp.r2)
+    "DNA\nMethylation" = max.methyl.r2, "SNP" = max.snp.r2)
+short.names <- c("Hap.", "Chrom.", "DM", "SNP")
 
 common.transcripts <- Reduce("intersect", lapply(all.var.list, names))
 all.var.table <- Reduce("cbind", lapply(all.var.list, function(x) x[match(common.transcripts, names(x))]))
@@ -1217,18 +1225,8 @@ mtext("Variance Explained", side = 2, col = title.color, font = 2, line = 2.5, c
 label_panel(par("usr"), bump.left = 0.2, bump.up = 0.09, label = "A")
 
 par(xpd = NA)
-for(i in 1:ncol(all.var.table)){
-    if(i %% 2 == 0){
-        text.adj <- c(0.5, 0);text.y = -0.2
-    }else{
-        text.adj <- c(0.5, 0.5);text.y = -0.22
-    }
-    text(x = i, y = text.y, labels = colnames(all.var.table)[i], adj = text.adj,
-    col = title.color, font = 2, cex = 1)
-    if(i %% 2 == 1){
-        segments(x0 = i, y0 = text.y+0.05, y1 = -0.05)
-    }
-}
+text(x = 1:ncol(all.var.table), y = -0.1, labels = short.names, adj = 0.5,
+    col = title.color, font = 2, cex = 1.2)
 par(xpd = TRUE)
 
 axis.min <- 0
@@ -1280,7 +1278,7 @@ if(!embed.figures){
 
 \pagebreak
 
-## Figure 8 - Example Genetic and Epigenetic States for One Gene
+## Figure `r fig.counter` - Example Genetic and Epigenetic States for One Gene
 
 Example of epigenetic states and imputation results for a single 
 gene, \textit{Pkd2}. (A) The variance in DO gene expression 
@@ -1321,7 +1319,6 @@ covar <- expr.data$covar
 chrom.mats <- readRDS(file.path(results.dir, 
     paste0("Chromatin_States_", num.states, "_full_gene_1000.RData")))
 
-results.dir <- "~/Desktop/both_sexes"
 chrom.r2 <- readRDS(file.path(results.dir, "chQTL.state.R2.RDS"))
 methyl.r2 <- readRDS(here("Results", "RRBS", "RRBS.R2.RDS"))
 snp.r2 <- readRDS(here("Results", "SNPs", "SNP.R2.RDS"))
@@ -1527,7 +1524,7 @@ plot_together <- function(gene.id, mark.region.x = NULL){
     #add row for x axis
     layout.mat <- rbind(layout.mat, c((max(layout.mat)+1), 0))
 
-    layout(layout.mat, heights = c(1,0.2, 1, 1, 1, 0.2), widths = c(1,0.4))
+    layout(layout.mat, heights = c(1,0.2, 1, 1, 1, 0.2), widths = c(1,0.5))
         #layout.show(7)
 
     #panel 1 - R2 scores for all features
@@ -1561,7 +1558,8 @@ plot_together <- function(gene.id, mark.region.x = NULL){
     #legend for panel 1
     par(xpd = NA)
     legend(x = global.max.pos, y = global.max.r2, pch = c("X", "+", "O"), 
-        col = c("#e41a1c", "#377eb8", "#4daf4a"), legend = c("SNP", "Chrom", "Methyl"))
+        col = c("#e41a1c", "#377eb8", "#4daf4a"), legend = c("SNP", "Chrom", "Methyl"),
+        cex = 1.2)
     par(xpd = TRUE)
 
     #panel 2 - direction of transcription
@@ -1578,7 +1576,7 @@ plot_together <- function(gene.id, mark.region.x = NULL){
     #if we are using a subset of states, we need to color them appropriately
     plot.chrom.mat(renamed.chrom, num.states = num.states, 
         xlim = c(global.min.pos, global.max.pos), state.cols = all.state.col,
-        ylab = "")
+        ylab = "", key.label.pos = "left", key.label.nudge = -2e2)
     mtext("Chromatin State", side = 2, line = 1.5, col = title.color, font = 2)
     label_panel(par("usr"), bump.left = 0.11, bump.up = 0.03, label = "B")
 
@@ -1588,7 +1586,8 @@ plot_together <- function(gene.id, mark.region.x = NULL){
         snp.colors <- c("A" = "#5CC93B", "C" = "#0D00C4", "G" = "#F3B63F", "T" = "#BB261A")
         plot.snp.mat(gene.snp.alleles[snp.strain.order,], num.states = 4, 
         xlim = c(global.min.pos, global.max.pos), ylab = "", state.cols = snp.colors,
-        state.labels = c("A", "C", "G", "T"), empty.cell.color = "gray90")
+        state.labels = c("A", "C", "G", "T"), empty.cell.color = "gray90",
+        key.label.pos = "left", key.label.nudge = -5e2, key.label.cex = 1.2)
         mtext("SNPs", side = 2, line = 1.5, col = title.color, font = 2)
     }
     if(length(gene.snp.alleles) > 0 && ncol(gene.snp.alleles) == 1){
@@ -1605,7 +1604,8 @@ plot_together <- function(gene.id, mark.region.x = NULL){
     if(length(gene.methyl.mat3) > 0){
     #subset to same range as chromatin state matrix
     plot.methyl.mat(methyl.mat = gene.methyl.mat3[methyl.strain.order,,drop=FALSE], 
-        xlim = c(global.min.pos, global.max.pos), ylab = "")
+        xlim = c(global.min.pos, global.max.pos), ylab = "", key.label.pos = "left", 
+        key.label.nudge = -5e2, key.label.cex = 1.2)
     mtext("% Methylation", side = 2, line = 1.5, col = title.color, font = 2)
 
     }else{
@@ -1618,8 +1618,8 @@ plot_together <- function(gene.id, mark.region.x = NULL){
     hap.order <- order(hap.coef[1:8])
     barplot(hap.coef[hap.order], col = hap.cols[hap.order], horiz = TRUE, las = 2,
     names = rev(rownames(renamed.chrom)))
-    mtext("Haplotype Effect", side = 1, line = 3, col = title.color, 
-        font = 2, cex = 0.7)
+    mtext("Haplotype Effect (AU)", side = 1, line = 2.5, col = title.color, 
+        font = 2, cex = 1)
     label_panel(par("usr"), bump.left = 0.15, bump.up = 0.05, label = "E")
 
     if(length(gene.expr) > 1){
@@ -1645,8 +1645,8 @@ plot_together <- function(gene.id, mark.region.x = NULL){
         } 
         par(xpd = TRUE)
         axis(1)
-        mtext("Inbred Expression (AU)", side = 1, line = 2, col = title.color, 
-            font = 2, cex = 0.7)
+        mtext("Inbred Expression (AU)", side = 1, line = 2.5, col = title.color, 
+            font = 2, cex = 1)
         
     }else{
         plot.text("No Inbred Expression Data")
@@ -1656,7 +1656,7 @@ plot_together <- function(gene.id, mark.region.x = NULL){
     mtext(gene.name, side = 3, outer = TRUE, line = -2.5, col = title.color, font = 2)
 
     par(mar = c(0,0,0,0))
-    plot.text("Relative Position", col = title.color, cex = 1.3, font = 2)
+    plot.text("Relative Position", col = title.color, cex = 1.5, font = 2)
 
 }
 ```
@@ -1673,7 +1673,7 @@ fig.counter <- fig.counter + 1
 gene.id <- gene.info[which(gene.info[,"external_gene_name"] == gene.name)[1],1]
 if(!embed.figures){
     png(here("Documents", "3.Manuscript", "Figures", paste0("Fig", fig.counter, "_Example.png")),
-    width = 6.5, height = 7, units = "in", res = 300)
+    width = 7, height = 7, units = "in", res = 300)
 }
 plot_together(gene.id, mark.region.x = c(0, 0.255))
 
@@ -1688,14 +1688,18 @@ if(!embed.figures){
 
 ## Supplemental Figures
 
-### Supplemental Figure S1 - Feature Correlations Across Strains
+```{r set_counter}
+supp.fig.counter <- 1
+```
 
-S1. Correlations of multiple genomic features across inbred
-mice. Each panel shows one genomic feature A. Transcriptome;
-B. Methylome; C. H3K27ac; D. H3K27me3; E. H3K4me1; F. H3K4me3.
-These figures complement Figure 1 in the manuscript and show
-a more finely detailed structure of the correlations between
-individuals and strains.
+### Supplemental Figure S`r supp.fig.counter` - Feature Correlations Across Strains
+
+S`r supp.fig.counter`. Correlations of multiple genomic features 
+across inbred mice. Each panel shows one genomic feature A. 
+Transcriptome; B. Methylome; C. H3K27ac; D. H3K27me3; E. H3K4me1; 
+F. H3K4me3. These figures complement Figure 1 in the manuscript 
+and show a more finely detailed structure of the correlations 
+between individuals and strains.
 
 ```{r supp_fig1_correlations}
 
@@ -1732,8 +1736,6 @@ plot_one_cor <- function(cor.mat, label = ""){
 #layout(layout.mat, heights = c(0.3,1), widths = c(0.2, 1))
 #plot_one_cor(rna.seq.cor, "Transcriptome")
 
-supp.fig.counter <- 1
-
 png(here("Documents","3.Manuscript", "Figures", 
     "Supplemental", paste0("Supp_Fig_S", supp.fig.counter, "_Feature_Correlations.png")), 
     width = 12, height = 18, units = "in", res = 200)
@@ -1759,7 +1761,60 @@ if(!embed.figures){
 
 \pagebreak
 
-### Supplemental Figure S2 - State abundance by strain
+### Supplemental Figure S`r supp.fig.counter` - Raw Enrichment Values
+
+S`r supp.fig.counter`. This figure corresponds to Figure 2B, which
+shows enrichment of each state around predicted functional elements
+in the mouse genome. Instead of scaled values, this figure shows
+raw enrichment values with the enrichment value printed in each 
+cell.
+
+```{r raw_enrichment}
+supp.fig.counter <- supp.fig.counter + 1
+
+if(!embed.figures){
+    png(here("Documents", "3.Manuscript", "Figures", "Supplemental", 
+    paste0("Supp_Fig_S", supp.fig.counter, "_Raw_Enrichments.png")), 
+    height = 7, width = 7, units = "in", res = 300)
+}
+
+par(mar = c(8, 4, 2, 2))
+imageWithText(round(sub.enrichment[,col.order], 2), use.pheatmap.colors = TRUE, 
+    show.text = TRUE, col.names = names(enrichment.col)[col.order],
+    row.names = paste("State", 1:length(state.idx)), col.text.shift = -0.7, 
+    col.text.cex = 1, row.text.shift = -0.5, cex = 0.8)
+
+if(label.fig){
+    mtext(paste0("Supp. Fig. S", supp.fig.counter), side = 3, outer = TRUE, line = -1.5, 
+    adj = 0)
+}
+
+if(!embed.figures){
+    dev.off()
+}
+
+```
+
+```{r test_col_norm, eval = FALSE}
+
+col_norm <- apply(sub.enrichment[,col.order], 2, function(x) scale.between.vals(x, 0,1))
+par(mar = c(8, 4, 2, 2))
+imageWithText(round(col_norm, 2), use.pheatmap.colors = TRUE, 
+    show.text = TRUE, col.names = names(enrichment.col)[col.order],
+    row.names = paste("State", 1:length(state.idx)), col.text.shift = -0.7, 
+    col.text.cex = 1, row.text.shift = -0.5)
+
+imageWithText(log10(sub.enrichment[,col.order]), use.pheatmap.colors = TRUE, 
+    show.text = TRUE, col.names = names(enrichment.col)[col.order],
+    row.names = paste("State", 1:length(state.idx)), col.text.shift = -0.7, 
+    col.text.cex = 1, row.text.shift = -0.5)
+
+```
+
+\pagebreak
+
+
+### Supplemental Figure S`r supp.fig.counter` - State abundance by strain
 
 These figures are companions to those shown in Figure 4. 
 Each panel shows the abundance of a single state for each 
@@ -1778,6 +1833,8 @@ legend.layout <- c(0, rep(num.states+3, 6), rep(0, num.states-5))
 layout.mat <- cbind(panel.layout, legend.layout)
 
 supp.fig.counter <- supp.fig.counter + 1
+
+
 ```
 
 ```{r plot_abundance_by_strain}
@@ -1862,7 +1919,7 @@ if(!embed.figures){
 \pagebreak
 
 
-### Supplemental Figure S3 - DNA methylation percent by strain
+### Supplemental Figure S`r supp.fig.counter` - DNA methylation percent by strain
 
 This figure is a companion to the DNA methylation percent
 panel in Figure 4. It shows DNA methylation percent for 
@@ -1907,7 +1964,7 @@ if(!embed.figures){
 
 \pagebreak
 
-### Supplemental Figure S4 - Methylation by State
+### Supplemental Figure S`r supp.fig.counter` - Methylation by State
 
 The following figure shows the association of each chromatin 
 state to gene expression for reference in the first colum. The
@@ -2124,7 +2181,7 @@ if(!embed.figures){
 
 
 
-### Supplemental Figure S5 - Emissions comparisons across models
+### Supplemental Figure S`r supp.fig.counter` - Emissions comparisons across models
 
 Made in keynote
 
@@ -2133,7 +2190,7 @@ supp.fig.counter <- supp.fig.counter + 1
 ```
 
 
-### Supplemental Figure S6 - Abundance comparisons across models
+### Supplemental Figure S`r supp.fig.counter` - Abundance comparisons across models
 
 Made in keynote
 
@@ -2141,7 +2198,7 @@ Made in keynote
 supp.fig.counter <- supp.fig.counter + 1
 ```
 
-### Supplemental Figure S7 - Effect comparisons across models
+### Supplemental Figure S`r supp.fig.counter` - Effect comparisons across models
 
 Made in Keynote
 
@@ -2149,7 +2206,7 @@ Made in Keynote
 supp.fig.counter <- supp.fig.counter + 1
 ```
 
-### Supplemental Figure S8 - Imputation Schematic
+### Supplemental Figure S`r supp.fig.counter` - Imputation Schematic
 
 Made in Keynote
 
@@ -2157,7 +2214,7 @@ Made in Keynote
 supp.fig.counter <- supp.fig.counter + 1
 ```
 
-### Supplemental Figure S9 - Empirical p value distributions
+### Supplemental Figure S`r supp.fig.counter` - Empirical p value distributions
 
 This figure shows empirical $p$-value distributions obtained
 by permuting imputed genomic features and associating them
@@ -2200,6 +2257,10 @@ if(!embed.figures){
 
 \pagebreak
 
+## Old Figures
+
+No code beyond this point is executed.
+
 ## Original Figure 6 - Expression Variance Explained in the DO
 
 Gene expression variance in a DO population explained 
@@ -2214,7 +2275,7 @@ single transcript.
 ```{r imputed_read_data, echo = FALSE, eval = FALSE}
 #matched variance explained from each genomic feature
 all.var.exp <- readRDS(here("Results", "SNPs", "All.Variance.Explained.RDS")) #generated in 4.1_Overlay_Imputed_R2.Rmd
-colnames(all.var.exp) <- c("Haplotype", "Chromatin\nState", "SNP", "DNA\nMethylation")
+colnames(all.var.exp) <- c("Hap.", "Chrom.", "SNP", "DM")
 ```
 
 ```{r plot_imputed, echo = FALSE, fig.width = 10, fig.height = 2.5, eval = FALSE}
@@ -2235,6 +2296,7 @@ mtext("Variance Explained", side = 2, col = title.color, font = 2, line = 2.5)
 label_panel(par("usr"), bump.left = 0.2, bump.up = 0.09, label = "A")
 
 par(xpd = NA)
+
 for(i in 1:ncol(all.var.exp)){
     if(i %% 2 == 0){
         text.adj <- c(0.5, 0);text.y = -0.2
