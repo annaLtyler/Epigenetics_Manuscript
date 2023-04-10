@@ -28,6 +28,9 @@ num.states = as.numeric(param["num_states",])
 
 is.interactive = FALSE
 #is.interactive = TRUE
+
+females_only = TRUE
+chow_only = FALSE
 ```
 
 The figures in this document refer to the `r num.states`-state model.
@@ -63,10 +66,29 @@ covar <- expr.data$covar
 chrom.mats <- readRDS(file.path(results.dir, 
     paste0("Chromatin_States_", num.states, "_full_gene_1000.RData")))
 
-chrom.r2 <- readRDS(file.path(results.dir, "chQTL.state.R2.RDS"))
-methyl.r2 <- readRDS(here("Results", "RRBS", "RRBS.R2.RDS"))
-snp.r2 <- readRDS(here("Results", "SNPs", "SNP.R2.RDS"))
-eqtl.r2 <- readRDS(file.path(results.dir, "eQTL.hap.R2.RDS"))
+
+chrom.r2.file <- file.path(results.dir, "chQTL.state.R2.RDS")
+methyl.r2.file <- here("Results", "RRBS", "RRBS.R2.RDS")
+snp.r2.file <- here("Results", "SNPs", "SNP.R2.RDS")
+eqtl.r2.file <- file.path(results.dir, "eQTL.hap.R2.RDS")
+
+if(females_only){
+    chrom.r2.file <- gsub(".RDS", "_females.RDS", chrom.r2.file)
+    methyl.r2.file <- gsub(".RDS", "_females.RDS", methyl.r2.file)
+    snp.r2.file <- gsub(".RDS", "_females.RDS", snp.r2.file)
+    eqtl.r2.file <- gsub(".RDS", "_females.RDS", eqtl.r2.file)
+}
+if(chow_only){
+    chrom.r2.file <- gsub(".RDS", "_chow.RDS", chrom.r2.file)
+    methyl.r2.file <- gsub(".RDS", "_chow.RDS", methyl.r2.file)
+    snp.r2.file <- gsub(".RDS", "_chow.RDS", snp.r2.file)
+    eqtl.r2.file <- gsub(".RDS", "_chow.RDS", eqtl.r2.file)
+}
+
+chrom.r2 <- readRDS(chrom.r2.file)
+methyl.r2 <- readRDS(methyl.r2.file)
+snp.r2 <- readRDS(snp.r2.file)
+eqtl.r2 <- readRDS(eqtl.r2.file)
 
 inbred.expr <- readRDS(here("Data", "RNASeq", "Strain_Scaled_C_Expression.RData"))
 
@@ -134,7 +156,14 @@ colnames(r2.mat) <- c("Haplotype_R2", "Chromatin_R2", "SNP_R2", "Methylation_R2"
 if(is.interactive){quartz()}
 pairs(r2.mat)
 
-saveRDS(r2.mat, file.path(results.dir, "All.Variance.Explained.RDS"))
+var.exp.file <- file.path(results.dir, "All.Variance.Explained.RDS")
+if(females_only){
+    var.exp.file <- gsub(".RDS", "_females.RDS", var.exp.file)
+}
+if(chow_only){
+    var.exp.file <- gsub(".RDS", "_chow.RDS", var.exp.file)
+}
+saveRDS(r2.mat, var.exp.file)
 ```
 
 ```{r plot_comp, fig.width = 9, fig.height = 6}
