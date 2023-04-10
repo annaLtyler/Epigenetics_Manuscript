@@ -122,19 +122,19 @@ geno.coef.file <- file.path(results.dir, "eQTL.hap.coef.RDS")
 geno.r2.file <- file.path(results.dir, "eQTL.hap.R2.RDS")
 
 if(females_only){
-  chrom.coef.file <- gsub(".RDS", "_female.RDS" chrom.coef.file)
-  chrom.r2.file <- gsub(".RDS", "_female.RDS" chrom.r2.file)
+  chrom.coef.file <- gsub(".RDS", "_female.RDS", chrom.coef.file)
+  chrom.r2.file <- gsub(".RDS", "_female.RDS", chrom.r2.file)
 
-  geno.coef.file <- gsub(".RDS", "_female.RDS" geno.coef.file)
-  geno.r2.file <- gsub(".RDS", "_female.RDS" geno.r2.file)
+  geno.coef.file <- gsub(".RDS", "_female.RDS", geno.coef.file)
+  geno.r2.file <- gsub(".RDS", "_female.RDS", geno.r2.file)
 }
 
 if(chow_only){
-  chrom.coef.file <- gsub(".RDS", "_chow.RDS" chrom.coef.file)
-  chrom.r2.file <- gsub(".RDS", "_chow.RDS" chrom.r2.file)
+  chrom.coef.file <- gsub(".RDS", "_chow.RDS", chrom.coef.file)
+  chrom.r2.file <- gsub(".RDS", "_chow.RDS", chrom.r2.file)
 
-  geno.coef.file <- gsub(".RDS", "_chow.RDS" geno.coef.file)
-  geno.r2.file <- gsub(".RDS", "_chow.RDS" geno.r2.file)
+  geno.coef.file <- gsub(".RDS", "_chow.RDS", geno.coef.file)
+  geno.r2.file <- gsub(".RDS", "_chow.RDS", geno.r2.file)
 }
 
 if(delete.previous){
