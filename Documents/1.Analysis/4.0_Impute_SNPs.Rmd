@@ -587,7 +587,16 @@ r2.p <- sapply(1:length(all.snp.r2),
 names(r2.p) <- names(all.snp.r2)
 
 results.table <- cbind(max.snp.r2, r2.p)
-saveRDS(results.table, here("Results", "SNPs", "Perm_Results.RDS"))
+
+perm.results.file <- here("Results", "SNPs", "Perm_Results.RDS")
+if(females_only){
+  perm.results.file <- gsub(".RDS", "_females.RDS", perm.results.file)
+}
+if(chow_only){
+  perm.results.file <- gsub(".RDS", "_chow.RDS", perm.results.file)
+}
+
+saveRDS(results.table, perm.results.file)
 
 r2.p[low.lod.idx] <- NA
 hist(r2.p, main = "R2 p",
