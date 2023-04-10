@@ -396,6 +396,13 @@ plot.coord <- coord.bins[1:(length(coord.bins)-1)]
 all.coord <- unlist(lapply(use.idx, function(x) as.numeric(names(centered.coord[[x]]))))
 
 state.coef.file <- file.path(results.dir, "State_Coef_SE_DO.RDS")
+if(females_only){
+  state.coef.file <- gsub(".RDS", "_females.RDS", state.coef.file)
+}
+if(chow_only){
+  state.coef.file <- gsub(".RDS", "_chow.RDS", state.coef.file)
+}
+
 
 if(!file.exists(state.coef.file)){
 
@@ -462,6 +469,13 @@ ymin <- min(sapply(chrom.r2, min), na.rm = TRUE)
 ymax <- max(sapply(chrom.r2, max), na.rm = TRUE)
 
 state.var.file <- file.path(results.dir, "State_Var_SE_DO.RDS")
+if(females_only){
+  state.var.file <- gsub(".RDS", "_females.RDS", state.var.file)
+}
+if(chow_only){
+  state.var.file <- gsub(".RDS", "_chow.RDS", state.var.file)
+}
+
 if(!file.exists(state.var.file)){
 
   state.var.se <- vector(mode = "list", length = num.states)

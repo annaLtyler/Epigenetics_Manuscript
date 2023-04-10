@@ -280,7 +280,7 @@ if(!file.exists(snp.r2.file)){
 
         regression.models  <- apply(snp.array[[1]], 3, function(x) lm(adj.expr[common.expr.locale,]~x[common.genoprob.locale,]))
         snp.r2.test <- sapply(regression.models, function(x) if(length(x) > 1){summary(x)$adj.r.squared}else{NA})
-        all.snp.r2[[i]] <- snp.r2
+        all.snp.r2[[i]] <- snp.r2.test
         snp.coef <- sapply(regression.models, function(x) if(length(x) > 1){coef(x)[2:length(coef(x))]}else{rep(NA, 4)})
         all.snp.coef[[i]] <- snp.coef
         cat("\n")
