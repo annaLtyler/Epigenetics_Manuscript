@@ -1701,6 +1701,7 @@ F. H3K4me3. These figures complement Figure 1 in the manuscript
 and show a more finely detailed structure of the correlations 
 between individuals and strains.
 
+
 ```{r supp_fig1_correlations}
 
 #read/generate data
@@ -1738,16 +1739,23 @@ plot_one_cor <- function(cor.mat, label = ""){
 
 png(here("Documents","3.Manuscript", "Figures", 
     "Supplemental", paste0("Supp_Fig_S", supp.fig.counter, "_Feature_Correlations.png")), 
-    width = 12, height = 18, units = "in", res = 200)
+    width = 18, height = 18, units = "in", res = 200)
 full.layout <- matrix(c(0,1,0,4,2,3,5,6,0,7,0,10,8,9,11,12,0,13,0,16,14,15,17,18), 
     ncol = 4, byrow = TRUE)
-layout(full.layout, heights = rep(c(0.3, 1), 3), widths = rep(c(0.3, 1), 2))
+legend.layout <- matrix(0, nrow = nrow(full.layout), ncol = 2)
+legend.layout[2,1] <- max(full.layout+1)
+full.layout <- cbind(full.layout, legend.layout)
+layout(full.layout, heights = rep(c(0.3, 1), 3), widths = c(rep(c(0.3, 1), 2), 1, 0.3))
+#layout.show(19);dev.off()
 plot_one_cor(rna.seq.cor, "Transcriptome")
 plot_one_cor(methylome.cor, "Methylome")
 for(i in 1:length(peakome.cor)){
     plot_one_cor(peakome.cor[[i]], names(peakome.cor)[i])
 }
-
+legend.text <- add.carriage.returns(paste0("Supp. Fig. S", supp.fig.counter, ". Correlations of multiple genomic features across inbred mice. Each panel shows one genomic feature A. Transcriptome; B. Methylome; C. H3K27ac; D. H3K27me3; E. H3K4me1; F. H3K4me3. These figures complement Figure 1 in the manuscript and show a more finely detailed structure of the correlations between individuals and strains."), 
+    max.char.per.line = 60)
+par(mar = c(0,0,0,4))
+plot.text(x = 0, y = 0.5, legend.text, adj = 0)
 if(label.fig){
     mtext(paste0("Supp. Fig. S", supp.fig.counter), side = 3, outer = TRUE, line = -1.5, 
     adj = 0)
@@ -1769,20 +1777,31 @@ in the mouse genome. Instead of scaled values, this figure shows
 raw enrichment values with the enrichment value printed in each 
 cell.
 
-```{r raw_enrichment}
+```{r increment_count}
 supp.fig.counter <- supp.fig.counter + 1
+```
+
+```{r raw_enrichment}
 
 if(!embed.figures){
     png(here("Documents", "3.Manuscript", "Figures", "Supplemental", 
     paste0("Supp_Fig_S", supp.fig.counter, "_Raw_Enrichments.png")), 
-    height = 7, width = 7, units = "in", res = 300)
+    height = 7, width = 9, units = "in", res = 300)
 }
 
-par(mar = c(8, 4, 2, 2))
+layout.mat <- matrix(c(1,2), ncol = 2)
+layout(layout.mat, widths = c(1, 0.5))
+
+par(mar = c(8, 4, 2, 0))
 imageWithText(round(sub.enrichment[,col.order], 2), use.pheatmap.colors = TRUE, 
     show.text = TRUE, col.names = names(enrichment.col)[col.order],
     row.names = paste("State", 1:length(state.idx)), col.text.shift = -0.7, 
     col.text.cex = 1, row.text.shift = -0.5, cex = 0.8)
+
+legend.text <- add.carriage.returns(paste0("Supp. Fig. S", supp.fig.counter, ". This figure corresponds to Figure 2B, which shows enrichment of each state around predicted functional elements in the mouse genome. Instead of scaled values, this figure shows raw fold enrichment values with the enrichment value printed in each cell."),
+    max.char.per.line = 30)
+par(mar = c(0,0,0,4))
+plot.text(x = 0, y = 0.82, legend.text, adj = 0)
 
 if(label.fig){
     mtext(paste0("Supp. Fig. S", supp.fig.counter), side = 3, outer = TRUE, line = -1.5, 
@@ -1831,22 +1850,21 @@ state.position <- readRDS(file.path(results.dir, "Chromatin.State.Position.Far.G
 panel.layout <- matrix(1:(num.states+2), ncol = 1) #add a panel for stuff at the top, and one for stuff at the bottom
 legend.layout <- c(0, rep(num.states+3, 6), rep(0, num.states-5))
 layout.mat <- cbind(panel.layout, legend.layout)
-
+legend.layout <- matrix(c(0, rep(max(layout.mat)+1, 8), rep(0, 7)), ncol = 1)
+full.layout <- cbind(layout.mat, legend.layout)
 supp.fig.counter <- supp.fig.counter + 1
-
-
 ```
 
 ```{r plot_abundance_by_strain}
 
 if(!embed.figures){
-    png(here("Documents", "3.Manuscript", "Figures", "Supplemental", 
-    paste0("Supp_Fig_S", supp.fig.counter, "_State_Abundance_by_Strain.png")), 
-    height = 11, width = 3, units = "in", res = 300)
+    pdf(here("Documents", "3.Manuscript", "Figures", "Supplemental", 
+    paste0("Supp_Fig_S", supp.fig.counter, "_State_Abundance_by_Strain.pdf")), 
+    height = 11, width = 6)
 }
 
 panel.height <- 1/(length(state.idx)+2)
-layout(layout.mat, widths = c(1, 0.35),
+layout(full.layout, widths = c(1, 0.35,1),
     heights = c(panel.height/2, rep(panel.height, length(use.states)), panel.height/2))
 #layout.show(17)
 # add TSS/TES labels for chromatin state plots
@@ -1904,6 +1922,11 @@ plot.window(c(0, 1), c(0,1))
 legend(0,1, lty = 1, col = strain.table[,3], legend = strain.table[,1], 
     lwd = 3, cex = 0.8)
 
+legend.text <- add.carriage.returns(paste0("Supp. Fig. S", supp.fig.counter, ". These figures are companions to those shown in Figure 4. Each panel shows the abundance of a single state for each strain. The color of each line indicates the strain. The abundance pattern of each state is largely identical across the strains. Deviations are seen only outside the gene body for very rare states are are thus artefacts due to low numbers of example genes."),
+    max.char.per.line = 35)
+par(mar = c(0,0,0,2))
+plot.text(x = 0, y = 0.8, legend.text, adj = 0)
+
 
 if(label.fig){
     mtext(paste0("Supp. Fig. S", supp.fig.counter), side = 3, outer = TRUE, line = -1.5, 
@@ -1935,8 +1958,11 @@ supp.fig.counter <- supp.fig.counter + 1
 if(!embed.figures){
     png(here("Documents", "3.Manuscript", "Figures", "Supplemental", 
     paste0("Supp_Fig_S", supp.fig.counter, "_DNA_Methylation_Percent_by_Strain.png")), 
-    height = 4, width = 4, units = "in", res = 300)
+    height = 5, width = 8.5, units = "in", res = 300)
 }
+
+layout.matrix <- matrix(c(1,2), ncol = 2)
+layout(layout.matrix, widths = c(1,0.5))
 
 plot.new()
 plot.window(xlim = c(xmin, xmax), ylim = c(0, 100))
@@ -1951,6 +1977,11 @@ mtext("Relative Position", side = 1, line = 2.5, col = title.color)
 mtext("Percent Methylated", side = 2, line = 2.5, col = title.color) 
 legend("bottomright", lty = 1, col = strain.table[,3], legend = strain.table[,1], 
     lwd = 3, cex = 0.5)
+
+legend.text <- add.carriage.returns(paste0("Supp. Fig.", supp.fig.counter, ". This figure is a companion to the DNA methylation percent panel in Figure 4. It shows DNA methylation percent for each strain along the gene body. Strain is indicated by color."),
+    max.char.per.line = 35)
+par(mar = c(0,0,0,2))
+plot.text(x = 0, y = 0.8, legend.text, adj = 0, cex = 0.8)
 
 if(label.fig){
     mtext(paste0("Supp. Fig. S", supp.fig.counter), side = 3, outer = TRUE, line = -1.5, 

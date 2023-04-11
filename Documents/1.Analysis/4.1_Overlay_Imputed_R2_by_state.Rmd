@@ -29,11 +29,27 @@ num.states = as.numeric(param["num_states",])
 is.interactive = FALSE
 #is.interactive = TRUE
 
-females_only = TRUE
+females_only = FALSE
 chow_only = FALSE
 ```
 
+```{r exp_text}
+sex_text <- "Both sexes were used."
+if(females_only){
+    sex_text <- "Only females were used."
+}
+diet_text <- "Both diets were used."
+if(chow_only){
+    diet_text <- "Only chow-fed animals were used."
+}
+```
+
 The figures in this document refer to the `r num.states`-state model.
+
+`r sex_text`
+
+`r diet_text`
+
 
 ```{r load_libraries}
 library(here)
@@ -73,10 +89,10 @@ snp.r2.file <- here("Results", "SNPs", "SNP.R2.RDS")
 eqtl.r2.file <- file.path(results.dir, "eQTL.hap.R2.RDS")
 
 if(females_only){
-    chrom.r2.file <- gsub(".RDS", "_females.RDS", chrom.r2.file)
+    chrom.r2.file <- gsub(".RDS", "_female.RDS", chrom.r2.file)
     methyl.r2.file <- gsub(".RDS", "_females.RDS", methyl.r2.file)
     snp.r2.file <- gsub(".RDS", "_females.RDS", snp.r2.file)
-    eqtl.r2.file <- gsub(".RDS", "_females.RDS", eqtl.r2.file)
+    eqtl.r2.file <- gsub(".RDS", "_female.RDS", eqtl.r2.file)
 }
 if(chow_only){
     chrom.r2.file <- gsub(".RDS", "_chow.RDS", chrom.r2.file)

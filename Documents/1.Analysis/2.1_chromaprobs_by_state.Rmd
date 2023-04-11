@@ -228,7 +228,7 @@ scan_chrom_transcript_by_state <- function(gene.id,
     #calculate R2
     #adjust expression for covariates first, so we don't include 
     #the covariates in the variance explained
-    adj.expr <- adjust(expr[grep("F", rownames(expr)),expr.locale,drop=FALSE], covar)
+    adj.expr <- adjust(expr[,expr.locale,drop=FALSE], sub.covar)
 
     all.models <- apply(geno[[1]], 3, function(x) apply(x, 2, function(y) lm(adj.expr~y)))
     all.r2 <- sapply(all.models, function(x) sapply(x, function(y) summary(y)$adj.r.squared))
