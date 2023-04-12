@@ -25,8 +25,8 @@ The basic pipeline for mapping chromatin to genotype is as follows:
 3. Calculate chromatin effects on transcript abundance using qtl2.
 
 ```{r set_param}
-females_only = TRUE
-chow_only = FALSE
+females_only = FALSE
+chow_only = TRUE
 ```
 
 ```{r source_code}

@@ -29,7 +29,7 @@ num.states = as.numeric(param["num_states",])
 is.interactive = FALSE
 #is.interactive = TRUE
 
-females_only = FALSE
+females_only = TRUE
 chow_only = FALSE
 ```
 

@@ -28,8 +28,8 @@ save.every = 100
 is.interactive = FALSE
 #is.interactive = TRUE
 
-females_only = TRUE
-chow_only = FALSE
+females_only = FALSE
+chow_only = TRUE
 ```
 
 ```{r load_libraries}

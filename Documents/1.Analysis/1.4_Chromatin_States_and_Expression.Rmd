@@ -63,19 +63,20 @@ performs the following specific tasks:
 
 ```{r set_args}
 args <- commandArgs(trailingOnly=T)
-delete.previous = as.logical(args[1]) #whether to delete and regenerate files 
+num.states <- as.numeric(args[1])
+delete.previous = as.logical(args[2]) #whether to delete and regenerate files 
                     #from previous a run.
 is.interactive = FALSE
 #is.interactive = TRUE
 
-if(is.na(delete.previous)){delete.previous = FALSE}
+if(is.na(delete.previous)){num.states = 15; delete.previous = FALSE}
 ```
 
 ```{r set_param}
 library(here)
 param <- read.delim(here("Data", "support_files", "param.txt"), header = FALSE, 
     stringsAsFactors = FALSE, row.names = 1)
-num.states = as.numeric(param["num_states",])
+#num.states = as.numeric(param["num_states",])
 ordered.marks <- strsplit(param["ordered_marks",], ",")[[1]]
 ```
 
@@ -205,7 +206,7 @@ Average expression across individuals in each strain.
 #file containing strain averages for each transcript. These
 #do not change from run to run. Save in data
 strain.expr.file <- here("Data", "RNASeq", paste0("Strain_Mean_", T.or.C, "_Expression.RData"))
-if(!file.exists(strain.expr.file) || delete.previous){
+if(!file.exists(strain.expr.file)){
     #get expression for the condition (control or treatment)
     strain.mean.expr <- lapply(rownames(rna.seq), function(x) 
     get.cond.expr(rnaseq.gene.info, rna.seq, x, T.or.C = T.or.C, return.mean = TRUE))
@@ -218,7 +219,7 @@ if(!file.exists(strain.expr.file) || delete.previous){
 
 #also scale the expression for each gene.
 strain.scaled.expr.file <- here("Data", "RNASeq", paste0("Strain_Scaled_", T.or.C, "_Expression.RData"))
-if(!file.exists(strain.scaled.expr.file) || delete.previous){
+if(!file.exists(strain.scaled.expr.file)){
     scaled.mean.expr  <- lapply(strain.mean.expr, scale)
     saveRDS(scaled.mean.expr, strain.scaled.expr.file)
 }else{
@@ -658,12 +659,12 @@ of different states.
 #closer than 2000 bp away. This is to look at whether the 
 #uptick in state 8 after the TSS is due to bleeding into the 
 #next gene or related to the post-transcriptional region
-
+stop()
 far.position.file <- file.path(results.dir, "Chromatin.State.Position.Far.Genes.RDS")
 if(!file.exists(far.position.file) || delete.previous){
     far.genes <- get.distant.genes(rnaseq.gene.info, 2000) 
     gene.ids <- rnaseq.gene.info[match(unlist(far.genes), rnaseq.gene.info[,"external_gene_name"]),"ensembl_gene_id"]
-    state.position <- lapply(1:num.states, function(x) state.by.position(gene.ids, 
+    state.position <- lapply_pb(1:num.states, function(x) state.by.position(gene.ids, 
     group.gene.expr = scaled.mean.expr, state.id = x, binned.chrom = binned.chromatin))
     saveRDS(state.position, far.position.file)
 }else{
@@ -686,22 +687,6 @@ for(s in 1:length(state.position)){
 #dev.off()
 ```
 
-```{r state_abundance_by_strain}
-
-par(mfrow = c(3,3), mar = c(2,2,2,2))
-for(st in 1:num.states){
-    state.sum.mat <- state.position[[st]]$state.by.strain
-    plot.new()
-    plot.window(xlim = c(-2, 2), ylim = c(0, max(state.sum.mat, na.rm = TRUE)))
-
-    for(i in 1:nrow(state.sum.mat)){
-        points(as.numeric(colnames(state.sum.mat)), state.sum.mat[i,], type = "l", col = col.table[i,3], lwd = 3)
-    }
-    axis(1);abline(v = c(0,1))
-    mtext(paste("State", st), side = 3)
-}
-
-```
 
 ## Enrichment by state and position
 
@@ -719,7 +704,7 @@ The enrichments are all related to insulin and pheromone binding. In contrast,
 right around the TSS in this same state, the strains are all much more evenly
 represented
 
-```{r bin_enrich}
+```{r bin_enrich, eval = FALSE}
 bin.enrich <- vector(mode = "list", length = num.states)
 names(bin.enrich) <- 1:num.states
 pdf(file.path(results.dir, "Enrichments.by.state.and.position.pdf"), width = 20, height = 7)
@@ -739,7 +724,7 @@ The following figures show functional enrichments for groups of genes
 with each state present at each position. There are clear groupings
 of enrichments at different positions.
 
-```{r plot_bin_enrich, results = "asis", fig.height = 15, fig.width = 8}
+```{r plot_bin_enrich, results = "asis", fig.height = 15, fig.width = 8, eval = FALSE}
 #pdf("~/Desktop/State.enrichment.pdf", width = 8, height = 15)
 for(state in 1:num.states){
     cat("State", state, "\n")

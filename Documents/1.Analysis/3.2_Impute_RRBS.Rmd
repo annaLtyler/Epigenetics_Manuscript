@@ -23,8 +23,8 @@ delete_previous = FALSE
 ```
 
 ```{r set_param}
-females_only = TRUE
-chow_only = FALSE
+females_only = FALSE
+chow_only = TRUE
 ```
 
 

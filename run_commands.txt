@@ -3,7 +3,7 @@
 #for 1.4_Chromatin_States_and_Expression.Rmd the state number is stored in support_file/param.txt
 #============================================================================================================
 
-R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '1.4_Chromatin_States_and_Expression.Rmd'))" --args "FALSE"
+R -e "rmarkdown::render(here::here('Documents', '1.Analysis', '1.4_Chromatin_States_and_Expression.Rmd'))" --args "4" "TRUE"
 
 
 #============================================================================================================
