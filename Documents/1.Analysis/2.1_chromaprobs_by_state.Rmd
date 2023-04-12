@@ -212,6 +212,7 @@ scan_chrom_transcript_by_state <- function(gene.id,
       #limit to only chow-fed animals because only chow-fed animals are in the inbred data
       chow.locale <- which(sub.covar[,"diethf"] == 0)
       geno[[1]] <- geno[[1]][chow.locale,,,drop=FALSE]
+      sub.covar <- sub.covar[chow.locale,]
     }
 
     #check for variation
