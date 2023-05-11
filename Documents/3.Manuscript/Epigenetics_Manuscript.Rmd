@@ -55,12 +55,36 @@ for(i in 1:length(all.code.dir)){
 state.idx <- readRDS(file.path(results.dir, "state.idx.RDS"))
 
 #use state.idx to order the states as they are in the Figures
+#the annotation table is generated in 1.5_Compare_State_Abundance.Rmd
 annotations <- as.matrix(read.delim(here("Data", "support_files", "annotation.table.txt")))[state.idx,]
 emissions <- as.matrix(read.delim(file.path(data.dir, paste0("emissions_", num.states, ".txt")), row.names = 1))[state.idx,]
 
 #make sure all marks are in the same order
 annotations[,1:4] <- annotations[,match(ordered.marks, colnames(annotations)[1:4])]
 emissions <- emissions[,match(ordered.marks, colnames(emissions))]
+```
+
+```{r supp_fig_tracker, echo = FALSE}
+#we need to keep track of supplemental figure numbers
+#without having captions. We want to create a reference
+#number for each figure that relates to the order they
+#appear in the manuscript, but remains the same if the
+#figure is referenced more than once.
+
+#create a vector of reference numbers for each figure
+sup_labels <- c("sup_feature_correlation", "sup_raw_enrich", 
+  "sup_state_abundance", "sup_methyl_by_strain", "sup_methyl_effect_by_state",
+  "sup_emission_comp", "sup_abundance_comp", "sup_effect_comp", 
+  "sup_imputation", "sup_empirical_p", "sup_subsets")
+fig.counter <- rep(0, length(sup_labels))
+names(fig.counter)  <- sup_labels
+
+ref_fig <- function(fig.vector, fig.ref){
+  if(fig.vector[fig.ref] == 0){
+    fig.vector[fig.ref] <- max(fig.vector)+1
+  }
+  return(fig.vector)
+}
 ```
 
 ```{r id_state, echo = FALSE}
@@ -86,7 +110,6 @@ weak.intragenic.enhancer <- id_state(state.emissions = c(0,0,1,0), annotation.ta
 strong.intragenic.enhancer <- id_state(state.emissions = c(0,0,1,1), annotation.table = annotations, emissions = emissions)
 tes.intragenic.enhancer <- id_state(state.emissions = c(0,0,0,1), annotation.table = annotations, emissions = emissions)
 imputation.results <- readRDS(file.path(results.dir, "All.Variance.Explained.RDS"))
-
 ```
 
 ```{r summary_stats, echo = FALSE}
@@ -165,30 +188,28 @@ individuals in
 humans \citep{mcvicker2013identification, kang2021genetic}, 
 rats \citep{rintisch2014natural}, 
 cattle \citep{prowse2022genetic},
-and mice 
-\citep{link2018analysis, schilling2009allele, zhou2022dna, grimm2019dna, xie2012base, gujar2018profiling}
-Because the majority of disease-associated genetic variants discovered 
-in humans are in gene regulatory regions, it has been suggested that 
-it is the regulation of gene expression, rather than alteration of 
-protein function, that is the primary mechanism through which genetic 
-variants confer disease risk 
-\citep{maurano2012systematic, farh2015genetic, pmid21617055, pmid19474294}.
-
-Supporting this hypothesis, it has been shown that epigenetic 
-variation across individuals is associated with variation in gene 
-expression \citep{kang2021genetic, rintisch2014natural, prowse2022genetic} 
+and mice, including some of the DO/CC founders
+\citep{link2018analysis, schilling2009allele, zhou2022dna, grimm2019dna, xie2012base, gujar2018profiling}.
+This epigenetic variation across individuals has been shown
+to be heritable \citep{schilling2009allele, grimm2019dna} 
+and to be associated with variation in 
+gene expression \citep{kang2021genetic, rintisch2014natural, prowse2022genetic},
+cellular phenotypes \citep{link2018analysis},
 and clinical outcomes \citep{kang2021genetic, hawe2022genetic}. 
-Work in mice has demonstrated variability of both DNA methylation 
-and histone modifications across inbred strains, including 
-some of the DO/CC founders 
-\citep{link2018analysis, schilling2009allele, zhou2022dna, grimm2019dna, xie2012base, gujar2018profiling}. 
-This work has shown that strain-specific epigenetic variation 
-is heritable \citep{schilling2009allele, grimm2019dna} and 
-leads to differential gene regulation and differential cellular 
-phenotypes across strains \citep{link2018analysis}. Therefore, 
-a broader survey of the DO/CC founders is potentially critical 
+
+Regulation of gene expression through heritable epigenetic 
+variation is thus an important link between genotype and 
+phenotype. Because the majority of disease-associated genetic 
+variants discovered in humans are in gene regulatory regions, 
+it has been suggested that it is the regulation of gene 
+expression, rather than alteration of protein function, that 
+is the primary mechanism through which genetic variants confer 
+disease risk 
+\citep{maurano2012systematic, farh2015genetic, pmid21617055, pmid19474294}.
+Therefore, having well annotated maps of epigenetic modifications 
+in disease models like the DO/CC founders is potentially critical 
 to understanding mechanisms of gene regulation and its impact on 
-disease in these important models. 
+disease. 
 
 To extend documented epigenetic variation to all DO/CC founders, 
 we undertook a strain survey of epigenetic variation in hepatocytes 
@@ -219,9 +240,9 @@ variation in these epigenetic markers and variation in gene
 expression across the nine inbred strains. 
 
 We extended our analysis into a population of Diversity
-Outbred (DO) 
+Outbred (DO) mice
 \citep{churchill2012diversity, Svenson:2012hq, Gatti:2014ko, pmid27309819} 
-mice to investigate the heritability of histone modifications and 
+to investigate the heritability of histone modifications and 
 DNA methylation with respect to gene expression. To do this, we 
 imputed the `r num.states` chromatin states and DNA methylation 
 into the DO mice. We then mapped gene expression to the imputed 
@@ -229,6 +250,17 @@ epigenetic states to assess the extent to which gene expression
 in the DO mice corresponded with imputed epigenetic variation.
 
 # Results
+
+```{r, echo = FALSE}
+#in the paragraph before a supplemental figure is referenced,
+#find its number. The figure counter can be observed at the 
+#end to verify the order that the figures should be put in,
+#and to see if any figures have not been referenced in the 
+#test
+fig.label <- "sup_feature_correlation"
+fig.counter <- ref_fig(fig.counter, fig.label)
+feature.cor.label <- fig.counter[fig.label]
+```
 
 Both gene expression and epigenetic state were consistent 
 within each inbred mouse strain but varied across the 
@@ -250,13 +282,13 @@ that epigenetic features relate to gene expression in a manner
 that is consistent with the subspecific origin of the mouse 
 strains \citep{yang2007subspecific}. For a more detailed 
 visualization of the correlations between strains see Supp. 
-Fig. \ref{supp_fig:feature_correlation}. Also, note that 
-all genes used in this analysis were expressed at a minimal
-level across the strains (overall mean of 5 TPM), so results
-do not include data from non-expressed genes.
+Fig. S`r feature.cor.label`. Also, note that all genes used 
+in this analysis were expressed at a minimal level across the 
+strains (overall mean of 5 TPM), so results do not include data 
+from non-expressed genes.
 
 \begin{figure}[ht!]
-\includegraphics[width=3in]{Figures/Fig1_Decomposition.png} 
+\includegraphics[width=3in]{Figures/Tyler_Fig1.pdf} 
 \caption{The first two principal components of each genomic 
 feature across nine inbred mouse strains. In all panels each 
 point represents an individual mouse, and strain is indicated 
@@ -273,16 +305,23 @@ positions aligned across strains.}
 
 ## Chromatin state overview
 
+```{r, echo = FALSE}
+fig.label <- "sup_raw_enrich"
+fig.counter <- ref_fig(fig.counter, fig.label)
+raw.enrich.label <- fig.counter[fig.label]
+```
+
 We used ChromHMM to identify `r num.states` chromatin states 
 composed of unique combinations of the four histone modifications
 (Fig. \ref{fig:state_overview}A). We calculated the enrichment 
 of each state near predicted functional elements in the mouse
-liver (Fig. \ref{fig:state_overview}B, Supp. Fig. ), and correlated the
-presence of each state with gene expression both across genes
-and across the inbred strains (Fig. \ref{fig:state_overview}C).
+liver (Fig. \ref{fig:state_overview}B, Supp. Fig. S`r raw.enrich.label`), 
+and correlated the presence of each state with gene expression 
+both across genes and across the inbred strains 
+(Fig. \ref{fig:state_overview}C).
 
 \begin{figure}[ht!]
-\includegraphics[width=\textwidth]{Figures/Fig2_Overview.png} 
+\includegraphics[width=\textwidth]{Figures/Tyler_Fig2.pdf} 
 \caption{Overview of chromatin state composition, genomic 
 distribution, and association with expression. (A) Emission 
 probabilities for each histone modification in each 
@@ -391,7 +430,7 @@ CAST, PWK, and B6 compared to the other strains (Fig.
 
 \begin{figure}[ht!]
 \begin{minipage}[c]{0.4\textwidth}
-  \includegraphics[width=\textwidth]{Figures/Fig3_CpG_Overview.png} 
+  \includegraphics[width=\textwidth]{Figures/Tyler_Fig3.pdf} 
 \end{minipage}\hfill
 \begin{minipage}[c]{0.5\textwidth}
 \caption{Overview of strain-specific CpG sites. (A) Boxes 
@@ -441,7 +480,7 @@ gene bodies by normalizing genomic positions to run from 0 at
 the TSS to 1 at the TES (See Methods) (Fig. \ref{fig:state_abundance})
 
 \begin{figure}[ht!]
-\includegraphics[width=0.67\textwidth]{Figures/Fig4_Abundance.png} 
+\includegraphics[width=0.67\textwidth]{Figures/Tyler_Fig4.pdf} 
 \caption{Relative abundance of chromatin states and methylated DNA. (A) Each panel 
 shows the abundance of a single chromatin state relative to gene TSS and TES. The 
 $y$-axis in each panel is the percent of genes containing the state. Each
@@ -488,12 +527,24 @@ of a TSS-proximal strong enhancer. State `r strong.intragenic.enhancer`,
 was depleted near the TSS, but enriched within the gene body, consistent 
 with its annotation of a TSS-distal enhancer.
 
+```{r, echo = FALSE}
+fig.label <- "sup_state_abundance"
+fig.counter <- ref_fig(fig.counter, fig.label)
+state.abundance.label <- fig.counter[fig.label]
+```
+
 States with weaker associations to expression (indicated by grayer
 shades in Fig. \ref{fig:state_abundance}) were of lower abundance, 
 but had distinct distribution patterns around the gene body suggesting 
 the possibility of distinct functional roles in the regulation of gene 
-expression. The abundance patterns were identical across all strains 
-(Supplemental Fig. \ref{supp_fig:state_abundance_by_strain})
+expression. These abundance patterns were not different across the strains 
+(Supp. Fig. S`r state.abundance.label`)
+
+```{r, echo = FALSE}
+fig.label <- "sup_methyl_by_strain"
+fig.counter <- ref_fig(fig.counter, fig.label)
+methyl.by.strain.label <- fig.counter[fig.label]
+```
 
 DNA methylation showed similar characteristic variation in abundance
 (Fig. \ref{fig:state_abundance}C-D). The TSS had densely packed 
@@ -503,7 +554,7 @@ the TSS was consistently hypomethylated relative to the median CpG
 site (Fig. \ref{fig:state_abundance}D). All genes used in this analysis 
 were expressed and thus had some degree of hypomethylation. There were 
 also no large-scale differences in CpG distribution or percent methylation 
-across strains (Supplemental Fig. \ref{supp_fig:percent_methyl_by_strain}).
+across strains (Supp. Fig. S`r methyl.by.strain.label`).
 
 ## Spatially resolved associations with gene expression
 
@@ -520,7 +571,7 @@ chromatin state with the variation in gene expression across
 strains (Fig. \ref{fig:state_effects} middle column).
 
 \begin{figure}[ht!]
-\includegraphics[width=0.7\textwidth]{Figures/Fig5_Effects.png}
+\includegraphics[width=0.7\textwidth]{Figures/Tyler_Fig5.pdf}
 \caption{Associations of chromatin states with gene expression. Each 
 column shows the association of each chromatin state with gene 
 expression in a different experimental context as labeled. 
@@ -573,7 +624,7 @@ were too few strains to reliably estimate the coefficients
 (Fig. \ref{fig:DNA_methylation_effect}B).
 
 \begin{figure}[ht!]
-\includegraphics[width=3in]{Figures/Fig6_methylation_effect.png} 
+\includegraphics[width=3in]{Figures/Tyler_Fig6.pdf} 
 \caption{Association of DNA methylation wkth gene expression (A) across 
 gene expression in hepatocytes and (B) across inbred strains. The dark 
 gray line shows the estimated effect of percent DNA methylation on gene 
@@ -617,16 +668,22 @@ in this state to be low. State `r nomark.state` has no histone modifications
 and is not expected to be transcriptionally active, which is consistent
 with high levels of DNA methylation.
 
+```{r, echo = FALSE}
+fig.label <- "sup_methyl_effect_by_state"
+fig.counter <- ref_fig(fig.counter, fig.label)
+methyl.effect.by.state <- fig.counter[fig.label]
+```
+
 DNA methylation within each chromatin state was differentially
-correlated with gene expression (Supplemental Fig. 
-\ref{supp_fig:methyl_effect_by_state}). DNA methylation in State 
-`r active.promoter.state`, the active promoter state, was associated 
-with decreased gene expression, suggesting that DNA methylation in 
-this state deactivated the active promoter state. Overall, the
-repressor state, State `r repressor.state`, was negatively associated 
-with gene expression. However, DNA methylation in this state was 
-positively associated with gene expression, suggesting that this 
-repressive state can be inactivated by DNA methylation.
+correlated with gene expression (Supp. Fig. S`r methyl.effect.by.state`). DNA 
+methylation in State `r active.promoter.state`, the active 
+promoter state, was associated with decreased gene expression, 
+suggesting that DNA methylation in this state deactivated the 
+active promoter state. Overall, the repressor state, State 
+`r repressor.state`, was negatively associated with gene 
+expression. However, DNA methylation in this state was 
+positively associated with gene expression, suggesting that 
+this repressive state can be inactivated by DNA methylation.
 
 ## Imputed chromatin state was associated with gene expression in DO mice
 
@@ -647,6 +704,12 @@ inbred mice would support the idea that inherited variance in epigenetic
 features contributes to inherited variation in gene expression across 
 genetically distinct individuals.
 
+```{r, echo = FALSE}
+fig.label <- "sup_empirical_p"
+fig.counter <- ref_fig(fig.counter, fig.label)
+emp.p.label <- fig.counter[fig.label]
+```
+
 We imputed chromatin state, DNA methylation, and SNPs into the DO 
 population (Methods). Because any feature imputed from haplotype 
 will be correlated with anything that haplotype is correlated with, 
@@ -655,23 +718,18 @@ haplotype and chromatin state (Methods). The resulting $p$-value
 distributions of each genomic feature suggested that each imputed 
 feature was significantly associated with gene expression in the DO 
 beyond the effects of the imputation alone 
-(Supp. Fig. \ref{supp_fig:empirical_p}).
+(Supp. Fig. S`r emp.p.label`).
 
 We then tested the association between each imputed chromatin state, SNP,
-or CpG site with gene expression in the DO. We tested each state
+or CpG site with gene expression in the DO. We tested each chromatin state
 independently. The standard method for testing associations is to include
-all alleles (or chromatin states) in a single linear model. However,
-because there are varying numbers of alleles across modalities (eight 
-haplotypes, `r num.states` chromatin states, three DNA methylation values, 
-and two SNPs), we needed to constrain the degrees of freedom for all features. 
-Thus, for all features, we tested only a single haplotype, chromatin state, etc. 
-in each model.
-
-Haplotypes are a measure of ancestry, whereas chromatin state, DNA 
-methylation, and SNPs are all potentially functional variation in 
-the genome or epigenome. Thus any individual chromatin state, SNP, 
-or CpG site can theoretically explain more variance in gene expression 
-than an individual haplotype. 
+independent variables for all alleles (or chromatin states) in a single 
+linear model. However, because there are varying numbers of predictor states 
+across modalities (eight haplotypes, `r num.states` chromatin states, 
+three DNA methylation values, and two SNPs), variance explained across the 
+modalities is not comparable unless the degrees of freedom are equal for 
+all tests. Thus, for all features, we tested only a single haplotype, 
+chromatin state, etc. versus all other possibilities in each model.
 
 Figure \ref{fig:effect_distrubutions} compares the variance 
 explained by individual haplotypes with that explained by 
@@ -696,8 +754,26 @@ supporting the hypothesis that all these features carry
 heritable information that potentially regulates gene 
 expression in this genetically diverse population. 
 
+```{r, echo = FALSE}
+fig.label <- "sup_subsets"
+fig.counter <- ref_fig(fig.counter, fig.label)
+subset.label <- fig.counter[fig.label]
+```
+
+To maximize power to estimate associations between epigenetic 
+states and gene expression, we used all animals in the DO population
+and regressed out the effects of sex and diet from all variables
+before testing for associations. However, because the inbred animals 
+used in this study were females maintained on a chow diet, it is possible
+that variation in either sex or diet in the DO population could affect the 
+results. To test whether sex or diet had any effect on the associations 
+between epigenetic features and gene expression, we performed all tests 
+using only females, and again only with chow-fed animals. Results were 
+similar across these subsets, and any differences in means were within 
+a fraction of a standard deviation of the distributions (Supp. Fig. S`r subset.label`).
+
 \begin{figure}[ht!]
-\includegraphics[width=\textwidth]{Figures/Fig7_Imputation.png} 
+\includegraphics[width=\textwidth]{Figures/Tyler_Fig7.pdf} 
 \caption{Comparison of the variance explained in DO gene expression
 by four genomic features: haplotype (Hap.) chromatin state (Chrom.), 
 local SNP genotype (SNP), and local imputed DNA methylation status 
@@ -733,23 +809,28 @@ provides an opportunity to annotate novel functional
 elements in the mouse genome, or provide supportive
 evidence of previously predicted functional elements. 
 As an example, we investigated the gene \textit{Pkd2} 
-(Fig. \ref{fig:example_gene}). 
+(Fig. \ref{fig:example_gene}). This gene had a strong 
+local eQTL (LOD = 144.8) that had been previously 
+identified \citep{gatti2017effects, pmid27309819}, and
+large amounts of variance explained (R$^2 = 0.6$) by
+both chromatin state and SNPs (Fig. \ref{fig:example_gene}A).
 
 WSB and PWK were low-expressing strains for \textit{Pkd2}, 
 and the remaining strains had higher expression 
-(Fig. \ref{fig:example_gene}E). The haplotype effects
+(Fig. \ref{fig:example_gene}F). The haplotype effects
 in the DO mirror this pattern with the CAST allele showing an
-especially high association with increased gene expression. 
-Figure \ref{fig:example_gene}B, C, and D show chromatin state,
-SNP genotype, and DNA methylation state along the body of \textit{Pkd2} 
-respectively. Panel A shows the association of each of the
-imputed features with gene expression in the DO. The detailed 
-view of this gene identified two regions marked by gray arrows 
-in panel A. One is at the TSS and the immediately surrounding 
-area, and the other is just downstream of the TSS. 
+especially high association with increased gene expression 
+(Fig. \ref{fig:example_gene}E). Figure \ref{fig:example_gene}B, 
+C, and D show chromatin state, SNP genotype, and DNA methylation 
+state along the body of \textit{Pkd2} respectively. Panel A shows 
+the association of each of the imputed features with gene 
+expression in the DO. The detailed view of this gene identified 
+two regions marked by gray arrows in panel A. One is at the TSS 
+and the immediately surrounding area, and the other is just downstream 
+of the TSS. 
 
 \begin{figure}[ht!]
-\includegraphics[width=0.7\textwidth]{Figures/Fig8_Example.png} 
+\includegraphics[width=0.7\textwidth]{Figures/Tyler_Fig8.pdf} 
 \caption{Example of epigenetic states and imputation results for a single 
 gene, \textit{Pkd2}. The legend for each panel is displayed to its right.
 (A) The variance in DO gene expression explained at 
@@ -782,20 +863,22 @@ all panels B through F are shown in the same order as the haplotype effects.}
 Both chromatin state and SNPs in these two regions were strongly 
 associated DO expression levels of \textit{Pkd2} (Fig. \ref{fig:example_gene}A). 
 Comparing these regions marked in panel A to the chromatin states
-in panel B, we see that these two regions both have activating 
+in panel B, we see that these two regions both have activating chromatin
 states in the high-expressing haplotypes and an absence of activating
 marks in the low-expressing haplotypes. We therefore hypothesized that 
-these two regions are heritable \textit{cis}-regulatory regions for \textit{Pkd2}.
+these two regions are heritable \textit{cis}-regulatory regions for 
+\textit{Pkd2}.
 
-The spatial patterns in the SNPs partially mirror those in chromatin 
-state (Fig. \ref{fig:example_gene}C). SNPs underlying the more proximal 
-enhancer region could potentially influence gene expression by altering 
-local chromatin state. However, the more distal putative \textit{cis}-regulatory
-region has no underlying SNPs, suggesting that there is an alternative 
-mechanism for determining chromatin state at this location. Perhaps SNPs 
-in the TSS region regulate chromatin state in both regions. For this 
-particular gene, variation in DNA methylation was not associated with 
-\textit{Pkd2} expression in the DO (Fig. \ref{fig:example_gene}D). 
+The spatial patterns in the SNPs  (Fig. \ref{fig:example_gene}C)
+partially mirror those in chromatin state (Fig. \ref{fig:example_gene}B). 
+SNPs underlying the more proximal enhancer region could potentially 
+influence gene expression by altering local chromatin state. However, 
+the more distal putative \textit{cis}-regulatory region has no underlying 
+SNPs, suggesting that there is an alternative mechanism for determining 
+chromatin state at this location. Perhaps SNPs in the TSS region regulate 
+chromatin state in both regions. For this particular gene, variation in 
+DNA methylation (Fig. \ref{fig:example_gene}D) was not associated with 
+\textit{Pkd2} expression in the DO. 
 
 
 # Discussion
@@ -807,7 +890,7 @@ strain differences in gene expression. We saw evidence that
 both chromatin state defined by combinatorial histone modifications,
 as well as DNA methylation, were heritable mechanisms contributing 
 to inter-individual variation in gene expression in mice. For DNA 
-methylation, heritable variation was drivin in part by strain-specific 
+methylation, heritable variation was driven in part by strain-specific 
 CpG sites. These CpG sites were enriched in enhancers, specifically, 
 weak, strong, and poised enhancers distal to the TSS. Strain-specific 
 CpG sites were depleted in promoter regions and CpG islands suggesting 
@@ -864,27 +947,35 @@ that these states likely represent a heritable form of \textit{cis}-regulation
 is intriguing and may suggest heritable variation in response to 
 liver injury or convergent evolution of regeneration pathways.
 
-State 5, which was also annotated as a bivalent promoter, was 
-associated with lower gene expression in hepatocytes, but with 
-higher gene expression when looking across strains. That is, 
-genes with State 5 were more lowly expressed than other hepatocyte 
-genes, but for any given gene, strains with State 5 had higher 
-expression than other strains.
+State 5 was also annotated as a bivalent promoter, but the 
+evidence for this annotation was less clear than for the other
+states with this annotation. State 5 was enriched primarily 
+around predicted bivalent promoters in mouse liver 
+(Fig. \ref{fig:state_overview}). However, it also included the 
+presence of H3K27ac, which is typically associated with active 
+enhancers, rather than inactive bivalent promoters 
+\citep{creyghton2010histone, pmid23788621}. The association of 
+State 5 with gene expression was also inconsistent. This state was 
+associated with lower gene expression in hepatocytes, but with higher 
+gene expression when looking across strains. That is, genes with 
+State 5 were more lowly expressed than other hepatocyte genes, but 
+for any given gene, strains with State 5 had higher expression than 
+strains with other states in the same position.
 
 The association of State 5 with reduced expression within hepatocytes 
 is consistent with the annotation of bivalent promoter. Genes marked 
-with this state were enriched for vascular development and Wnt signaling, 
-further supporting the annotation. When positions marked with State 5 
-varied across strains, the most common alternate state at these positions 
-was State 12, another bivalent promoter. Thus, this group of genes in 
-general was regulated by bivalent promoters and down-regulated relative 
-to other genes. However, our results suggest that State 5 was associated 
-with less severe down-regulation when compared with State 12, resulting 
-in an apparent up-regulation when looking across strains. It is also 
-possible that State 5 is a mixture of State 12 and other states and 
-therefore produced inconsistent results. State 5 had a very similar 
-abundance distribution, effect size distribution, and GO term enrichments 
-to State 12. As a whole, the group of states annotated as bivalent promoters 
+with this state were enriched for vascular development and Wnt
+signaling, further supporting the annotation. When positions marked with 
+State 5 varied across strains, the most common alternate state at these 
+positions was State 12, another bivalent promoter. Thus, this group of 
+genes in general was down-regulated relative to other genes. However, 
+our results suggest that State 5 was associated with less severe 
+down-regulation when compared with State 12, resulting in an apparent 
+up-regulation when looking across strains. It is also possible that the 
+inconsistent results observed for State 5 indicate that it was a mixture 
+of State 12 and another state. State 5 had a very similar abundance 
+distribution, effect size distribution, and GO term enrichments to 
+State 12. As a whole, the group of states annotated as bivalent promoters 
 raise the intriguing possibility of identifying new modes of expression 
 regulation through histone modification. Although these five states all 
 recieved the same annotation, each had a unique pattern of distribution 
@@ -923,32 +1014,25 @@ The merging of DO expression quantitative trait loci with inbred
 chromatin state maps offers a potential method to identify 
 \textit{cis}-regulatory regions. The \textit{Pkd2} example illustrates 
 how this could be done. Given that there is a \textit{cis}-eQTL at this 
-locus (LOD = 144.8) \citep{gatti2017effects, pmid27309819}, and that 
-imputed chromatin state explained a large amount of variance in DO 
-gene expression, we looked more closely at chromatin state within the 
-inbred founders to identify putative \textit{cis}-regulatory regions 
-(Fig. \ref{fig:example_gene}A arrows). The variation in chromatin 
-state across the inbred strains in these regions is highly correlated 
-with gene expression in the outbred animals, pointing to possible 
-molecular mechanisms for the observed eQTL. The PWK and WSB haplotypes 
-lack the activating states seen in the other six haplotypes. This
-lack of activating states was correlated with reduced gene expression 
-in these strains. Further, the haplotypes with broader activating 
-states also appeared to have higher \textit{Pkd2} expression 
-suggesting that the width of the activating state may also contribute
-to increased gene expression. The CpG sites in and arround these putative
-regulatory regions are unmethylated across all strains, further supporting 
-the hypothesis chromatin state in these regions is actively regulating 
-transcription. Validation of these regions is beyond the scope of this 
-study, but our results suggest that combining DO eQTL data with inbred 
-epigenetic data may serve as an important resource in identifying putative 
-regulatory regions.
+locus, and that imputed chromatin state explained a large amount of 
+variance in DO gene expression, it made sense to look at the patterns
+of genomic features around this gene. The patterns of chromatin
+state and SNPs in the gene body pointed to possible molecular mechanisms
+for the observed eQTL. Both the presence of activating chromatin
+states and their breadth correlated with gene expression, suggesting
+the presence of local regulatory regions. The CpG sites in and arround 
+these putative regulatory regions are unmethylated across all strains, 
+further supporting the hypothesis chromatin state in these regions is 
+actively regulating transcription. Validation of these regions is beyond 
+the scope of this study, but our results suggest that combining DO eQTL 
+data with inbred epigenetic data may serve as an important resource in 
+identifying putative regulatory regions.
 
 The discordance between the patterns of chromatin state and 
 SNPs in this gene may also point to potentially novel regulatory 
-mechanisms. Variation in chromatin state at the intragenic enhancer 
+mechanisms. Variation in chromatin state at the more distal enhancer 
 is present in the absence of local SNPs. This suggests that the 
-presence of the downstream enhancer is determined by another 
+presence of the distal enhancer is determined by another 
 mechanism, perhaps SNPs acting in *trans* to this region, or 
 local variation that was not measured by SNP genotyping, e.g. 
 indels. Genetic variation located at a distance from the putative 
@@ -1059,17 +1143,6 @@ high-sucrose (HF/HS) diet (45\% fat, 40\% carbohydrates, and 15\% protein)
 (Envigo Teklad TD.08811, Envigo, Madison, WI). Mice were maintained on this 
 diet for 26 weeks. 
 
-To get the best estimates of the associations between epigenetic 
-states and gene expression, we used all animals in the DO population
-and regressed out the effects of sex and diet from all variables
-before testing for associations. However, because the inbred animals 
-used in this study were females maintained on a chow diet, it is possible
-that either sex or diet could affect the results. To test whether sex
-or diet had any effect on the associations between epigenetic features
-and gene expression, we performed all tests using only females, and again 
-only with chow-fed animals. Neither subsetting of the DO animals affected 
-the results, so all results presented here use all animals.
-
 ### Genotyping
 All DO mice were genotyped as described in Svenson \textit{et al.} (2012)
 \citep{Svenson:2012hq} using the Mouse Universal Genotyping Array 
@@ -1095,8 +1168,9 @@ were generated on the Illumina HiSeq 2000.
 ### Sequence processing
 
 The raw sequencing data from both RNA-seq and ChIP-seq were put through 
-the quality control program FastQC (0.11.5), and duplicate sequences 
-were removed before downstream analysis. 
+the quality control program FastQC (0.11.5) 
+(\url{https://www.bioinformatics.babraham.ac.uk/projects/fastqc/}), 
+and duplicate sequences were removed before downstream analysis. 
 
 ### Transcript quantification
 Transcript sequences were aligned to strain-specific 
@@ -1112,14 +1186,15 @@ normalize the gene expression data. We filtered out transcripts
 with less than 1 CPM in two or more replicates.
 
 ### ChIP-seq quantification
-We used MACS 1.4.2 \citep{pmid18798982} to identify peaks in the ChIP-seq 
-sequencing data, with a significance threshold of $p \leq 10^{-5}$. 
-In order to compare peaks across strains, we converted the MACS output 
-peak coordinates to common B6 coordinates using g2g tools. 
+We used MACS 1.4.2 \citep{pmid18798982} to identify peaks in the 
+ChIP-seq sequencing data, with a significance threshold of $p \leq 
+10^{-5}$. In order to compare peaks across strains, we converted 
+the MACS output peak coordinates to common B6 coordinates using g2g 
+tools. 
 
 ## Quantifying DNA methylation
 RRBS data were processed using a Bismark-based pipeline modified from 
-\citep{pmid30348905}. The pipeline uses Trim Galore! 0.6.3 
+\citet{pmid30348905}. The pipeline uses Trim Galore! 0.6.3 
 \url{https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/} for QC, 
 followed by the trimRRBSdiversityAdaptCustomers.py script from NuGen for 
 trimming the diversity adapters. This script is available at: 
@@ -1132,9 +1207,10 @@ with the average above 38. Duplication level was reduced to $<2$ for about
 95\% of the sequences. 
 
 High quality reads were aligned to a custom strain pseudogenomes, using 
-Bowtie 2 as implemented in Bismark 0.22 \citep{pmid21493656}. The pseudogenomes were
-created by incorporating strain-specific SNPs and indels into the reference 
-genome using g2gtools, allowing a more precise characterization of methylation 
+Bowtie 2 \citep{langmead2012fast} as implemented in Bismark 0.22 
+\citep{pmid21493656}. The pseudogenomes were created by incorporating 
+strain-specific SNPs and indels into the reference genome using g2gtools, 
+allowing a more precise characterization of methylation 
 patterns. Bismark methylation extractor tool was then used for creating a BED 
 file of estimated methylation proportions for each animal, which was then translated 
 to the reference mouse genome (GRCm38) coordinates using g2gtools. Unlike other 
@@ -1163,6 +1239,15 @@ binary chromatin modifications ($2^n$). We ran all mouse strains
 together in the same model as if they were different cell types
 in a standard run of ChromHMM.
 
+```{r, echo = FALSE}
+fig.counter <- ref_fig(fig.counter, "sup_emission_comp")
+emissions.label <- fig.counter["sup_emission_comp"]
+fig.counter <- ref_fig(fig.counter, "sup_abundance_comp")
+abundance.label <- fig.counter["sup_abundance_comp"]
+fig.counter <- ref_fig(fig.counter, "sup_effect_comp")
+effect.label <- fig.counter["sup_effect_comp"]
+```
+
 To ensure we were analyzing the most biologically meaningful chromatin 
 states, we aligned states across all models of four to 16 states 
 by assigning each to one of the sixteen possible binary states using an 
@@ -1170,10 +1255,10 @@ emissions probability of 0.3 as the threshold for presence/absence of the
 histone mark. This threshold was used for comparison purposes only, and 
 produced the most stable state estimates between models. We then 
 investigated the stability of three features across all states: the 
-emissions probabilities (Supplemental Fig. \ref{supp_fig:model_emissions_comparison}), 
-the abundance of each state across transcribed genes (Supplemental Figure 
-\ref{supp_fig:model_abundance_comparison}), and the associations of each state 
-with transcription (Supplemental Fig. \ref{supp_fig:model_effect_comparison}). 
+emissions probabilities (Supp. Fig. S`r emissions.label`), 
+the abundance of each state across transcribed genes (Supp. Fig. 
+S`r abundance.label`), and the associations of each state 
+with transcription (Supp. Fig. S`r effect.label`). 
 Methods for each of these analyses are described separately below. All 
 measures were consistent across all models, but the 
 `r num.states`-state model was characterized by a wide range of 
@@ -1361,11 +1446,17 @@ diversity outbred (DO) mice. We compared the effects of the imputed
 epigenetic features to imputed SNPs and to local haplotype effects
 as measured in the DO.
 
+```{r, echo = FALSE}
+fig.label <- "sup_imputation"
+fig.counter <- ref_fig(fig.counter, fig.label)
+imputation.label <- fig.counter[fig.label]
+```
+
 All imputations followed the same basic procedure: For each transcript, 
 we identified the haplotype probabilities in the DO mice at the genetic 
 marker nearest the gene transcription start site. This matrix held DO 
 individuals in rows and DO founder haplotypes in columns 
-(Supplemental Fig. \ref{supp_fig:imputation}).
+(Supp. Fig. S`r imputation.label`).
 
 For each transcript, we also generated a three-dimensional array 
 representing the genomic features (chromatin state, DNA methylation 
@@ -1379,7 +1470,7 @@ We then multiplied the haplotype probabilities by each genomic feature
 array to obtain the imputed genomic feature for each DO mouse. This final 
 array held DO individuals in rows, the genomic feature in the second 
 dimension, and genomic position in the third dimension 
-(Supplemental Fig. \ref{supp_fig:imputation}). This array is analagous 
+(Supp. Fig. S`r imputation.label`). This array is analagous 
 to the genoprobs object in R/qtl2 \citep{pmid30591514}. The genomic 
 position dimension included all positions from 1 kb upstream of the 
 TSS to 1 kb downstream of the TES for the given transcript. SNP data 
@@ -1443,18 +1534,18 @@ itself. The $p$-value distributions for all three genomic features were
 highly enriched for small $p$-values (all Kruskal-Wallis $p < 2^{-16}$), 
 suggesting that, although many individual imputed values were not significantly 
 associated with gene expression, overall each genomic feature could 
-be significantly associated with gene expression (Supplemental Fig. 
-\ref{supp_fig:empirical_p}).
+be significantly associated with gene expression (Supp. Fig. 
+S`r emp.p.label`).
 
 # Data Access
-All raw and processed sequencing data generated in this study have 
-been submitted to the NCBI Gene Expression Omnibus 
+All raw and processed sequencing data generated in this study 
+have been submitted to the NCBI Gene Expression Omnibus 
 (GEO; https://www.ncbi.nlm.nih.gov/geo/) under accession 
 number GSE213968.
 
 Code to run the analyses in this study are available at 
 \url{https://github.com/annaLtyler/Epigenetics_Manuscript}
-and in Supplemental File XXX.
+and in the file Supplemental_Code.zip.
 
 # Competing Interest Statement
 The authors do not have any competing interests to declare.
@@ -1469,131 +1560,6 @@ Leukemia & Lymphoma Society.
 We gratefully acknowledge expert assistance from Genome 
 Technologies, Gene Expression Services, and Information 
 Technologies at The Jackson Laboratory.
-
-\pagebreak
-
-# Supplemental Figure Legends
-
-\beginsupplement
-
-\begin{figure}[ht!]
-\caption{Correlations of multiple genomic features across inbred
-mice. Each panel shows one genomic feature A. Transcriptome;
-B. Methylome; C. H3K27ac; D. H3K27me3; E. H3K4me1; F. H3K4me3.
-These figures complement Figure 1 in the manuscript and show
-a more finely detailed structure of the correlations between
-individuals and strains.
-}
-\label{supp_fig:feature_correlation}
-\end{figure}
-
-\begin{figure}[ht!]
-\caption{These figures are companions to those shown in Figure 
-\ref{fig:state_abundance}A. Each panel shows the abundance of 
-a single state for each strain. The color of each line indicates 
-the strain. The abundance pattern of each state is largely identical 
-across the strains. Deviations are seen only outside the gene body
-for very rare states are are thus artefacts due to low numbers
-of example genes.
-}
-\label{supp_fig:state_abundance_by_strain}
-\end{figure}
-
-
-\begin{figure}[ht!]
-\caption{This figure is a companion to the DNA methylation 
-percent panel in Figure \ref{fig:state_abundance}D. It shows 
-DNA methylation percent for each strain along the gene body. 
-Strain is indicated by color.
-}
-\label{supp_fig:percent_methyl_by_strain}
-\end{figure}
-
-\begin{figure}[ht!]
-\caption{The following figure shows the association of each chromatin 
-state to gene expression for reference in the first colum. The
-second column shows the percent DNA methylation of CpG sites in 
-each state. The third column shows the association between DNA 
-methylation in each state with gene expression. The fourth column
-shows the state annotation for reference. Note that DNA methylation
-in each state tended to be associated with expression in a manner
-opposite to that of the chromatin state. If the chromatin state
-had a positive association with gene expression, DNA methylation 
-in that state had a negative association with gene expression and
-vice versa.
-}
-\label{supp_fig:methyl_effect_by_state}
-\end{figure}
-
-
-\begin{figure}[ht!]
-\caption{Comparison of emissions probabilities across all ChromHMM models.
-Each row contains data for a single ChromHMM model fit to the number of
-states indicated on either side of the row. Each set of four columns shows
-data for each of the four histone modifications. Each set is separated from
-the next by a column of gray for ease of visualization. The bottom row, the
-reference row, shows the ideal state that all model states are being compared
-to. Blue indicates absence of the histone mark and red indicates presence.
-For each ChromHMM model, each state was assigned to one of the reference states
-using an emissions probability of 0.3 as a threshold for presence of the histone
-modification. If a state was not present in the given model, the corresponding
-area is shown in gray. Emissions probabilities near 0 are shown in blue, and 
-probabilities near 1 are shown in red. Orange and yellow indicate intermediate
-probabilities. Aligning the states across all models shows that emissions
-across models were stable. This stability is evident as vertical bars of 
-consistent color.}
-\label{supp_fig:model_emissions_comparison}
-\end{figure}
-
-
-\begin{figure}[ht!]
-\caption{Comparison of state abundance across all ChromHMM models. The left-most column
-shows the annotation for each state. Unannotated states are marked with a dash. The 
-binary heatmap indicates which histone modifications were present in each state: 1 
-indicates presence, and 0 indicates absence. The histone modifications are labeled
-at the bottom of each column. The continuous heatmap shows the abundance of each state
-(in rows) in each ChromHMM model (in columns). The abundance is the proportion of 
-transcribed genes with the state present. Less abundant states are shaded blue, and 
-more abundant states are shaded yellow, orange, and red. The number of states in the
-model is indicated at the bottom of each column. The black box highlights the model
-used in this study -- the `r num.states`-state model. State abundance was
-stable across the different models.}
-\label{supp_fig:model_abundance_comparison}
-\end{figure}
-
-\begin{figure}[ht!]
-\caption{Comparison of state associations with gene expression across all 
-ChromHMM models. This figure is identical to Figure 
-\ref{supp_fig:model_abundance_comparison}, except that the cells in the 
-continuous heatmap show the effect size of each state on gene expression
-across all ChromHMM models. The effect was the $\beta$ coefficient derived from
-a linear model. Similar to state abundance, the associations were 
-stable across models.}
-\label{supp_fig:model_effect_comparison}
-\end{figure}
-
-\begin{figure}[ht!]
-\caption{Schematic for imputation of histone modifications into the 
-DO mice. For a single transcript imputation was made by multiplying 
-a three-dimensional array, containing chromatin state by strain by
-position, by a two-dimensional array, contatining haplotype probabilities
-by DO individual, to create a three-dimensional array, containing 
-individual by position by chromatin state probability.}
-\label{supp_fig:imputation}
-\end{figure}
-
-
-\begin{figure}[ht!]
-\caption{This figure shows empirical $p$-value distributions obtained
-by permuting imputed genomic features and associating them
-with gene expression in the DO mice. All distributions are
-enriched with small values suggesting that overall each 
-genomic feature   is associated with gene expression in the DO
-beyond the simple correlation with haplotype.
-}
-\label{supp_fig:empirical_p}
-\end{figure}
-
 
 \pagebreak
 

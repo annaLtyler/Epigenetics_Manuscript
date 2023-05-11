@@ -69,7 +69,7 @@ delete.previous = as.logical(args[2]) #whether to delete and regenerate files
 is.interactive = FALSE
 #is.interactive = TRUE
 
-if(is.na(delete.previous)){num.states = 15; delete.previous = FALSE}
+if(is.na(delete.previous)){num.states = 14; delete.previous = FALSE}
 ```
 
 ```{r set_param}

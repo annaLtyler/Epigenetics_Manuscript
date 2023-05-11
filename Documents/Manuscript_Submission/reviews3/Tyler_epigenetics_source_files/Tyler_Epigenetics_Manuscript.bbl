@@ -1,0 +1,395 @@
+\begin{thebibliography}{74}
+\providecommand{\natexlab}[1]{#1}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi:\discretionary{}{}{}#1}\else
+  \providecommand{\doi}{doi:\discretionary{}{}{}\begingroup
+  \urlstyle{rm}\Url}\fi
+
+\bibitem[Ashbrook \emph{et~al.}(2019)]{Ashbrook:2019bd}
+Ashbrook DG, Arends D, Prins P, Mulligan MK, Roy S, Williams EG, Lutz CM,
+  Valenzuela A, Bohl CJ, Ingels JF, \emph{et~al.}, 2019, {The expanded BXD
+  family of mice: A cohort for experimental systems genetics and precision
+  medicine}. \emph{bioRxiv} 139: 387--64, \doi{https::\\10.1101/672097}.
+
+\bibitem[Bernstein \emph{et~al.}(2005)]{pmid15680324}
+Bernstein BE, Kamal M, Lindblad-Toh K, Bekiranov S, Bailey DK, Huebert DJ,
+  McMahon S, Karlsson EK, Kulbokas EJ, Gingeras TR, \emph{et~al.}, 2005,
+  {{G}enomic maps and comparative analysis of histone modifications in human
+  and mouse}. \emph{Cell} 120(2): 169--181.
+
+\bibitem[Bogue \emph{et~al.}(2015)]{bogue2015collaborative}
+Bogue MA, Churchill GA, Chesler EJ, 2015, Collaborative cross and diversity
+  outbred data resources in the mouse phenome database. \emph{Mammalian Genome}
+  26(9): 511--520.
+
+\bibitem[Bonasio \emph{et~al.}(2010)]{bonasio2010molecular}
+Bonasio R, Tu S, Reinberg D, 2010, Molecular signals of epigenetic states.
+  \emph{Science} 330(6004): 612--616.
+
+\bibitem[Broman \emph{et~al.}(2019)]{pmid30591514}
+Broman KW, Gatti DM, Simecek P, Furlotte NA, Prins P, Sen S, Yandell BS,
+  Churchill GA, 2019, {{R}/qtl2: {S}oftware for {M}apping {Q}uantitative
+  {T}rait {L}oci with {H}igh-{D}imensional {D}ata and {M}ultiparent
+  {P}opulations}. \emph{Genetics} 211(2): 495--502.
+
+\bibitem[Chesler \emph{et~al.}(2008)]{Chesler:2008ge}
+Chesler EJ, Miller DR, Branstetter LR, Galloway LD, Jackson BL, Philip VM, Voy
+  BH, Culiat CT, Threadgill DW, Williams RW, \emph{et~al.}, 2008, {The
+  Collaborative Cross at Oak Ridge National Laboratory: developing a powerful
+  resource for systems genetics.} \emph{Mammalian Genome} 19(6): 382--389.
+
+\bibitem[Chick \emph{et~al.}(2016)]{pmid27309819}
+Chick JM, Munger SC, Simecek P, Huttlin EL, Choi K, Gatti DM, Raghupathy N,
+  Svenson KL, Churchill GA, Gygi SP, 2016, {{D}efining the consequences of
+  genetic variation on a proteome-wide scale}. \emph{Nature} 534(7608):
+  500--505.
+
+\bibitem[Chigurupati \emph{et~al.}(2007)]{chigurupati2007involvement}
+Chigurupati S, Arumugam TV, Son TG, Lathia JD, Jameel S, Mughal MR, Tang SC, Jo
+  DG, Camandola S, Giunta M, \emph{et~al.}, 2007, Involvement of notch
+  signaling in wound healing. \emph{PloS one} 2(11): e1167.
+
+\bibitem[Churchill \emph{et~al.}(2012)]{churchill2012diversity}
+Churchill GA, Gatti DM, Munger SC, Svenson KL, 2012, The diversity outbred
+  mouse population. \emph{Mammalian genome} 23(9): 713--718.
+
+\bibitem[Conover(1999)]{conover1999practical}
+Conover WJ, 1999, \emph{Practical nonparametric statistics}, vol. 350. John
+  Wiley \& Sons, Inc., New York, NY.
+
+\bibitem[Creyghton \emph{et~al.}(2010)]{creyghton2010histone}
+Creyghton MP, Cheng AW, Welstead GG, Kooistra T, Carey BW, Steine EJ, Hanna J,
+  Lodato MA, Frampton GM, Sharp PA, \emph{et~al.}, 2010, Histone {H3K27ac}
+  separates active from poised enhancers and predicts developmental state.
+  \emph{Proc Natl Acad Sci} 107(50): 21931--21936.
+
+\bibitem[Durrant \emph{et~al.}(2011)]{durrant2011collaborative}
+Durrant C, Tayem H, Yalcin B, Cleak J, Goodstadt L, de~Villena FPM, Mott R,
+  Iraqi FA, 2011, Collaborative cross mice and their power to map host
+  susceptibility to aspergillus fumigatus infection. \emph{Genome research}
+  21(8): 1239--1248.
+
+\bibitem[Ernst and Kellis(2012)]{Ernst:2012ii}
+Ernst J, Kellis M, 2012, {ChromHMM: automating chromatin-state discovery and
+  characterization}. \emph{Nature Methods} 9(3): 215--216.
+
+\bibitem[Ernst and Kellis(2017)]{pmid29120462}
+Ernst J, Kellis M, 2017, {{C}hromatin-state discovery and genome annotation
+  with {C}hrom{H}{M}{M}}. \emph{Nat Protoc} 12(12): 2478--2492.
+
+\bibitem[Farh \emph{et~al.}(2015)]{farh2015genetic}
+Farh KKH, Marson A, Zhu J, Kleinewietfeld M, Housley WJ, Beik S, Shoresh N,
+  Whitton H, Ryan RJ, Shishkin AA, \emph{et~al.}, 2015, Genetic and epigenetic
+  fine mapping of causal autoimmune disease variants. \emph{Nature} 518(7539):
+  337--343.
+
+\bibitem[Fraga \emph{et~al.}(2005)]{pmid16009939}
+Fraga MF, Ballestar E, Paz MF, Ropero S, Setien F, Ballestar ML, Heine-Suñer
+  D, Cigudosa JC, Urioste M, Benitez J, \emph{et~al.}, 2005, {{E}pigenetic
+  differences arise during the lifetime of monozygotic twins}. \emph{Proc Natl
+  Acad Sci} 102(30): 10604--10609.
+
+\bibitem[Gatti \emph{et~al.}(2017)]{gatti2017effects}
+Gatti DM, Simecek P, Somes L, Jeffrey CT, Vincent MJ, Choi K, Chen X, Churchill
+  GA, Svenson KL, 2017, The effects of sex and diet on physiology and liver
+  gene expression in diversity outbred mice. \emph{bioRxiv} : 098657.
+
+\bibitem[Gatti \emph{et~al.}(2014)]{Gatti:2014ko}
+Gatti DM, Svenson KL, Shabalin A, Wu LY, Valdar W, Simecek P, Goodwin N, Cheng
+  R, Pomp D, Palmer A, \emph{et~al.}, 2014, {Quantitative trait locus mapping
+  methods for diversity outbred mice.} \emph{G3} 4(9): 1623--1633.
+
+\bibitem[Godini \emph{et~al.}(2018)]{pmid29625185}
+Godini R, Lafta HY, Fallahi H, 2018, {{E}pigenetic modifications in the
+  embryonic and induced pluripotent stem cells}. \emph{Gene Expr Patterns} 29:
+  1--9.
+
+\bibitem[Graham \emph{et~al.}(2021)]{graham2021baseline}
+Graham JB, Swarts JL, Leist SR, Sch{\"a}fer A, Menachery VD, Gralinski LE, Jeng
+  S, Miller DR, Mooney MA, McWeeney SK, \emph{et~al.}, 2021, Baseline t cell
+  immune phenotypes predict virologic and disease control upon sars-cov
+  infection in collaborative cross mice. \emph{PLoS pathogens} 17(1): e1009287.
+
+\bibitem[Grimm \emph{et~al.}(2019)]{grimm2019dna}
+Grimm SA, Shimbo T, Takaku M, Thomas JW, Auerbach S, Bennett BD, Bucher JR,
+  Burkholder AB, Day F, Du Y, \emph{et~al.}, 2019, Dna methylation in mice is
+  influenced by genetics as well as sex and life experience. \emph{Nature
+  communications} 10(1): 305.
+
+\bibitem[Gujar \emph{et~al.}(2018)]{gujar2018profiling}
+Gujar H, Liang JW, Wong NC, Mozhui K, 2018, Profiling dna methylation
+  differences between inbred mouse strains on the illumina human infinium
+  methylationepic microarray. \emph{PLoS One} 13(3): e0193496.
+
+\bibitem[Hawe \emph{et~al.}(2022)]{hawe2022genetic}
+Hawe JS, Wilson R, Schmid KT, Zhou L, Lakshmanan LN, Lehne BC, K{\"u}hnel B,
+  Scott WR, Wielscher M, Yew YW, \emph{et~al.}, 2022, Genetic variation
+  influencing dna methylation provides insights into molecular mechanisms
+  regulating genomic function. \emph{Nature genetics} 54(1): 18--29.
+
+\bibitem[Heintzman \emph{et~al.}(2009)]{heintzman2009histone}
+Heintzman ND, Hon GC, Hawkins RD, Kheradpour P, Stark A, Harp LF, Ye Z, Lee LK,
+  Stuart RK, Ching CW, \emph{et~al.}, 2009, Histone modifications at human
+  enhancers reflect global cell-type-specific gene expression. \emph{Nature}
+  459(7243): 108--112.
+
+\bibitem[Heintzman \emph{et~al.}(2007)]{heintzman2007distinct}
+Heintzman ND, Stuart RK, Hon G, Fu Y, Ching CW, Hawkins RD, Barrera LO,
+  Van~Calcar S, Qu C, Ching KA, \emph{et~al.}, 2007, Distinct and predictive
+  chromatin signatures of transcriptional promoters and enhancers in the human
+  genome. \emph{Nature genetics} 39(3): 311--318.
+
+\bibitem[Hindorff \emph{et~al.}(2009)]{pmid19474294}
+Hindorff LA, Sethupathy P, Junkins HA, Ramos EM, Mehta JP, Collins FS, Manolio
+  TA, 2009, {{P}otential etiologic and functional implications of genome-wide
+  association loci for human diseases and traits}. \emph{Proc Natl Acad Sci}
+  106(23): 9362--9367.
+
+\bibitem[Hu and Monga(2021)]{hu2021wnt}
+Hu S, Monga SP, 2021, Wnt/$\beta$-catenin signaling and liver regeneration:
+  Circuit, biology, and opportunities. \emph{Gene Expression} 20(3): 189.
+
+\bibitem[Ji \emph{et~al.}(2010)]{pmid20720541}
+Ji H, Ehrlich LI, Seita J, Murakami P, Doi A, Lindau P, Lee H, Aryee MJ,
+  Irizarry RA, Kim K, \emph{et~al.}, 2010, {{C}omprehensive methylome map of
+  lineage commitment from haematopoietic progenitors}. \emph{Nature} 467(7313):
+  338--342.
+
+\bibitem[Jones(2012)]{jones2012functions}
+Jones PA, 2012, Functions of {DNA} methylation: islands, start sites, gene
+  bodies and beyond. \emph{Nature Reviews Genetics} 13(7): 484--492.
+
+\bibitem[Kang \emph{et~al.}(2021)]{kang2021genetic}
+Kang HG, Lee YH, Lee SY, Choi JE, Do SK, Hong MJ, Lee JH, Jeong JY, Do YW, Lee
+  EB, \emph{et~al.}, 2021, Genetic variants in histone modification regions are
+  associated with the prognosis of lung adenocarcinoma. \emph{Scientific
+  reports} 11(1): 1--10.
+
+\bibitem[Keane \emph{et~al.}(2011)]{keane2011mouse}
+Keane TM, Goodstadt L, Danecek P, White MA, Wong K, Yalcin B, Heger A, Agam A,
+  Slater G, Goodson M, \emph{et~al.}, 2011, Mouse genomic variation and its
+  effect on phenotypes and gene regulation. \emph{Nature} 477(7364): 289--294.
+
+\bibitem[Kebede and Attie(2014)]{kebede2014insights}
+Kebede MA, Attie AD, 2014, Insights into obesity and diabetes at the
+  intersection of mouse and human genetics. \emph{Trends in Endocrinology \&
+  Metabolism} 25(10): 493--501.
+
+\bibitem[Keller \emph{et~al.}(2019)]{keller2019gene}
+Keller MP, Rabaglia ME, Schueler KL, Stapleton DS, Gatti DM, Vincent M, Mitok
+  KA, Wang Z, Ishimura T, Simonett SP, \emph{et~al.}, 2019, Gene loci
+  associated with insulin secretion in islets from nondiabetic mice. \emph{The
+  Journal of clinical investigation} 129(10): 4419--4432.
+
+\bibitem[Koyuncu \emph{et~al.}(2021)]{koyuncu2021cxcl1}
+Koyuncu D, Niazi MKK, Tavolara T, Abeijon C, Ginese ML, Liao Y, Mark C, Specht
+  A, Gower AC, Restrepo BI, \emph{et~al.}, 2021, Cxcl1: A new diagnostic
+  biomarker for human tuberculosis discovered using diversity outbred mice.
+  \emph{PLoS pathogens} 17(8): e1009773.
+
+\bibitem[Krueger and Andrews(2011)]{pmid21493656}
+Krueger F, Andrews SR, 2011, {{B}ismark: a flexible aligner and methylation
+  caller for {B}isulfite-{S}eq applications}. \emph{Bioinformatics} 27(11):
+  1571--1572.
+
+\bibitem[Kurtz \emph{et~al.}(2020)]{kurtz2020diversity}
+Kurtz SL, Rossi AP, Beamer GL, Gatti DM, Kramnik I, Elkins KL, 2020, The
+  diversity outbred mouse population is an improved animal model of vaccination
+  against tuberculosis that reflects heterogeneity of protection.
+  \emph{Msphere} 5(2): e00097--20.
+
+\bibitem[Langmead and Salzberg(2012)]{langmead2012fast}
+Langmead B, Salzberg SL, 2012, Fast gapped-read alignment with bowtie 2.
+  \emph{Nature methods} 9(4): 357--359.
+
+\bibitem[Lawrence \emph{et~al.}(2016)]{lawrence2016lateral}
+Lawrence M, Daujat S, Schneider R, 2016, Lateral thinking: how histone
+  modifications regulate gene expression. \emph{Trends in Genetics} 32(1):
+  42--56.
+
+\bibitem[Link \emph{et~al.}(2018)]{link2018analysis}
+Link VM, Duttke SH, Chun HB, Holtman IR, Westin E, Hoeksema MA, Abe Y, Skola D,
+  Romanoski CE, Tao J, \emph{et~al.}, 2018, Analysis of genetically diverse
+  macrophages reveals local and domain-wide mechanisms that control
+  transcription factor binding and function. \emph{Cell} 173(7): 1796--1809.
+
+\bibitem[Love \emph{et~al.}(2014)]{love2014moderated}
+Love MI, Huber W, Anders S, 2014, Moderated estimation of fold change and
+  dispersion for {RNA-seq data with DESeq2}. \emph{Genome biology} 15(12):
+  1--21.
+
+\bibitem[Mao \emph{et~al.}(2015)]{mao2015identification}
+Mao JH, Langley SA, Huang Y, Hang M, Bouchard KE, Celniker SE, Brown JB,
+  Jansson JK, Karpen GH, Snijders AM, 2015, Identification of genetic factors
+  that modify motor performance and body weight using collaborative cross mice.
+  \emph{Scientific reports} 5(1): 1--9.
+
+\bibitem[Maurano \emph{et~al.}(2012)]{maurano2012systematic}
+Maurano MT, Humbert R, Rynes E, Thurman RE, Haugen E, Wang H, Reynolds AP,
+  Sandstrom R, Qu H, Brody J, \emph{et~al.}, 2012, Systematic localization of
+  common disease-associated variation in regulatory {DNA}. \emph{Science}
+  337(6099): 1190--1195.
+
+\bibitem[McVicker \emph{et~al.}(2013)]{mcvicker2013identification}
+McVicker G, Van De~Geijn B, Degner JF, Cain CE, Banovich NE, Raj A, Lewellen N,
+  Myrthil M, Gilad Y, Pritchard JK, 2013, Identification of genetic variants
+  that affect histone modifications in human cells. \emph{Science} 342(6159):
+  747--749.
+
+\bibitem[Moore \emph{et~al.}(2013)]{moore2013dna}
+Moore LD, Le T, Fan G, 2013, {DNA} methylation and its basic function.
+  \emph{Neuropsychopharmacology} 38(1): 23--38.
+
+\bibitem[Pennisi(2011)]{pmid21617055}
+Pennisi E, 2011, {{T}he {B}iology of {G}enomes. {D}isease risk links to gene
+  regulation}. \emph{Science} 332(6033): 1031.
+
+\bibitem[Prickaerts \emph{et~al.}(2016)]{pmid27800026}
+Prickaerts P, Adriaens ME, Beucken TVD, Koch E, Dubois L, Dahlmans VEH, Gits C,
+  Evelo CTA, Chan-Seng-Yue M, Wouters BG, \emph{et~al.}, 2016, {{H}ypoxia
+  increases genome-wide bivalent epigenetic marking by specific gain of
+  {H}3{K}27me3}. \emph{Epigenetics Chromatin} 9: 46.
+
+\bibitem[Prowse-Wilkins \emph{et~al.}(2022)]{prowse2022genetic}
+Prowse-Wilkins CP, Lopdell TJ, Xiang R, Vander~Jagt CJ, Littlejohn MD,
+  Chamberlain AJ, Goddard ME, 2022, Genetic variation in histone modifications
+  and gene expression identifies regulatory variants in the mammary gland of
+  cattle. \emph{BMC genomics} 23(1): 1--19.
+
+\bibitem[Quinlan and Hall(2010)]{quinlan2010bedtools}
+Quinlan AR, Hall IM, 2010, Bedtools: a flexible suite of utilities for
+  comparing genomic features. \emph{Bioinformatics} 26(6): 841--842.
+
+\bibitem[Rada-Iglesias \emph{et~al.}(2011)]{rada2011unique}
+Rada-Iglesias A, Bajpai R, Swigut T, Brugmann SA, Flynn RA, Wysocka J, 2011, A
+  unique chromatin signature uncovers early developmental enhancers in humans.
+  \emph{Nature} 470(7333): 279--283.
+
+\bibitem[Raghupathy \emph{et~al.}(2018)]{pmid29444201}
+Raghupathy N, Choi K, Vincent MJ, Beane GL, Sheppard KS, Munger SC, Korstanje
+  R, Pardo-Manual~de Villena F, Churchill GA, 2018, {{H}ierarchical analysis of
+  {R}{N}{A}-seq reads improves the accuracy of allele-specific expression}.
+  \emph{Bioinformatics} 34(13): 2177--2184.
+
+\bibitem[Rintisch \emph{et~al.}(2014)]{rintisch2014natural}
+Rintisch C, Heinig M, Bauerfeind A, Schafer S, Mieth C, Patone G, Hummel O,
+  Chen W, Cook S, Cuppen E, \emph{et~al.}, 2014, Natural variation of histone
+  modification and its impact on gene expression in the rat genome.
+  \emph{Genome research} 24(6): 942--953.
+
+\bibitem[Santos-Rosa \emph{et~al.}(2002)]{pmid12353038}
+Santos-Rosa H, Schneider R, Bannister AJ, Sherriff J, Bernstein BE, Emre NC,
+  Schreiber SL, Mellor J, Kouzarides T, 2002, {{A}ctive genes are
+  tri-methylated at {K}4 of histone {H}3}. \emph{Nature} 419(6905): 407--411.
+
+\bibitem[Schilling \emph{et~al.}(2009)]{schilling2009allele}
+Schilling E, El~Chartouni C, Rehli M, 2009, Allele-specific dna methylation in
+  mouse strains is mainly determined by cis-acting sequences. \emph{Genome
+  research} 19(11): 2028--2035.
+
+\bibitem[Schneider \emph{et~al.}(2004)]{pmid14661024}
+Schneider R, Bannister AJ, Myers FA, Thorne AW, Crane-Robinson C, Kouzarides T,
+  2004, {{H}istone {H}3 lysine 4 methylation patterns in higher eukaryotic
+  genes}. \emph{Nat Cell Biol} 6(1): 73--77.
+
+\bibitem[Shi \emph{et~al.}(2015)]{shi2015wnt}
+Shi Y, Shu B, Yang R, Xu Y, Xing B, Liu J, Chen L, Qi S, Liu X, Wang P,
+  \emph{et~al.}, 2015, Wnt and notch signaling pathway involved in wound
+  healing by targeting c-myc and hes1 separately. \emph{Stem cell research \&
+  therapy} 6: 1--13.
+
+\bibitem[Svenson \emph{et~al.}(2012)]{Svenson:2012hq}
+Svenson KL, Gatti DM, Valdar W, Welsh CE, Cheng R, Chesler EJ, Palmer AA,
+  McMillan L, Churchill GA, 2012, {High-resolution genetic mapping using the
+  Mouse Diversity outbred population.} \emph{Genetics} 190(2): 437--447.
+
+\bibitem[Takemon \emph{et~al.}(2021)]{takemon2021uncovering}
+Takemon Y, Wright V, Davenport B, Gatti DM, Sheehan SM, Letson K, Savage HS,
+  Lennon R, Korstanje R, 2021, Uncovering modifier genes of x-linked alport
+  syndrome using a novel multiparent mouse model. \emph{Journal of the American
+  Society of Nephrology} 32(8): 1961--1973.
+
+\bibitem[Thompson and Monga(2007)]{thompson2007wnt}
+Thompson MD, Monga SP, 2007, Wnt/$\beta$-catenin signaling in liver health and
+  disease. \emph{Hepatology} 45(5): 1298--1305.
+
+\bibitem[Thompson \emph{et~al.}(2018)]{pmid30348905}
+Thompson MJ, Chwiałkowska K, Rubbi L, Lusis AJ, Davis RC, Srivastava A,
+  Korstanje R, Churchill GA, Horvath S, Pellegrini M, 2018, {{A} multi-tissue
+  full lifespan epigenetic clock for mice}. \emph{Aging} 10(10): 2832--2854.
+
+\bibitem[Threadgill and Churchill(2012)]{threadgill2012ten}
+Threadgill DW, Churchill GA, 2012, Ten years of the collaborative cross.
+  \emph{G3: Genes| Genomes| Genetics} 2(2): 153--156.
+
+\bibitem[Threadgill \emph{et~al.}(2011)]{threadgill2011collaborative}
+Threadgill DW, Miller DR, Churchill GA, de~Villena FPM, 2011, The collaborative
+  cross: a recombinant inbred mouse population for the systems genetic era.
+  \emph{ILAR journal} 52(1): 24--31.
+
+\bibitem[Tyler \emph{et~al.}(2017)]{pmid28592500}
+Tyler AL, Ji B, Gatti DM, Munger SC, Churchill GA, Svenson KL, Carter GW, 2017,
+  {{E}pistatic networks jointly influence phenotypes related to metabolic
+  disease and gene expression in diversity outbred mice}. \emph{Genetics}
+  206(2): 621--639.
+
+\bibitem[Vastenhouw and Schier(2012)]{pmid22513113}
+Vastenhouw NL, Schier AF, 2012, {{B}ivalent histone modifications in early
+  embryogenesis}. \emph{Curr Opin Cell Biol} 24(3): 374--386.
+
+\bibitem[Villicaña and Bell(2021)]{pmid33931130}
+Villicaña S, Bell JT, 2021, {{G}enetic impacts on {D}{N}{A} methylation:
+  research findings and future perspectives}. \emph{Genome Biol} 22(1): 127.
+
+\bibitem[Voigt \emph{et~al.}(2013)]{pmid23788621}
+Voigt P, Tee WW, Reinberg D, 2013, {{A} double take on bivalent promoters}.
+  \emph{Genes Dev} 27(12): 1318--1338.
+
+\bibitem[Whyte \emph{et~al.}(2012)]{whyte2012wnt}
+Whyte JL, Smith AA, Helms JA, 2012, Wnt signaling and injury repair. \emph{Cold
+  Spring Harbor perspectives in biology} 4(8): a008078.
+
+\bibitem[Wiench \emph{et~al.}(2011)]{pmid21701563}
+Wiench M, John S, Baek S, Johnson TA, Sung MH, Escobar T, Simmons CA, Pearce
+  KH, Biddie SC, Sabo PJ, \emph{et~al.}, 2011, {{D}{N}{A} methylation status
+  predicts cell type-specific enhancer activity}. \emph{EMBO J} 30(15):
+  3028--3039.
+
+\bibitem[Wysocka \emph{et~al.}(2006)]{pmid16728976}
+Wysocka J, Swigut T, Xiao H, Milne TA, Kwon SY, Landry J, Kauer M, Tackett AJ,
+  Chait BT, Badenhorst P, \emph{et~al.}, 2006, {{A} {P}{H}{D} finger of
+  {N}{U}{R}{F} couples histone {H}3 lysine 4 trimethylation with chromatin
+  remodelling}. \emph{Nature} 442(7098): 86--90.
+
+\bibitem[Xie \emph{et~al.}(2012)]{xie2012base}
+Xie W, Barr CL, Kim A, Yue F, Lee AY, Eubanks J, Dempster EL, Ren B, 2012,
+  Base-resolution analyses of sequence and parent-of-origin dependent dna
+  methylation in the mouse genome. \emph{Cell} 148(4): 816--831.
+
+\bibitem[Xu \emph{et~al.}(2021)]{pmid32671792}
+Xu R, Li C, Liu X, Gao S, 2021, {{I}nsights into epigenetic patterns in
+  mammalian early embryos}. \emph{Protein Cell} 12(1): 7--28.
+
+\bibitem[Yang \emph{et~al.}(2007)]{yang2007subspecific}
+Yang H, Bell TA, Churchill GA, Pardo-Manuel~de Villena F, 2007, On the
+  subspecific origin of the laboratory mouse. \emph{Nature genetics} 39(9):
+  1100--1107.
+
+\bibitem[Yue \emph{et~al.}(2018)]{yue2018role}
+Yue ZS, Ruan B, Duan JL, Han H, Wang L, 2018, The role of the notch signaling
+  pathway in liver injury and repair. \emph{Journal of Bio-X Research} 1(02):
+  95--104.
+
+\bibitem[Zhang \emph{et~al.}(2008)]{pmid18798982}
+Zhang Y, Liu T, Meyer CA, Eeckhoute J, Johnson DS, Bernstein BE, Nusbaum C,
+  Myers RM, Brown M, Li W, \emph{et~al.}, 2008, {{M}odel-based analysis of
+  {C}h{I}{P}-{S}eq ({M}{A}{C}{S})}. \emph{Genome Biol} 9(9): R137,
+  \doi{10.1186/gb-2008-9-9-r137}.
+
+\bibitem[Zhou \emph{et~al.}(2022)]{zhou2022dna}
+Zhou W, Hinoue T, Barnes B, Mitchell O, Iqbal W, Lee SM, Foy KK, Lee KH, Moyer
+  EJ, VanderArk A, \emph{et~al.}, 2022, Dna methylation dynamics and
+  dysregulation delineated by high-throughput profiling in the mouse.
+  \emph{Cell genomics} 2(7): 100144.
+
+\end{thebibliography}

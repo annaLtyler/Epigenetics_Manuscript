@@ -1,7 +1,4 @@
 % Options for packages loaded elsewhere
-%DIF LATEXDIFF DIFFERENCE FILE
-%DIF DEL Epigenetics_Manuscript_resubmission2.tex   Sat Apr 15 09:34:54 2023
-%DIF ADD Epigenetics_Manuscript.tex                 Tue May  9 11:23:05 2023
 \PassOptionsToPackage{unicode}{hyperref}
 \PassOptionsToPackage{hyphens}{url}
 %
@@ -86,87 +83,6 @@
 expression across nine inbred strains of mice}
 \author{}
 \date{\vspace{-2.5em}}
-%DIF PREAMBLE EXTENSION ADDED BY LATEXDIFF
-%DIF UNDERLINE PREAMBLE %DIF PREAMBLE
-\RequirePackage[normalem]{ulem} %DIF PREAMBLE
-\RequirePackage{color}\definecolor{RED}{rgb}{1,0,0}\definecolor{BLUE}{rgb}{0,0,1} %DIF PREAMBLE
-\providecommand{\DIFaddtex}[1]{{\protect\color{blue}\uwave{#1}}} %DIF PREAMBLE
-\providecommand{\DIFdeltex}[1]{{\protect\color{red}\sout{#1}}}                      %DIF PREAMBLE
-%DIF SAFE PREAMBLE %DIF PREAMBLE
-\providecommand{\DIFaddbegin}{} %DIF PREAMBLE
-\providecommand{\DIFaddend}{} %DIF PREAMBLE
-\providecommand{\DIFdelbegin}{} %DIF PREAMBLE
-\providecommand{\DIFdelend}{} %DIF PREAMBLE
-\providecommand{\DIFmodbegin}{} %DIF PREAMBLE
-\providecommand{\DIFmodend}{} %DIF PREAMBLE
-%DIF FLOATSAFE PREAMBLE %DIF PREAMBLE
-\providecommand{\DIFaddFL}[1]{\DIFadd{#1}} %DIF PREAMBLE
-\providecommand{\DIFdelFL}[1]{\DIFdel{#1}} %DIF PREAMBLE
-\providecommand{\DIFaddbeginFL}{} %DIF PREAMBLE
-\providecommand{\DIFaddendFL}{} %DIF PREAMBLE
-\providecommand{\DIFdelbeginFL}{} %DIF PREAMBLE
-\providecommand{\DIFdelendFL}{} %DIF PREAMBLE
-%DIF HYPERREF PREAMBLE %DIF PREAMBLE
-\providecommand{\DIFadd}[1]{\texorpdfstring{\DIFaddtex{#1}}{#1}} %DIF PREAMBLE
-\providecommand{\DIFdel}[1]{\texorpdfstring{\DIFdeltex{#1}}{}} %DIF PREAMBLE
-\newcommand{\DIFscaledelfig}{0.5}
-%DIF HIGHLIGHTGRAPHICS PREAMBLE %DIF PREAMBLE
-\RequirePackage{settobox} %DIF PREAMBLE
-\RequirePackage{letltxmacro} %DIF PREAMBLE
-\newsavebox{\DIFdelgraphicsbox} %DIF PREAMBLE
-\newlength{\DIFdelgraphicswidth} %DIF PREAMBLE
-\newlength{\DIFdelgraphicsheight} %DIF PREAMBLE
-% store original definition of \includegraphics %DIF PREAMBLE
-\LetLtxMacro{\DIFOincludegraphics}{\includegraphics} %DIF PREAMBLE
-\newcommand{\DIFaddincludegraphics}[2][]{{\color{blue}\fbox{\DIFOincludegraphics[#1]{#2}}}} %DIF PREAMBLE
-\newcommand{\DIFdelincludegraphics}[2][]{% %DIF PREAMBLE
-\sbox{\DIFdelgraphicsbox}{\DIFOincludegraphics[#1]{#2}}% %DIF PREAMBLE
-\settoboxwidth{\DIFdelgraphicswidth}{\DIFdelgraphicsbox} %DIF PREAMBLE
-\settoboxtotalheight{\DIFdelgraphicsheight}{\DIFdelgraphicsbox} %DIF PREAMBLE
-\scalebox{\DIFscaledelfig}{% %DIF PREAMBLE
-\parbox[b]{\DIFdelgraphicswidth}{\usebox{\DIFdelgraphicsbox}\\[-\baselineskip] \rule{\DIFdelgraphicswidth}{0em}}\llap{\resizebox{\DIFdelgraphicswidth}{\DIFdelgraphicsheight}{% %DIF PREAMBLE
-\setlength{\unitlength}{\DIFdelgraphicswidth}% %DIF PREAMBLE
-\begin{picture}(1,1)% %DIF PREAMBLE
-\thicklines\linethickness{2pt} %DIF PREAMBLE
-{\color[rgb]{1,0,0}\put(0,0){\framebox(1,1){}}}% %DIF PREAMBLE
-{\color[rgb]{1,0,0}\put(0,0){\line( 1,1){1}}}% %DIF PREAMBLE
-{\color[rgb]{1,0,0}\put(0,1){\line(1,-1){1}}}% %DIF PREAMBLE
-\end{picture}% %DIF PREAMBLE
-}\hspace*{3pt}}} %DIF PREAMBLE
-} %DIF PREAMBLE
-\LetLtxMacro{\DIFOaddbegin}{\DIFaddbegin} %DIF PREAMBLE
-\LetLtxMacro{\DIFOaddend}{\DIFaddend} %DIF PREAMBLE
-\LetLtxMacro{\DIFOdelbegin}{\DIFdelbegin} %DIF PREAMBLE
-\LetLtxMacro{\DIFOdelend}{\DIFdelend} %DIF PREAMBLE
-\DeclareRobustCommand{\DIFaddbegin}{\DIFOaddbegin \let\includegraphics\DIFaddincludegraphics} %DIF PREAMBLE
-\DeclareRobustCommand{\DIFaddend}{\DIFOaddend \let\includegraphics\DIFOincludegraphics} %DIF PREAMBLE
-\DeclareRobustCommand{\DIFdelbegin}{\DIFOdelbegin \let\includegraphics\DIFdelincludegraphics} %DIF PREAMBLE
-\DeclareRobustCommand{\DIFdelend}{\DIFOaddend \let\includegraphics\DIFOincludegraphics} %DIF PREAMBLE
-\LetLtxMacro{\DIFOaddbeginFL}{\DIFaddbeginFL} %DIF PREAMBLE
-\LetLtxMacro{\DIFOaddendFL}{\DIFaddendFL} %DIF PREAMBLE
-\LetLtxMacro{\DIFOdelbeginFL}{\DIFdelbeginFL} %DIF PREAMBLE
-\LetLtxMacro{\DIFOdelendFL}{\DIFdelendFL} %DIF PREAMBLE
-\DeclareRobustCommand{\DIFaddbeginFL}{\DIFOaddbeginFL \let\includegraphics\DIFaddincludegraphics} %DIF PREAMBLE
-\DeclareRobustCommand{\DIFaddendFL}{\DIFOaddendFL \let\includegraphics\DIFOincludegraphics} %DIF PREAMBLE
-\DeclareRobustCommand{\DIFdelbeginFL}{\DIFOdelbeginFL \let\includegraphics\DIFdelincludegraphics} %DIF PREAMBLE
-\DeclareRobustCommand{\DIFdelendFL}{\DIFOaddendFL \let\includegraphics\DIFOincludegraphics} %DIF PREAMBLE
-%DIF LISTINGS PREAMBLE %DIF PREAMBLE
-\RequirePackage{listings} %DIF PREAMBLE
-\RequirePackage{color} %DIF PREAMBLE
-\lstdefinelanguage{DIFcode}{ %DIF PREAMBLE
-%DIF DIFCODE_UNDERLINE %DIF PREAMBLE
-  moredelim=[il][\color{red}\sout]{\%DIF\ <\ }, %DIF PREAMBLE
-  moredelim=[il][\color{blue}\uwave]{\%DIF\ >\ } %DIF PREAMBLE
-} %DIF PREAMBLE
-\lstdefinestyle{DIFverbatimstyle}{ %DIF PREAMBLE
-	language=DIFcode, %DIF PREAMBLE
-	basicstyle=\ttfamily, %DIF PREAMBLE
-	columns=fullflexible, %DIF PREAMBLE
-	keepspaces=true %DIF PREAMBLE
-} %DIF PREAMBLE
-\lstnewenvironment{DIFverbatim}{\lstset{style=DIFverbatimstyle}}{} %DIF PREAMBLE
-\lstnewenvironment{DIFverbatim*}{\lstset{style=DIFverbatimstyle,showspaces=true}}{} %DIF PREAMBLE
-%DIF END PREAMBLE EXTENSION ADDED BY LATEXDIFF
 
 \begin{document}
 \maketitle
@@ -336,9 +252,8 @@ expressed at a minimal level across the strains (overall mean of 5 TPM),
 so results do not include data from non-expressed genes.
 
 \begin{figure}[ht!]
-%DIF < \includegraphics[width=3in]{Figures/Tyler_Fig1.pdf} 
-\DIFaddbeginFL \includegraphics[width=3in]{Figures/Tyler_Fig1.pdf} 
-\DIFaddendFL \caption{The first two principal components of each genomic 
+%\includegraphics[width=3in]{Figures/Tyler_Fig1.pdf} 
+\caption{The first two principal components of each genomic 
 feature across nine inbred mouse strains. In all panels each 
 point represents an individual mouse, and strain is indicated 
 by color as shown in the legend at the bottom of the figure. 
@@ -364,9 +279,8 @@ of each state with gene expression both across genes and across the
 inbred strains (Fig. \ref{fig:state_overview}C).
 
 \begin{figure}[ht!]
-%DIF < \includegraphics[width=\textwidth]{Figures/Tyler_Fig2.pdf} 
-\DIFaddbeginFL \includegraphics[width=\textwidth]{Figures/Tyler_Fig2.pdf} 
-\DIFaddendFL \caption{Overview of chromatin state composition, genomic 
+%\includegraphics[width=\textwidth]{Figures/Tyler_Fig2.pdf} 
+\caption{Overview of chromatin state composition, genomic 
 distribution, and association with expression. (A) Emission 
 probabilities for each histone modification in each 
 chromatin state. Blue indicates the absence of the histone
@@ -468,15 +382,11 @@ commonly present in CAST, PWK, and B6 compared to the other strains
 (Fig. \ref{fig:cpg_overview}A).
 
 \begin{figure}[ht!]
-%DIF < \begin{minipage}[c]{0.4\textwidth}
-  %DIF < \includegraphics[width=\textwidth]{Figures/Tyler_Fig3.pdf} 
-%DIF < \end{minipage}\hfill
-%DIF < \begin{minipage}[c]{0.5\textwidth}
-\DIFaddbeginFL \begin{minipage}[c]{0.4\textwidth}
-  \includegraphics[width=\textwidth]{Figures/Tyler_Fig3.pdf} 
-\end{minipage}\hfill
-\begin{minipage}[c]{0.5\textwidth}
-\DIFaddendFL \caption{Overview of strain-specific CpG sites. (A) Boxes 
+%\begin{minipage}[c]{0.4\textwidth}
+  %\includegraphics[width=\textwidth]{Figures/Tyler_Fig3.pdf} 
+%\end{minipage}\hfill
+%\begin{minipage}[c]{0.5\textwidth}
+\caption{Overview of strain-specific CpG sites. (A) Boxes 
 show proportion of strain-specific CpG sites that are present 
 in each strain. Boxes are colored by official strain colors
 for ease of visualization. Short names for strains are
@@ -494,9 +404,8 @@ Tsp - transcription start site proximal; Tsd - transcription
 start site distal, Hetero. - heterochromatin; Enh. - enhancer.
 }
 \label{fig:cpg_overview}
-%DIF < \end{minipage}
-\DIFaddbeginFL \end{minipage}
-\DIFaddendFL \end{figure}
+%\end{minipage}
+\end{figure}
 
 CpG sites that were shared across all strains were enriched around
 genomic features such as CpG islands and promoters (Methods) (Fig.
@@ -523,9 +432,8 @@ genomic positions to run from 0 at the TSS to 1 at the TES (See Methods)
 (Fig. \ref{fig:state_abundance})
 
 \begin{figure}[ht!]
-%DIF < \includegraphics[width=0.67\textwidth]{Figures/Tyler_Fig4.pdf} 
-\DIFaddbeginFL \includegraphics[width=0.67\textwidth]{Figures/Tyler_Fig4.pdf} 
-\DIFaddendFL \caption{Relative abundance of chromatin states and methylated DNA. (A) Each panel 
+%\includegraphics[width=0.67\textwidth]{Figures/Tyler_Fig4.pdf} 
+\caption{Relative abundance of chromatin states and methylated DNA. (A) Each panel 
 shows the abundance of a single chromatin state relative to gene TSS and TES. The 
 $y$-axis in each panel is the percent of genes containing the state. Each
 panel has an independent $y$-axis to better show the shape of each curve.
@@ -600,9 +508,8 @@ association of each chromatin state with the variation in gene
 expression across strains (Fig. \ref{fig:state_effects} middle column).
 
 \begin{figure}[ht!]
-%DIF < \includegraphics[width=0.7\textwidth]{Figures/Tyler_Fig5.pdf}
-\DIFaddbeginFL \includegraphics[width=0.7\textwidth]{Figures/Tyler_Fig5.pdf}
-\DIFaddendFL \caption{Associations of chromatin states with gene expression. Each 
+%\includegraphics[width=0.7\textwidth]{Figures/Tyler_Fig5.pdf}
+\caption{Associations of chromatin states with gene expression. Each 
 column shows the association of each chromatin state with gene 
 expression in a different experimental context as labeled. 
 Effects shown are $\beta$ coefficients from equation 1. The 
@@ -653,9 +560,8 @@ strains, perhaps because there were too few strains to reliably estimate
 the coefficients (Fig. \ref{fig:DNA_methylation_effect}B).
 
 \begin{figure}[ht!]
-%DIF < \includegraphics[width=3in]{Figures/Tyler_Fig6.pdf} 
-\DIFaddbeginFL \includegraphics[width=3in]{Figures/Tyler_Fig6.pdf} 
-\DIFaddendFL \caption{Association of DNA methylation wkth gene expression (A) across 
+%\includegraphics[width=3in]{Figures/Tyler_Fig6.pdf} 
+\caption{Association of DNA methylation wkth gene expression (A) across 
 gene expression in hepatocytes and (B) across inbred strains. The dark 
 gray line shows the estimated effect of percent DNA methylation on gene 
 expression. The $x$-axis is normalized position along the gene body 
@@ -783,9 +689,8 @@ across these subsets, and any differences in means were within a
 fraction of a standard deviation of the distributions (Supp. Fig. S7).
 
 \begin{figure}[ht!]
-%DIF < \includegraphics[width=\textwidth]{Figures/Tyler_Fig7.pdf} 
-\DIFaddbeginFL \includegraphics[width=\textwidth]{Figures/Tyler_Fig7.pdf} 
-\DIFaddendFL \caption{Comparison of the variance explained in DO gene expression
+%\includegraphics[width=\textwidth]{Figures/Tyler_Fig7.pdf} 
+\caption{Comparison of the variance explained in DO gene expression
 by four genomic features: haplotype (Hap.) chromatin state (Chrom.), 
 local SNP genotype (SNP), and local imputed DNA methylation status 
 (DM). A. Distributions of gene expression variance explained by each 
@@ -827,22 +732,20 @@ explained (R\(^2 = 0.6\)) by both chromatin state and SNPs (Fig.
 \ref{fig:example_gene}A).
 
 WSB and PWK were low-expressing strains for \textit{Pkd2}, and the
-remaining strains had higher expression (Fig. \ref{fig:example_gene}\DIFdelbegin \DIFdel{E}\DIFdelend \DIFaddbegin \DIFadd{F}\DIFaddend ).
+remaining strains had higher expression (Fig. \ref{fig:example_gene}E).
 The haplotype effects in the DO mirror this pattern with the CAST allele
-showing an especially high association with increased gene expression
-\DIFdelbegin \DIFdel{.
-}\DIFdelend \DIFaddbegin \DIFadd{(Fig. \ref{fig:example_gene}E). }\DIFaddend Figure \ref{fig:example_gene}B, C, and D
-show chromatin state, SNP genotype, and DNA methylation state along the
-body of \textit{Pkd2} respectively. Panel A shows the association of
-each of the imputed features with gene expression in the DO. The
-detailed view of this gene identified two regions marked by gray arrows
-in panel A. One is at the TSS and the immediately surrounding area, and
-the other is just downstream of the TSS.
+showing an especially high association with increased gene expression.
+Figure \ref{fig:example_gene}B, C, and D show chromatin state, SNP
+genotype, and DNA methylation state along the body of \textit{Pkd2}
+respectively. Panel A shows the association of each of the imputed
+features with gene expression in the DO. The detailed view of this gene
+identified two regions marked by gray arrows in panel A. One is at the
+TSS and the immediately surrounding area, and the other is just
+downstream of the TSS.
 
 \begin{figure}[ht!]
-%DIF < \includegraphics[width=0.7\textwidth]{Figures/Tyler_Fig8.pdf} 
-\DIFaddbeginFL \includegraphics[width=0.7\textwidth]{Figures/Tyler_Fig8.pdf} 
-\DIFaddendFL \caption{Example of epigenetic states and imputation results for a single 
+%\includegraphics[width=0.7\textwidth]{Figures/Tyler_Fig8.pdf} 
+\caption{Example of epigenetic states and imputation results for a single 
 gene, \textit{Pkd2}. The legend for each panel is displayed to its right.
 (A) The variance in DO gene expression explained at 
 each position along the gene body by each of the imputed genomic 
@@ -880,20 +783,16 @@ absence of activating marks in the low-expressing haplotypes. We
 therefore hypothesized that these two regions are heritable
 \textit{cis}-regulatory regions for \textit{Pkd2}.
 
-The spatial patterns in the SNPs \DIFaddbegin \DIFadd{(Fig. \ref{fig:example_gene}C)
-}\DIFaddend partially mirror those in chromatin state (Fig.
-\ref{fig:example_gene}\DIFdelbegin \DIFdel{C}\DIFdelend \DIFaddbegin \DIFadd{B}\DIFaddend ). SNPs underlying the more proximal enhancer
-region could potentially influence gene expression by altering local
-chromatin state. However, the more distal putative
+The spatial patterns in the SNPs partially mirror those in chromatin
+state (Fig. \ref{fig:example_gene}C). SNPs underlying the more proximal
+enhancer region could potentially influence gene expression by altering
+local chromatin state. However, the more distal putative
 \textit{cis}-regulatory region has no underlying SNPs, suggesting that
 there is an alternative mechanism for determining chromatin state at
 this location. Perhaps SNPs in the TSS region regulate chromatin state
 in both regions. For this particular gene, variation in DNA methylation
-\DIFaddbegin \DIFadd{(Fig. \ref{fig:example_gene}D) }\DIFaddend was not associated with \textit{Pkd2}
-expression in the DO\DIFdelbegin \DIFdel{(Fig.
+was not associated with \textit{Pkd2} expression in the DO (Fig.
 \ref{fig:example_gene}D).
-}\DIFdelend \DIFaddbegin \DIFadd{.
-}\DIFaddend 
 
 \hypertarget{discussion}{%
 \section{Discussion}\label{discussion}}
@@ -904,7 +803,7 @@ variation was associated with strain differences in gene expression. We
 saw evidence that both chromatin state defined by combinatorial histone
 modifications, as well as DNA methylation, were heritable mechanisms
 contributing to inter-individual variation in gene expression in mice.
-For DNA methylation, heritable variation was \DIFdelbegin \DIFdel{drivin }\DIFdelend \DIFaddbegin \DIFadd{driven }\DIFaddend in part by
+For DNA methylation, heritable variation was drivin in part by
 strain-specific CpG sites. These CpG sites were enriched in enhancers,
 specifically, weak, strong, and poised enhancers distal to the TSS.
 Strain-specific CpG sites were depleted in promoter regions and CpG
@@ -963,22 +862,11 @@ these states likely represent a heritable form of
 variation in response to liver injury or convergent evolution of
 regeneration pathways.
 
-State 5 \DIFdelbegin \DIFdel{, which }\DIFdelend was also annotated as a bivalent promoter, \DIFdelbegin \DIFdel{was associated
-with }\DIFdelend \DIFaddbegin \DIFadd{but the evidence for
-this annotation was less clear than for the other states with this
-annotation. State 5 was enriched primarily around predicted bivalent
-promoters in mouse liver (Fig. \ref{fig:state_overview}). However, it
-also included the presence of H3K27ac, which is typically associated
-with active enhancers, rather than inactive bivalent promoters
-\mbox{%DIFAUXCMD
-\citep{creyghton2010histone, pmid23788621}}\hspace{0pt}%DIFAUXCMD
-. The association of State 5
-with gene expression was also inconsistent. This state was associated
-with }\DIFaddend lower gene expression in hepatocytes, but with higher gene
+State 5, which was also annotated as a bivalent promoter, was associated
+with lower gene expression in hepatocytes, but with higher gene
 expression when looking across strains. That is, genes with State 5 were
 more lowly expressed than other hepatocyte genes, but for any given
-gene, strains with State 5 had higher expression than \DIFdelbegin \DIFdel{other strains }\DIFdelend \DIFaddbegin \DIFadd{strains with other
-states in the same position}\DIFaddend .
+gene, strains with State 5 had higher expression than other strains.
 
 The association of State 5 with reduced expression within hepatocytes is
 consistent with the annotation of bivalent promoter. Genes marked with
@@ -986,20 +874,20 @@ this state were enriched for vascular development and Wnt signaling,
 further supporting the annotation. When positions marked with State 5
 varied across strains, the most common alternate state at these
 positions was State 12, another bivalent promoter. Thus, this group of
-genes in general was \DIFdelbegin \DIFdel{regulated by bivalent promoters and }\DIFdelend down-regulated relative to other genes. However,
-our results suggest that State 5 was associated with less severe
-down-regulation when compared with State 12, resulting in an apparent
-up-regulation when looking across strains. It is also possible that \DIFaddbegin \DIFadd{the
-inconsistent results observed for }\DIFaddend State 5 \DIFdelbegin \DIFdel{is }\DIFdelend \DIFaddbegin \DIFadd{indicate that it was }\DIFaddend a mixture
-of State 12 and \DIFdelbegin \DIFdel{other states
-and therefore produced inconsistent results}\DIFdelend \DIFaddbegin \DIFadd{another state}\DIFaddend . State 5 had a very similar abundance
-distribution, effect size distribution, and GO term enrichments to State
-12. As a whole, the group of states annotated as bivalent promoters
-raise the intriguing possibility of identifying new modes of expression
-regulation through histone modification. Although these five states all
-recieved the same annotation, each had a unique pattern of distribution
-around the gene body and association with gene expression suggesting
-that each represents a different functional element in the mouse genome.
+genes in general was regulated by bivalent promoters and down-regulated
+relative to other genes. However, our results suggest that State 5 was
+associated with less severe down-regulation when compared with State 12,
+resulting in an apparent up-regulation when looking across strains. It
+is also possible that State 5 is a mixture of State 12 and other states
+and therefore produced inconsistent results. State 5 had a very similar
+abundance distribution, effect size distribution, and GO term
+enrichments to State 12. As a whole, the group of states annotated as
+bivalent promoters raise the intriguing possibility of identifying new
+modes of expression regulation through histone modification. Although
+these five states all recieved the same annotation, each had a unique
+pattern of distribution around the gene body and association with gene
+expression suggesting that each represents a different functional
+element in the mouse genome.
 
 The diversity in the associations with gene expression observed across
 all 14 chromatin states highlights the importance of analyzing
@@ -1222,9 +1110,8 @@ single-end reads were generated on the Illumina HiSeq 2000.
 \subsubsection{Sequence processing}\label{sequence-processing}}
 
 The raw sequencing data from both RNA-seq and ChIP-seq were put through
-the quality control program FastQC (0.11.5)
-\DIFaddbegin \DIFadd{(}\url{https://www.bioinformatics.babraham.ac.uk/projects/fastqc/}\DIFadd{)}\DIFaddend , and
-duplicate sequences were removed before downstream analysis.
+the quality control program FastQC (0.11.5), and duplicate sequences
+were removed before downstream analysis.
 
 \hypertarget{transcript-quantification}{%
 \subsubsection{Transcript
@@ -1255,11 +1142,7 @@ using g2g tools.
 methylation}\label{quantifying-dna-methylation}}
 
 RRBS data were processed using a Bismark-based pipeline modified from
-\DIFdelbegin \DIFdel{\mbox{%DIFAUXCMD
-\citep{pmid30348905}}\hspace{0pt}%DIFAUXCMD
-}\DIFdelend \DIFaddbegin \DIFadd{\mbox{%DIFAUXCMD
-\citet{pmid30348905}}\hspace{0pt}%DIFAUXCMD
-}\DIFaddend . The pipeline uses Trim Galore! 0.6.3
+\citep{pmid30348905}. The pipeline uses Trim Galore! 0.6.3
 \url{https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/}
 for QC, followed by the trimRRBSdiversityAdaptCustomers.py script from
 NuGen for trimming the diversity adapters. This script is available at:
@@ -1272,18 +1155,16 @@ with the average above 38. Duplication level was reduced to \(<2\) for
 about 95\% of the sequences.
 
 High quality reads were aligned to a custom strain pseudogenomes, using
-Bowtie 2 \DIFaddbegin \DIFadd{\mbox{%DIFAUXCMD
-\citep{langmead2012fast} }\hspace{0pt}%DIFAUXCMD
-}\DIFaddend as implemented in Bismark 0.22
-\citep{pmid21493656}. The pseudogenomes were created by incorporating
-strain-specific SNPs and indels into the reference genome using
-g2gtools, allowing a more precise characterization of methylation
-patterns. Bismark methylation extractor tool was then used for creating
-a BED file of estimated methylation proportions for each animal, which
-was then translated to the reference mouse genome (GRCm38) coordinates
-using g2gtools. Unlike other liftOver tools, g2gtools does not throw
-away alignments that land on indel regions. B6 samples were aligned
-directly to the reference mouse genome (mm10).
+Bowtie 2 as implemented in Bismark 0.22 \citep{pmid21493656}. The
+pseudogenomes were created by incorporating strain-specific SNPs and
+indels into the reference genome using g2gtools, allowing a more precise
+characterization of methylation patterns. Bismark methylation extractor
+tool was then used for creating a BED file of estimated methylation
+proportions for each animal, which was then translated to the reference
+mouse genome (GRCm38) coordinates using g2gtools. Unlike other liftOver
+tools, g2gtools does not throw away alignments that land on indel
+regions. B6 samples were aligned directly to the reference mouse genome
+(mm10).
 
 \hypertarget{analysis-of-histone-modifications}{%
 \subsection{Analysis of histone
@@ -1635,10 +1516,8 @@ submitted to the NCBI Gene Expression Omnibus (GEO;
 GSE213968.
 
 Code to run the analyses in this study are available at
-\url{https://github.com/annaLtyler/Epigenetics_Manuscript} and in \DIFdelbegin \DIFdel{Supplemental File 2.
-}\DIFdelend \DIFaddbegin \DIFadd{the
-file Supplemental\_Code.zip.
-}\DIFaddend 
+\url{https://github.com/annaLtyler/Epigenetics_Manuscript} and in
+Supplemental File 2.
 
 \hypertarget{competing-interest-statement}{%
 \section{Competing Interest

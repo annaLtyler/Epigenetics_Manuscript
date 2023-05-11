@@ -1,4 +1,4 @@
-\begin{thebibliography}{72}
+\begin{thebibliography}{73}
 \providecommand{\natexlab}[1]{#1}
 \expandafter\ifx\csname urlstyle\endcsname\relax
   \providecommand{\doi}[1]{doi:\discretionary{}{}{}#1}\else
@@ -88,6 +88,11 @@ Fraga MF, Ballestar E, Paz MF, Ropero S, Setien F, Ballestar ML, Heine-Suñer
   D, Cigudosa JC, Urioste M, Benitez J, \emph{et~al.}, 2005, {{E}pigenetic
   differences arise during the lifetime of monozygotic twins}. \emph{Proc Natl
   Acad Sci} 102(30): 10604--10609.
+
+\bibitem[Gatti \emph{et~al.}(2017)]{gatti2017effects}
+Gatti DM, Simecek P, Somes L, Jeffrey CT, Vincent MJ, Choi K, Chen X, Churchill
+  GA, Svenson KL, 2017, The effects of sex and diet on physiology and liver
+  gene expression in diversity outbred mice. \emph{bioRxiv} : 098657.
 
 \bibitem[Gatti \emph{et~al.}(2014)]{Gatti:2014ko}
 Gatti DM, Svenson KL, Shabalin A, Wu LY, Valdar W, Simecek P, Goodwin N, Cheng

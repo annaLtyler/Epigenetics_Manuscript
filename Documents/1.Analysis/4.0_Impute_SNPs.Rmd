@@ -474,7 +474,6 @@ if(start.at < length(all.snp.r2)){
 
 
 ```{r perm_snps}
-
 geno.lod.file <- here("Results", "ChromHMM", "14_states_C", "eQTL.lod.RDS")
 geno.lod <- readRDS(geno.lod.file)
 

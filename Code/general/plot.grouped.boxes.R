@@ -1,6 +1,6 @@
 plot.grouped.boxes <- function(group.list, group.labels = names(group.list), 
 group.cols = c("#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3", "#a6d854", "#ffd92f", "#e5c494", "#b3b3b3"),
-main = "", type = c("list", "matrix"), 
+main = "", type = c("list", "matrix"), ylab = "",
 plot.type = c("box", "strip"), print.vals = c("mean", "median"), 
 text.cex = 0.7, label.srt = 0, legend.x = NULL, legend.y = NULL, notch = FALSE){
 
@@ -32,7 +32,7 @@ text.cex = 0.7, label.srt = 0, legend.x = NULL, legend.y = NULL, notch = FALSE){
 		for(l in 1:length(group.list)){ #plot the ith element from group l
 			
 			if(type == "list"){
-				data.vals <- group.list[[l]][[i]];label <- names(group.list[[l]])[i]
+				data.vals <- group.list[[l]][[i]]; label <- names(group.list[[l]])[i]
 				}else{
 				data.vals <- group.list[[l]][,i]; label <- colnames(group.list[[l]])[i]
 				}
@@ -45,6 +45,7 @@ text.cex = 0.7, label.srt = 0, legend.x = NULL, legend.y = NULL, notch = FALSE){
 				main = "", method = "jitter", vertical = TRUE, pch = 16)
 			}
 			mtext(main, side = 3, line = 0)
+			mtext(ylab, side = 2, line = 2.5)
 
 			if(!is.na(print.vals)){
 			par(xpd = TRUE)
